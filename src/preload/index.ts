@@ -182,6 +182,7 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     audit: () => ipcRenderer.invoke(IPC_CHANNELS.permissionsAudit),
     clearAudit: () => ipcRenderer.invoke(IPC_CHANNELS.permissionsClearAudit),
     setAutoMode: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.permissionsSetAutoMode, enabled),
+    setAskLess: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.permissionsSetAskLess, enabled),
   },
   usage: {
     overview: () => ipcRenderer.invoke(IPC_CHANNELS.usageOverview),

@@ -27,6 +27,7 @@ interface PolicyFileState {
   levels: Record<string, string>;
   grants: PermissionGrant[];
   autoMode?: boolean;
+  askLess?: boolean;
 }
 
 interface AuditFileState {
@@ -104,6 +105,7 @@ export class PermissionService {
       levels: sanitizeLevels(stored.levels),
       grants: stored.grants.filter((grant) => PERMISSION_CATEGORIES.includes(grant.category)),
       autoMode: stored.autoMode === true,
+      askLess: stored.askLess === true,
     };
     this.#pruneGrants();
     const audit = await this.#auditFile.read(() => ({ version: 1, entries: [] }), isAuditFileState);
@@ -125,7 +127,15 @@ export class PermissionService {
       levels: { ...this.#policy.levels },
       grants: this.#policy.grants.map((grant) => ({ ...grant })),
       autoMode: this.#policy.autoMode,
+      askLess: this.#policy.askLess === true,
     };
+  }
+
+  /** "Ask me less" on the Approvals screen: everyday steps on this computer stop asking. */
+  async setAskLess(enabled: boolean): Promise<PermissionPolicyState> {
+    this.#policy.askLess = enabled;
+    await this.#persistPolicy();
+    return this.get();
   }
 
   async setAutoMode(enabled: boolean): Promise<PermissionPolicyState> {
@@ -336,6 +346,7 @@ export class PermissionService {
       levels: { ...this.#policy.levels },
       grants: this.#policy.grants,
       autoMode: this.#policy.autoMode,
+      askLess: this.#policy.askLess === true,
     });
   }
 }

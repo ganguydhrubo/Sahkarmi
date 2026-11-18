@@ -121,6 +121,14 @@ export function decide(
   if (level === "auto" && !isSensitive(request.category)) {
     return { effective: "allow", level, reason: "Allowed automatically.", grant: null };
   }
+  if (policy.askLess && everydayOnThisComputer(request)) {
+    return {
+      effective: "allow",
+      level,
+      reason: "Everyday step on this computer (Ask me less).",
+      grant: null,
+    };
+  }
   if (level === "workspace" && !isSensitive(request.category)) {
     if (
       request.paths.length > 0 &&
@@ -222,6 +230,32 @@ export function mentionsSecretPath(command: string): boolean {
 }
 
 /** Why this request must be asked whatever the settings say, or null. */
+const ASK_LESS_CATEGORIES: ReadonlySet<PermissionCategory> = new Set([
+  "file_create",
+  "file_modify",
+  "downloads",
+  "shell",
+]);
+
+/**
+ * Commands that are never "everyday": they delete, install, change the computer's set-up or
+ * talk to the internet. A plain word list on purpose: when in doubt, the owner is asked.
+ */
+const NOT_EVERYDAY_COMMAND =
+  /\b(rm|del|erase|rmdir|rd|Remove-Item|format|diskpart|reg|regedit|shutdown|Stop-Computer|Restart-Computer|npm|pnpm|yarn|bun|pip|pip3|winget|choco|scoop|msiexec|Set-ExecutionPolicy|schtasks|net|netsh|curl|wget|Invoke-WebRequest|iwr|Invoke-RestMethod|irm|Start-BitsTransfer|ssh|scp|sftp|ftp|git|Start-Process|sudo|runas)\b/i;
+
+/**
+ * "Ask me less": a step that stays on this computer and can be put right: making or changing a
+ * file, a download, or an ordinary command. Deleting, installing, internet commands and key
+ * files are never everyday, and the sensitive categories never reach this check.
+ */
+export function everydayOnThisComputer(request: PermissionRequest): boolean {
+  if (!ASK_LESS_CATEGORIES.has(request.category)) return false;
+  if (request.category !== "shell") return true;
+  const command = `${request.detail ?? ""} ${request.action ?? ""}`;
+  return !NOT_EVERYDAY_COMMAND.test(command) && !mentionsSecretPath(command);
+}
+
 export function protectedPathReason(request: PermissionRequest): string | null {
   if (WRITE_CATEGORIES.has(request.category) && request.paths.some(isAgentConfigPath)) {
     return "This changes an AI tool's settings folder; asking the owner.";

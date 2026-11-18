@@ -578,3 +578,22 @@ export function starterJobs(
       prompt: spec.text[words].prompt,
     }));
 }
+
+const FIRST_JOB_KEY = "sahkarmi:first-job-done";
+
+/** True once the owner has started a job from Home; the first-job guide then stays away. */
+export function firstJobDone(): boolean {
+  try {
+    return window.localStorage.getItem(FIRST_JOB_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function markFirstJobDone(): void {
+  try {
+    window.localStorage.setItem(FIRST_JOB_KEY, "1");
+  } catch {
+    // Without storage the guide simply shows again next time.
+  }
+}

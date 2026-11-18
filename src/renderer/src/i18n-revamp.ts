@@ -146,6 +146,22 @@ export const revampEn = {
   helpQAutoTeam: "Why did my job go to a whole team?",
   helpAAutoTeam:
     'A long job, or one with four or more steps, goes to a team by itself when you type it on Home or send it to the workspace\'s CEO. The lead plans the steps, the coworkers work side by side and you get one report. A team uses much more of your AI limit than one coworker. To keep a job with one coworker, press "Use one coworker instead" on Home, or start your message to the CEO with "Only you". You can switch this off in Settings > Features ("Big jobs go to a team by themselves").',
+  askLevelTitle: "How much should Sahkarmi ask you?",
+  askEach: "Ask me for each step",
+  askEachHint: "Safest. Commands, and files outside the coworker's own folder, wait for your OK.",
+  askLess: "Ask me less",
+  askLessHint:
+    "Everyday steps on this computer run by themselves: making and changing files, downloads and ordinary commands. Deleting, installing, internet commands, messages, posting and money always ask.",
+  askLevelMore: "More choices for each kind of step are in Settings > Permissions.",
+  askLevelAuto:
+    "Auto mode is on, so everyday work does not ask. You can change it in Settings > Permissions.",
+  settingsShowAll: "Show all settings",
+  settingsShowFewer: "Show fewer settings",
+  guideTitle: "Your first job, in three steps",
+  guideStep1: "Tap a ready job below, or type what you want.",
+  guideStep2: "Change the words if you like.",
+  guideStep3: "Press Start. Your coworker does the work and shows you the result.",
+  guideTry: "Try it with: {job}",
 };
 
 export type RevampDictionary = typeof revampEn;
@@ -294,6 +310,21 @@ export const revampHi: RevampDictionary = {
   helpQAutoTeam: "मेरा काम पूरी टीम के पास क्यों गया?",
   helpAAutoTeam:
     "लंबा काम, या चार या ज़्यादा क़दमों वाला काम, होम पर लिखने या वर्कस्पेस के CEO को भेजने पर अपने आप टीम के पास जाता है। लीड क़दम तय करता है, सहकर्मी साथ-साथ काम करते हैं और आपको एक रिपोर्ट मिलती है। टीम एक सहकर्मी से कहीं ज़्यादा AI सीमा इस्तेमाल करती है। काम एक ही सहकर्मी के पास रखना हो तो होम पर “एक ही सहकर्मी से करवाएँ” दबाएँ, या CEO को संदेश “सिर्फ़ तुम” से शुरू करें। इसे सेटिंग्स > फ़ीचर्स में बंद कर सकते हैं।",
+  askLevelTitle: "सहकर्मी आपसे कितना पूछे?",
+  askEach: "हर क़दम पर पूछें",
+  askEachHint: "सबसे सुरक्षित। कमांड और सहकर्मी के अपने फ़ोल्डर के बाहर की फ़ाइलें आपकी हाँ का इंतज़ार करती हैं।",
+  askLess: "कम पूछें",
+  askLessHint:
+    "इस कंप्यूटर के रोज़ के क़दम अपने आप चलते हैं: फ़ाइलें बनाना और बदलना, डाउनलोड और सामान्य कमांड। डिलीट करना, इंस्टॉल करना, इंटरनेट कमांड, संदेश, पोस्ट और पैसे के लिए हमेशा पूछा जाएगा।",
+  askLevelMore: "हर तरह के क़दम के लिए और विकल्प सेटिंग्स > अनुमतियाँ में हैं।",
+  askLevelAuto: "ऑटो मोड चालू है, इसलिए रोज़ के काम में नहीं पूछा जाता। इसे सेटिंग्स > अनुमतियाँ में बदल सकते हैं।",
+  settingsShowAll: "सभी सेटिंग्स दिखाएँ",
+  settingsShowFewer: "कम सेटिंग्स दिखाएँ",
+  guideTitle: "आपका पहला काम, तीन क़दमों में",
+  guideStep1: "नीचे से कोई तैयार काम चुनें, या जो चाहिए वह लिखें।",
+  guideStep2: "चाहें तो शब्द बदल लें।",
+  guideStep3: "“शुरू करें” दबाएँ। आपका सहकर्मी काम करके नतीजा दिखाएगा।",
+  guideTry: "इससे आज़माएँ: {job}",
 };
 
 export const revampBn: RevampDictionary = {
@@ -439,4 +470,19 @@ export const revampBn: RevampDictionary = {
   helpQAutoTeam: "আমার কাজ পুরো টিমের কাছে গেল কেন?",
   helpAAutoTeam:
     "লম্বা কাজ, বা চার বা তার বেশি ধাপের কাজ, হোমে লিখলে বা ওয়ার্কস্পেসের CEO-কে পাঠালে নিজে থেকেই টিমের কাছে যায়। লিড ধাপ ঠিক করে, সহকর্মীরা পাশাপাশি কাজ করে এবং আপনি একটি রিপোর্ট পান। একটি টিম একজন সহকর্মীর চেয়ে অনেক বেশি AI সীমা ব্যবহার করে। কাজ একজন সহকর্মীর কাছেই রাখতে হোমে “একজন সহকর্মীকে দিয়েই করান” চাপুন, অথবা CEO-কে বার্তা “শুধু তুমি” দিয়ে শুরু করুন। সেটিংস > ফিচার্স থেকে এটি বন্ধ করা যায়।",
+  askLevelTitle: "সহকর্মী আপনাকে কতটা জিজ্ঞেস করবে?",
+  askEach: "প্রতিটি ধাপে জিজ্ঞেস করুন",
+  askEachHint: "সবচেয়ে নিরাপদ। কমান্ড এবং সহকর্মীর নিজের ফোল্ডারের বাইরের ফাইল আপনার সম্মতির অপেক্ষায় থাকে।",
+  askLess: "কম জিজ্ঞেস করুন",
+  askLessHint:
+    "এই কম্পিউটারের রোজকার ধাপ নিজে থেকেই চলে: ফাইল তৈরি ও বদলানো, ডাউনলোড এবং সাধারণ কমান্ড। মুছে ফেলা, ইনস্টল করা, ইন্টারনেট কমান্ড, বার্তা, পোস্ট ও টাকার জন্য সবসময় জিজ্ঞেস করা হবে।",
+  askLevelMore: "প্রতিটি ধরনের ধাপের জন্য আরও পছন্দ সেটিংস > অনুমতি-তে আছে।",
+  askLevelAuto: "অটো মোড চালু আছে, তাই রোজকার কাজে জিজ্ঞেস করা হয় না। সেটিংস > অনুমতি-তে এটি বদলাতে পারেন।",
+  settingsShowAll: "সব সেটিংস দেখান",
+  settingsShowFewer: "কম সেটিংস দেখান",
+  guideTitle: "আপনার প্রথম কাজ, তিন ধাপে",
+  guideStep1: "নিচ থেকে একটি তৈরি কাজ বেছে নিন, অথবা যা চান তা লিখুন।",
+  guideStep2: "চাইলে শব্দ বদলে নিন।",
+  guideStep3: "“শুরু করুন” চাপুন। আপনার সহকর্মী কাজ করে ফল দেখাবে।",
+  guideTry: "এটি দিয়ে চেষ্টা করুন: {job}",
 };

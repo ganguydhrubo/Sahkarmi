@@ -1,5 +1,10 @@
 import { createMemo, createSignal, For, onMount, Show } from "solid-js";
-import type { ApprovalCategory, ApprovalProvenance, ApprovalRequest } from "../../../shared/ipc";
+import type {
+  ApprovalCategory,
+  ApprovalProvenance,
+  ApprovalRequest,
+  PermissionPolicyState,
+} from "../../../shared/ipc";
 import type { BotProfile } from "../data";
 import { type MessageKey, t } from "../i18n";
 import { AgentAvatar } from "./AgentAvatar";
@@ -49,6 +54,73 @@ export function provenanceText(provenance: ApprovalProvenance | undefined): stri
   }
 }
 
+/**
+ * "How much should Sahkarmi ask you?": two plain choices at the top of Approvals. Every other
+ * permission setting stays where it was, in Settings > Permissions.
+ */
+function AskLevel() {
+  const [policy, setPolicy] = createSignal<PermissionPolicyState | null>(null);
+  const [error, setError] = createSignal("");
+  onMount(() => {
+    void window.sahkarmi?.permissions
+      ?.get?.()
+      .then(setPolicy)
+      .catch(() => undefined);
+  });
+  async function choose(askLess: boolean) {
+    const api = window.sahkarmi?.permissions;
+    if (!api?.setAskLess) return;
+    try {
+      setPolicy(await api.setAskLess(askLess));
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+  return (
+    <Show when={window.sahkarmi?.permissions?.setAskLess && policy()}>
+      {(current) => (
+        <section class="ask-level" aria-label={t("askLevelTitle")}>
+          <strong>{t("askLevelTitle")}</strong>
+          <Show
+            when={!current().autoMode}
+            fallback={<p class="ask-level-note">{t("askLevelAuto")}</p>}
+          >
+            <div class="ask-level-choices">
+              <button
+                type="button"
+                class="ask-level-choice"
+                classList={{ "ask-level-on": !current().askLess }}
+                aria-pressed={!current().askLess}
+                onClick={() => void choose(false)}
+              >
+                <span>{t("askEach")}</span>
+                <small>{t("askEachHint")}</small>
+              </button>
+              <button
+                type="button"
+                class="ask-level-choice"
+                classList={{ "ask-level-on": current().askLess === true }}
+                aria-pressed={current().askLess === true}
+                onClick={() => void choose(true)}
+              >
+                <span>{t("askLess")}</span>
+                <small>{t("askLessHint")}</small>
+              </button>
+            </div>
+            <p class="ask-level-note">{t("askLevelMore")}</p>
+          </Show>
+          <Show when={error()}>
+            <p class="approval-error" role="alert">
+              {error()}
+            </p>
+          </Show>
+        </section>
+      )}
+    </Show>
+  );
+}
+
 export function ApprovalsView(props: ApprovalsViewProps) {
   const pending = createMemo(() =>
     props.approvals.filter((approval) => approval.status === "pending"),
@@ -67,6 +139,7 @@ export function ApprovalsView(props: ApprovalsViewProps) {
         </Show>
       </header>
       <div class="center-view-body">
+        <AskLevel />
         <h2 class="center-view-subheading">{t("pending")}</h2>
         <Show
           when={pending().length > 0}

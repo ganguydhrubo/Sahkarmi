@@ -199,6 +199,21 @@ describe("Home", () => {
     expect(wantsOneCoworker("Please check stock")).toBe(false);
   });
 
+  it("guides the first job, and stops once a job has been started from Home", async () => {
+    const first = show();
+    expect(screen.getByText("Your first job, in three steps")).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole("button", { name: /^Try it with: / }));
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value.length).toBeGreaterThan(10);
+    await fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(first.onSend).toHaveBeenCalled());
+    expect(screen.queryByText("Your first job, in three steps")).not.toBeInTheDocument();
+  });
+
+  it("shows no guide to an owner whose coworkers have already worked", () => {
+    show({ bots: TEAM.map((item) => ({ ...item, threadId: "thread-1" })) });
+    expect(screen.queryByText("Your first job, in three steps")).not.toBeInTheDocument();
+  });
+
   it("says when approvals are waiting", () => {
     const onOpenApprovals = vi.fn();
     show({ pendingApprovals: 2, onOpenApprovals });

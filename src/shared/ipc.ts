@@ -124,6 +124,7 @@ export const IPC_CHANNELS = {
   permissionsAudit: "permissions:audit",
   permissionsClearAudit: "permissions:clear-audit",
   permissionsSetAutoMode: "permissions:set-auto-mode",
+  permissionsSetAskLess: "permissions:set-ask-less",
 
   providerSetupList: "provider-setup:list",
   providerSetupConnect: "provider-setup:connect",
@@ -1219,6 +1220,12 @@ export interface PermissionPolicyState {
    * and anything set to "Block" stays blocked.
    */
   autoMode: boolean;
+  /**
+   * "Ask me less": everyday steps on this computer run by themselves (making and changing
+   * files, downloads, ordinary commands). Deleting, installing, internet commands, messages,
+   * posting, money, account changes and government forms still ask. Narrower than auto mode.
+   */
+  askLess?: boolean;
 }
 
 export interface PermissionAuditEntry {
@@ -2124,6 +2131,8 @@ export interface PermissionsDesktopApi {
   audit: () => Promise<PermissionAuditEntry[]>;
   clearAudit: () => Promise<void>;
   setAutoMode: (enabled: boolean) => Promise<PermissionPolicyState>;
+  /** Optional: older preloads do not have it. */
+  setAskLess?: (enabled: boolean) => Promise<PermissionPolicyState>;
 }
 
 export interface UsageDesktopApi {

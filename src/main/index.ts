@@ -1170,6 +1170,10 @@ function registerIpcHandlers(
     if (typeof enabled !== "boolean") throw new Error("Invalid auto mode request.");
     return permissions.setAutoMode(enabled);
   });
+  handleTrusted(IPC_CHANNELS.permissionsSetAskLess, (enabled: unknown) => {
+    if (typeof enabled !== "boolean") throw new Error("Invalid request.");
+    return permissions.setAskLess(enabled);
+  });
 
   handleTrusted(IPC_CHANNELS.usageOverview, () => service.usageOverview());
   handleTrusted(IPC_CHANNELS.usageRefresh, () => service.refreshUsage());

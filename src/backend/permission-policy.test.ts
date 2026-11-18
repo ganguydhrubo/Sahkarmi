@@ -13,6 +13,7 @@ import {
   classifyCommand,
   DEFAULT_PERMISSION_LEVELS,
   decide,
+  everydayOnThisComputer,
   redact,
   sanitizeLevels,
 } from "./permission-policy";
@@ -442,5 +443,41 @@ describe.sequential("PermissionService", () => {
     await service.initialize();
     expect(service.get().levels.payments).toBe("ask");
     expect(service.get().levels.shell).toBe("ask");
+  });
+});
+
+describe("Ask me less", () => {
+  const roots = ["C:\\work\\maya"];
+  const policy = (askLess: boolean) =>
+    ({ levels: { ...DEFAULT_PERMISSION_LEVELS }, grants: [], autoMode: false, askLess }) as never;
+  const ask = (category: string, detail = "", paths: string[] = []) =>
+    ({ botId: "maya", category, action: "", detail, paths }) as never;
+
+  it("lets everyday steps on this computer run, and nothing else", () => {
+    const on = policy(true);
+    // A file outside the coworker's folder and an ordinary script: no longer asked.
+    expect(decide(on, ask("file_create", "", ["D:\\Reports\\list.xlsx"]), roots).effective).toBe(
+      "allow",
+    );
+    expect(decide(on, ask("shell", "python make_report.py"), roots).effective).toBe("allow");
+    // Deleting, installing, internet commands, key files and the sensitive kinds still ask.
+    expect(decide(on, ask("shell", "Remove-Item old.txt"), roots).effective).toBe("ask");
+    expect(decide(on, ask("shell", "pip install requests"), roots).effective).toBe("ask");
+    expect(decide(on, ask("shell", "curl https://example.com/x"), roots).effective).toBe("ask");
+    expect(decide(on, ask("file_delete", "", ["C:\\work\\maya\\a.txt"]), roots).effective).toBe(
+      "ask",
+    );
+    expect(decide(on, ask("payments"), roots).effective).toBe("ask");
+    expect(decide(on, ask("external_messages"), roots).effective).toBe("ask");
+  });
+
+  it("changes nothing while it is off", () => {
+    const off = policy(false);
+    expect(decide(off, ask("shell", "python make_report.py"), roots).effective).toBe("ask");
+    expect(decide(off, ask("file_create", "", ["D:\\Reports\\list.xlsx"]), roots).effective).toBe(
+      "ask",
+    );
+    expect(everydayOnThisComputer(ask("shell", "python make_report.py"))).toBe(true);
+    expect(everydayOnThisComputer(ask("shell", "git push origin main"))).toBe(false);
   });
 });

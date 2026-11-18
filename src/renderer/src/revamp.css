@@ -1477,3 +1477,123 @@
 .composer-toolbar > .send-button {
   margin-left: auto;
 }
+
+/* ---------------------------------------------------------------------------------------- */
+/* Easy wins: how much to ask, simple Settings, the first job                                */
+/* ---------------------------------------------------------------------------------------- */
+
+.ask-level {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 20px;
+  border: 1px solid var(--card-line);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 16px 20px;
+  color: var(--text-primary);
+}
+
+.ask-level-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ask-level .ask-level-choice {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ask-level .ask-level-choice small {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* The chosen answer has a navy edge and a calm fill; no orange, this is not the main action. */
+.ask-level .ask-level-choice.ask-level-on {
+  border-color: var(--indigo-accent);
+  background: var(--calm-bg);
+}
+
+.ask-level-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.settings-show-all {
+  justify-self: start;
+  min-height: 40px;
+  margin: 12px 0 0;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--link-ink);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-show-all:hover {
+  text-decoration: underline;
+}
+
+.home-guide {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--card-line);
+  border-left: 4px solid var(--indigo-accent);
+  border-radius: 14px;
+  background: var(--card-bg);
+  padding: 14px 18px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.home-guide strong {
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+}
+
+.home-guide ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.home-guide-done {
+  color: var(--success);
+}
+
+.home-guide-now {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.home-guide-try {
+  justify-self: start;
+  min-height: var(--control-h);
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 16px;
+  color: var(--indigo-accent);
+  font-weight: 700;
+  cursor: pointer;
+}

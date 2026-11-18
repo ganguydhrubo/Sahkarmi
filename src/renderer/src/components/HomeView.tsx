@@ -7,7 +7,9 @@ import { t } from "../i18n";
 import { language, setTrade, trade } from "../preferences";
 import { TRADES, type TradeId, tradeName } from "../trade-names";
 import {
+  firstJobDone,
   type JobRole,
+  markFirstJobDone,
   noteStarterUsed,
   type StarterJob,
   starterJobs,
@@ -79,6 +81,14 @@ export function HomeView(props: {
   const [advice, setAdvice] = createSignal<{ botId: string; why: string } | null>(null);
   const [choosingTrade, setChoosingTrade] = createSignal(false);
   const [sending, setSending] = createSignal(false);
+  /**
+   * The first job, done together: shown until the owner has started one job from Home, and
+   * only while no coworker has worked yet (an owner with chats already knows the way).
+   */
+  const [firstDone, setFirstDone] = createSignal(firstJobDone());
+  const guiding = () =>
+    !firstDone() && props.bots.length > 0 && !props.bots.some((bot) => bot.threadId);
+  const guideStep = () => (text().trim() ? 3 : 1);
   /** The owner said "use one coworker" for the big job in the box. */
   const [oneOnly, setOneOnly] = createSignal(false);
   /**
@@ -198,6 +208,8 @@ export function HomeView(props: {
       setFiles([]);
       const started = jobId();
       if (started) setUseCounts(noteStarterUsed(started));
+      markFirstJobDone();
+      setFirstDone(true);
       setText("");
       setJobRole(null);
       setJobId(null);
@@ -225,6 +237,24 @@ export function HomeView(props: {
               : t("homeApprovals", { count: String(props.pendingApprovals) })}
             <span class="home-needs-open">{t("homeApprovalsOpen")}</span>
           </button>
+        </Show>
+
+        <Show when={guiding()}>
+          <section class="home-guide" aria-label={t("guideTitle")}>
+            <strong>{t("guideTitle")}</strong>
+            <ol>
+              <li classList={{ "home-guide-done": guideStep() > 1 }}>{t("guideStep1")}</li>
+              <li classList={{ "home-guide-now": guideStep() === 3 }}>{t("guideStep2")}</li>
+              <li classList={{ "home-guide-now": guideStep() === 3 }}>{t("guideStep3")}</li>
+            </ol>
+            <Show when={guideStep() === 1 && jobs()[0]}>
+              {(job) => (
+                <button type="button" class="home-guide-try" onClick={() => pick(job())}>
+                  {t("guideTry", { job: job().title })}
+                </button>
+              )}
+            </Show>
+          </section>
         </Show>
 
         <form
