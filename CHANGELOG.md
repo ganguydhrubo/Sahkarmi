@@ -5,6 +5,57 @@ All notable changes to Sahkarmi are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-18
+
+### Added
+
+- **Home**: Sahkarmi opens on one box, "What do you want done today?", with a big Speak button
+  and ready jobs for your line of work (shop, CA office, clinic, school, property, other) in
+  English, Hindi and Bengali. The coworker's AI first says what it understood, asks only what it
+  cannot guess, and passes the job to a better-suited coworker. A big job goes to a team by
+  itself, with "Use one coworker instead".
+- **A menu with five named places** (Home, Coworkers, Team project, Approvals, Settings); the
+  rest is under More. Settings shows six places, with "Show all settings" for the others.
+- **First open** asks your language, your line of work and the AI, and Home guides the first job.
+- **If one AI runs out**: set a backup order once in Settings > AI & models. At a usage limit the
+  same job carries on with the next AI, which gets a note of the goal, the plan, the steps done
+  and the files made. The coworker returns to its own AI when the limit is back. An account
+  health card says what needs you, with a Fix button.
+- **Several ChatGPT or Claude accounts**: add a second account; at a limit the coworker carries on
+  with the other account in the same chat.
+- **Repeated jobs use fewer tokens**: a scheduled task or routine that has run before starts in a
+  clean chat with a short note of the steps that worked, instead of reading every earlier run.
+- **Pinned messages**: pin a reply (a price list, a final bill) and jump back to it.
+- A thumbs-up on a coworker's question answers "yes, go ahead"; a thumbs-down answers "no".
+- Schedules and routines say why a run was late, waited or did not start.
+- **Ask me less** on the Approvals screen: everyday steps on this computer run by themselves.
+  Deleting, installing, internet commands, messages, posting and money always ask.
+- Chat box: **Quick, Careful or Free** beside the exact-model picker.
+- Team projects build a team from one instruction, with a model and effort choice and a line
+  about the AI's limit before the start.
+- Voice typing: speak in Hinglish, English, Hindi or Bengali.
+- Disconnect for ChatGPT, Claude, Cursor and Kiro, so another account can be connected.
+
+### Changed
+
+- Changing a coworker's AI no longer starts the job again: the earlier chat stays on screen and
+  the new AI is told what is already done.
+- At a usage limit the order is: the next Google account for Gemini, then the same AI's other
+  account, then your backup order, then the free model.
+- Approvals say "Allow once" and "Do not allow", and each card says what will happen, why,
+  whether it can be undone and what happens if you say no.
+- The chat reads like a page: a narrower column, larger text and a soft bubble for your messages.
+- The first coworker of a new workspace becomes its CEO; the list shows who the CEO is and the
+  Team and CEO box says what a CEO does.
+- The light theme is the default look. The default AI starts first, so the app is ready sooner.
+- The built-in free AI stays on its tested 1.x line and says when a 2.x release is out.
+
+### Fixed
+
+- A used-up ChatGPT limit was shown only as "error" and nothing carried on; it is now recognised.
+- A voice note recorded on Home was dropped; it now goes with the job.
+- "Add to this task now" keeps the same task on AIs that cannot take a message mid-task.
+
 ## [0.33.0] - 2026-11-12
 
 ### Added
