@@ -253,7 +253,10 @@ async function build(
   agent: FakeAgent,
   planner: string | null = null,
   review = false,
-  extra: Pick<OrchestratorEngineOptions, "route" | "intelligence"> = {},
+  extra: Pick<
+    OrchestratorEngineOptions,
+    "route" | "intelligence" | "teamMember" | "aiPlanning"
+  > = {},
 ) {
   const store = new OrchestratorStore(root);
   await store.initialize();
@@ -308,7 +311,7 @@ describe("team runs on the durable engine", () => {
     agent.responder = (_botId, text) =>
       text.startsWith("[Approval")
         ? { reply: "Posted the campaign after your approval." }
-        : text.includes("Your task: Core Implementation")
+        : text.includes("Your task: Do the work")
           ? { approval: "Post the campaign on Facebook" }
           : { reply: "Done." };
     const { orchestrator } = await build(agent);
@@ -331,17 +334,15 @@ describe("team runs on the durable engine", () => {
     const implementation = done.tasks[1];
     expect(implementation?.inputs.result).toBe("Posted the campaign after your approval.");
     // The task was sent once; the approval follow-up came from the decision, not from the engine.
-    expect(
-      agent.sent.filter((item) => item.text.includes("Your task: Core Implementation")),
-    ).toHaveLength(1);
+    expect(agent.sent.filter((item) => item.text.includes("Your task: Do the work"))).toHaveLength(
+      1,
+    );
   });
 
   it("fails the task when the owner rejects, and says why", async () => {
     const agent = new FakeAgent(BOTS);
     agent.responder = (_botId, text) =>
-      text.includes("Your task: Core Implementation")
-        ? { approval: "Pay the vendor" }
-        : { reply: "Done." };
+      text.includes("Your task: Do the work") ? { approval: "Pay the vendor" } : { reply: "Done." };
     const { orchestrator } = await build(agent);
     const run = await orchestrator.startRun(
       { objective: "Pay vendors and reconcile", forcedStrategy: "multi-agent" },
@@ -361,7 +362,7 @@ describe("team runs on the durable engine", () => {
     const agent = new FakeAgent(BOTS);
     let hang = true;
     agent.responder = (_botId, text) =>
-      text.includes("Your task: Core Implementation") && hang ? { hang: true } : { reply: "Done." };
+      text.includes("Your task: Do the work") && hang ? { hang: true } : { reply: "Done." };
     const first = await build(agent);
     const run = await first.orchestrator.startRun(
       { objective: "Build the whole stack", forcedStrategy: "multi-agent" },
@@ -373,7 +374,8 @@ describe("team runs on the durable engine", () => {
       agent
         .listQueue("dev-code")
         .deliveries.some(
-          (delivery) => delivery.status === "running" && delivery.text.includes("Your task: Core"),
+          (delivery) =>
+            delivery.status === "running" && delivery.text.includes("Your task: Do the work"),
         )
         ? true
         : null,
@@ -394,9 +396,13 @@ describe("team runs on the durable engine", () => {
     await second.orchestrator.resumeRun(run.id, root);
     const done = await runStatus(second.orchestrator, run.id, "completed");
     // The first task was never sent again; the interrupted one was retried once.
-    expect(agent.sent.filter((item) => item.text.includes("Your task: Arch"))).toHaveLength(1);
-    expect(agent.sent.filter((item) => item.text.includes("Your task: Core"))).toHaveLength(2);
-    const retried = agent.sent.filter((item) => item.text.includes("Your task: Core"))[1];
+    expect(
+      agent.sent.filter((item) => item.text.includes("Your task: Plan the work")),
+    ).toHaveLength(1);
+    expect(agent.sent.filter((item) => item.text.includes("Your task: Do the work"))).toHaveLength(
+      2,
+    );
+    const retried = agent.sent.filter((item) => item.text.includes("Your task: Do the work"))[1];
     expect(retried?.text).toContain("attempt 2");
     expect(done.tasks[1]?.attemptCount).toBe(2);
   });
@@ -663,6 +669,143 @@ ${JSON.stringify({
   });
 });
 
+describe("a lead builds a team for the goal", () => {
+  function hire(agent: FakeAgent, made: string[]) {
+    return async (request: { role: string; model: string | null; workspaceId: string | null }) => {
+      const id = `team-${request.role}`;
+      let bot = agent.bots.find((item) => item.id === id);
+      if (!bot) {
+        const base = agent.bots[0] ?? new FakeAgent(["x"]).bots[0];
+        bot = {
+          ...(base as BotSummary),
+          id,
+          name: `Team ${request.role}`,
+          workspaceId: request.workspaceId ?? "default",
+        };
+        agent.bots.push(bot);
+        made.push(request.role);
+      }
+      return bot;
+    };
+  }
+
+  it("without a CEO, the team's lead plans and each role gets its own member", async () => {
+    const agent = new FakeAgent(["priya-sales"]);
+    const made: string[] = [];
+    agent.responder = (botId, text) => {
+      if (botId === "team-lead" && text.startsWith("[Team run planning]")) {
+        return {
+          reply: JSON.stringify({
+            tasks: [
+              { title: "Find prices", description: "List 5 suppliers", role: "research" },
+              { title: "Work out costs", description: "Total the costs", role: "finance" },
+              {
+                title: "Bring it together",
+                description: "One page summary",
+                role: "research",
+                dependsOn: [1, 2],
+              },
+            ],
+          }),
+        };
+      }
+      return { reply: `${botId} finished.` };
+    };
+    const { orchestrator } = await build(agent, null, false, {
+      teamMember: hire(agent, made) as never,
+    });
+    const run = await orchestrator.startRun(
+      { objective: "Plan a Diwali sale for our shop", forcedStrategy: "multi-agent", model: null },
+      root,
+    );
+    const done = await runStatus(orchestrator, run.id, "completed");
+    expect(done.plannedBy).toBe("ceo");
+    expect(done.leadName).toBe("Team lead");
+    expect(made).toEqual(["lead", "research", "finance"]);
+    expect(done.tasks.map((task) => task.assignedBotId)).toEqual([
+      "team-research",
+      "team-finance",
+      "team-research",
+    ]);
+    expect(done.report).toContain("1. Find prices");
+    expect(done.report).toContain("team-finance finished.");
+  });
+
+  it("keeps a workspace's team inside it: another workspace's coworkers get no work", async () => {
+    const agent = new FakeAgent(["kavya-content", "dev-code", "tara-ops"]);
+    const made: string[] = [];
+    let planAsk = "";
+    agent.responder = (botId, text) => {
+      if (botId === "team-lead" && text.startsWith("[Team run planning]")) {
+        planAsk = text;
+        return {
+          reply: JSON.stringify({
+            tasks: [
+              {
+                title: "Write posts",
+                description: "3 posts",
+                role: "code",
+                coworkerId: "kavya-content",
+              },
+              { title: "Check them", description: "Check", role: "qa", dependsOn: [1] },
+            ],
+          }),
+        };
+      }
+      return { reply: `${botId} finished.` };
+    };
+    const { orchestrator } = await build(agent, null, false, {
+      teamMember: hire(agent, made) as never,
+    });
+    const run = await orchestrator.startRun(
+      {
+        objective: "Diwali posts for the new shop",
+        forcedStrategy: "multi-agent",
+        workspaceId: "shop",
+      },
+      root,
+    );
+    const done = await runStatus(orchestrator, run.id, "completed");
+    expect(planAsk).toContain("(none yet");
+    expect(planAsk).not.toContain("kavya-content");
+    expect(done.tasks.map((task) => task.assignedBotId)).toEqual(["team-code", "team-qa"]);
+    expect(agent.sent.every((item) => item.botId.startsWith("team-"))).toBe(true);
+  });
+
+  it("with planning off, template tasks still go to one member per role", async () => {
+    const agent = new FakeAgent(["priya-sales"]);
+    const made: string[] = [];
+    const { orchestrator } = await build(agent, null, false, {
+      teamMember: hire(agent, made) as never,
+      aiPlanning: () => false,
+    });
+    const run = await orchestrator.startRun(
+      { objective: "Build a page", forcedStrategy: "multi-agent" },
+      root,
+    );
+    const done = await runStatus(orchestrator, run.id, "completed");
+    expect(done.plannedBy).toBe("template");
+    expect(made).not.toContain("lead");
+    expect(new Set(done.tasks.map((task) => task.assignedBotId)).size).toBe(made.length);
+    expect(agent.sent.every((item) => item.botId !== "priya-sales")).toBe(true);
+  });
+
+  it("stops at once on an AI usage limit instead of retrying", async () => {
+    const agent = new FakeAgent(BOTS);
+    agent.responder = () => ({ fail: "Free usage limit reached. Try again later." });
+    const { orchestrator } = await build(agent);
+    const run = await orchestrator.startRun(
+      { objective: "Quick fix", forcedStrategy: "single-agent" },
+      root,
+      agent.bots,
+    );
+    const failed = await runStatus(orchestrator, run.id, "failed");
+    expect(agent.sent).toHaveLength(1);
+    expect(failed.error).toContain("usage limit");
+    expect(failed.report).toBeTruthy();
+  });
+});
+
 describe("a second model reviews team-run work (cross-model-review)", () => {
   it("sends the task back when the reviewer asks for changes, then passes on approval", async () => {
     const agent = new FakeAgent(BOTS);
@@ -787,7 +930,7 @@ describe("team runs with the Intelligence Core", () => {
 
   it("stops a task that fails the same way twice when no coworker is clearly better", async () => {
     const agent = new FakeAgent(BOTS);
-    agent.responder = () => ({ fail: "The model refused (code 429)." });
+    agent.responder = () => ({ fail: "The model refused (code 500)." });
     const { intelligence, calls } = fakeIntelligence(true, () => null);
     const events: AgentEvent[] = [];
     const { orchestrator } = await build(agent, null, false, { intelligence });

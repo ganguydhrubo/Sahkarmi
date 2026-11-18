@@ -58,6 +58,14 @@ describe("claimedFiles", () => {
     expect(claimedFiles("I wrote three ideas for the post.")).toEqual([]);
     expect(claimedFiles(null)).toEqual([]);
   });
+
+  it("does not take file types, choices or patterns for files that were made", () => {
+    expect(
+      claimedFiles(
+        "Upload accepts `.xlsx`, `.xls` and .csv files. Templates: `demo/templates/sales_template.xlsx|.xls`, *.json. Wrote `demo/README.md`.",
+      ),
+    ).toEqual(["demo/README.md"]);
+  });
 });
 
 describe("VerificationRepairEngine", () => {
@@ -87,6 +95,20 @@ describe("VerificationRepairEngine", () => {
     expect(result.verdict).toBe("failed");
     expect(result.evidence[0]?.summary).toContain("missing: Shared/missing.pdf");
     expect(result.evidence[0]?.summary).toContain("empty: Shared/empty.csv");
+  });
+
+  it("finds a bare file name in the team-run task's own folder", async () => {
+    const taskFolder = join(shared, "team-runs", "run-1", "t-1");
+    await mkdir(taskFolder, { recursive: true });
+    await writeFile(join(taskFolder, "offer-price-list.txt"), "Kaju katli ₹900 → ₹810");
+    const verifier = new VerificationRepairEngine();
+    const result = await verifier.verifyTask(task(), {
+      workspacePath: own,
+      sharedRoot: shared,
+      taskFolder,
+      reply: "Created the price list in offer-price-list.txt.",
+    });
+    expect(result.verdict).toBe("passed");
   });
 
   it("checks the coworker's own folder, not a colleague's", async () => {

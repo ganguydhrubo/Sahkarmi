@@ -49,6 +49,7 @@ import { providerForModel } from "../../shared/ipc";
 import type { MarketplaceAgent } from "../../shared/marketplace";
 import { vocab } from "./activity-vocab";
 import { stableApprovals } from "./approval-list";
+import { looksBig, wantsOneCoworker } from "./big-job";
 import { ApprovalsView } from "./components/ApprovalsView";
 import { Conversation, REVEAL_MESSAGE_EVENT } from "./components/Conversation";
 import { GlobalSearch } from "./components/GlobalSearch";
@@ -63,7 +64,7 @@ import { UpdateControl } from "./components/UpdateControl";
 import { WelcomeCard } from "./components/WelcomeCard";
 import { WhatsNewDialog } from "./components/WhatsNewDialog";
 import { accentForAvatarColor, accentForBot, type BotMessage, type BotProfile } from "./data";
-import { featureOn, loadFeatures } from "./features";
+import { featureOn, features, loadFeatures } from "./features";
 import { t } from "./i18n";
 import {
   dismissWelcome,
@@ -95,6 +96,9 @@ const SettingsView = lazy(() =>
 );
 const TasksView = lazy(() =>
   import("./components/TasksView").then((module) => ({ default: module.TasksView })),
+);
+const HomeView = lazy(() =>
+  import("./components/HomeView").then((module) => ({ default: module.HomeView })),
 );
 const OrchestratorView = lazy(() =>
   import("./components/OrchestratorView").then((module) => ({ default: module.OrchestratorView })),
@@ -230,6 +234,16 @@ export function App() {
   const [setupLoaded, setSetupLoaded] = createSignal(false);
   const [permissionsOpen, setPermissionsOpen] = createSignal(false);
   const [view, setView] = createSignal<CenterView>("coworker");
+  // Home is the landing screen once the feature list is known and says so; an owner who has
+  // already opened another screen by then stays where they are.
+  let landed = false;
+  createEffect(() => {
+    if (landed || features().length === 0) return;
+    landed = true;
+    if (featureOn("simple-home") && untrack(view) === "coworker") setView("home");
+  });
+  /** A goal typed on Home and handed to Team projects. */
+  const [teamGoal, setTeamGoal] = createSignal("");
   const [searchOpen, setSearchOpen] = createSignal(false);
   const [botsLoaded, setBotsLoaded] = createSignal(false);
   const [helpOpen, setHelpOpen] = createSignal(false);
@@ -771,6 +785,11 @@ export function App() {
       );
       const newAgent = createMutable(toBotProfile(stored));
       setBotList((current) => [newAgent, ...current.filter((item) => item.id !== newAgent.id)]);
+      // The first coworker of a workspace becomes its CEO: show that at once.
+      void window.sahkarmi.team
+        ?.listWorkspaces?.()
+        .then(setWorkspaces)
+        .catch(() => undefined);
       setLiveMessages((current) => ({ ...current, [newAgent.id]: [] }));
       setConversationLoaded((current) => ({ ...current, [newAgent.id]: true }));
       setAgentPickerOpen(false);
@@ -993,6 +1012,27 @@ export function App() {
     }
   }
 
+  /** Starts a team project with this goal and shows it (Home and the CEO's chat use this). */
+  async function startTeamRun(goal: string): Promise<void> {
+    const stored = (key: string) => {
+      try {
+        return window.localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+    const model = stored("sahkarmi.team.model") as AgentModelId | null;
+    const reasoningEffort = stored("sahkarmi.team.effort") as AgentReasoningEffort | null;
+    await window.sahkarmi.orchestrator.startRun({
+      objective: goal,
+      workspaceId: workspaces().activeWorkspaceId || undefined,
+      ...(model && modelOptions().some((option) => option.id === model) ? { model } : {}),
+      ...(reasoningEffort ? { reasoningEffort } : {}),
+    });
+    setAgentPickerOpen(false);
+    setView("orchestrator");
+  }
+
   async function sendMessage(
     body: string,
     attachmentDraftIds: string[],
@@ -1000,6 +1040,32 @@ export function App() {
   ): Promise<boolean> {
     const bot = activeBot();
     if (!bot || (!body.trim() && attachmentDraftIds.length === 0)) return false;
+    // A big job typed to the workspace's CEO goes to the whole team by itself. "Only you: ..."
+    // at the start keeps it with the CEO alone.
+    const ceoBotId = workspaces().workspaces.find(
+      (workspace) => workspace.id === workspaces().activeWorkspaceId,
+    )?.ceoBotId;
+    if (
+      featureOn("auto-team") &&
+      bot.id === ceoBotId &&
+      attachmentDraftIds.length === 0 &&
+      !replyToMessageId &&
+      (coworkerStatuses()[bot.id] ?? "idle") === "idle" &&
+      looksBig(body) &&
+      !wantsOneCoworker(body)
+    ) {
+      try {
+        await startTeamRun(body.trim());
+        appendUiError(
+          bot.id,
+          t("teamAutoNote", { name: bot.name }),
+          vocab().ERROR_TITLES.notice ?? "Note",
+        );
+        return true;
+      } catch {
+        // The team could not start: the CEO gets the message as usual.
+      }
+    }
     return sendMessageToBot(bot.id, body, attachmentDraftIds, replyToMessageId, true);
   }
 
@@ -1010,6 +1076,8 @@ export function App() {
     replyToMessageId: string | null = null,
     /** Typed in the composer: may join the coworker's running turn. */
     steer = false,
+    /** From Home: the coworker's AI says what it understood before it works. */
+    understandFirst = false,
   ): Promise<boolean> {
     const text = body.trim();
     const pendingId = text ? `sending:${++sendSequence}` : null;
@@ -1044,6 +1112,7 @@ export function App() {
         attachmentDraftIds,
         ...(replyToMessageId ? { replyToMessageId } : {}),
         ...(steer ? { steer: true } : {}),
+        ...(understandFirst ? { understandFirst: true } : {}),
       });
       setUiErrors((current) => ({ ...current, [botId]: [] }));
       // The queued message arrives in a snapshot applied on the next frame: swap in that frame.
@@ -1393,7 +1462,10 @@ export function App() {
         >
           <div
             class="app-frame"
-            classList={{ "app-frame-sidebar-collapsed": leftPanelCollapsed() }}
+            classList={{
+              "app-frame-sidebar-collapsed": leftPanelCollapsed(),
+              "app-frame-simple": featureOn("simple-home"),
+            }}
             style={`--left-panel-width: ${leftPanelCollapsed() ? 0 : leftPanelWidth()}px`}
           >
             <Show
@@ -1486,6 +1558,34 @@ export function App() {
             </Show>
             <Suspense fallback={<section class="center-view" aria-busy="true" />}>
               <Switch>
+                <Match when={view() === "home"}>
+                  <HomeView
+                    bots={workspaceBots()}
+                    ceoBotId={
+                      workspaces().workspaces.find(
+                        (workspace) => workspace.id === workspaces().activeWorkspaceId,
+                      )?.ceoBotId ?? null
+                    }
+                    pendingApprovals={pendingApprovals().length}
+                    onSend={async (botId, text, attachmentDraftIds, options) => {
+                      await sendMessageToBot(
+                        botId,
+                        text,
+                        attachmentDraftIds,
+                        null,
+                        false,
+                        options?.understandFirst === true,
+                      );
+                    }}
+                    onOpenBot={selectBot}
+                    onStartTeam={startTeamRun}
+                    onOpenTeamProject={(goal) => {
+                      setTeamGoal(goal);
+                      setView("orchestrator");
+                    }}
+                    onOpenApprovals={() => setView("approvals")}
+                  />
+                </Match>
                 <Match when={view() === "tasks"}>
                   <TasksView
                     bots={workspaceBots()}
@@ -1496,7 +1596,15 @@ export function App() {
                   />
                 </Match>
                 <Match when={view() === "orchestrator"}>
-                  <OrchestratorView bots={workspaceBots()} onOpenCoworker={selectBot} />
+                  <OrchestratorView
+                    bots={workspaceBots()}
+                    onOpenCoworker={selectBot}
+                    workspaceId={workspaces().activeWorkspaceId}
+                    modelOptions={modelOptions()}
+                    agentStatus={agentStatus()}
+                    defaultModel={activeBot()?.model ?? null}
+                    initialObjective={teamGoal()}
+                  />
                 </Match>
                 <Match when={view() === "memory"}>
                   <MemoryView workspaceId={workspaces().activeWorkspaceId} bots={botList()} />
@@ -1930,6 +2038,8 @@ function cleanPreview(preview: string): string {
     .replace(/\binbox\s+at\s+zero\b[:,]?\s*/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  // A team lead's plan is saved as JSON; the list shows what it means, not the code.
+  if (/^(?:```(?:json)?\s*)?\{\s*"tasks"\s*:/i.test(cleaned)) return "Planned the team's steps";
   return cleaned || NO_MESSAGES_PREVIEW;
 }
 

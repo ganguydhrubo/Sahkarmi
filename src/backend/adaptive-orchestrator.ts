@@ -12,6 +12,7 @@ import type {
 import { AgentCollaborationBus } from "./agent-collaboration-bus";
 import { AgentExecutionFactory } from "./agent-execution-factory";
 import type { OrchestratorStore } from "./orchestrator-store";
+import type { TeamMemberRequest } from "./team-members";
 import type { TeamRunAgentPort, TeamRunEngine, TeamRunIntelligence } from "./team-run-engine";
 import { VerificationRepairEngine } from "./verification-repair-engine";
 
@@ -29,6 +30,16 @@ export interface OrchestratorEngineOptions {
    * the standard three-step template.
    */
   planner?: (workspaceId: string | null) => string | null;
+  /**
+   * Whether a team run is planned by a lead (the workspace CEO, or the team's own lead when there
+   * is no CEO). False: the standard template. Default: on when planner or teamMember is given.
+   */
+  aiPlanning?: () => boolean;
+  /**
+   * The team's own coworker for a role, made once per workspace and reused. Tasks whose role has
+   * no coworker get one of these instead of all landing on one coworker.
+   */
+  teamMember?: (request: TeamMemberRequest) => Promise<BotSummary>;
   /** How long the CEO may take to plan (tests shorten it). */
   planTimeoutMs?: number;
   /** Work limit: most task messages one team run may send (null: none). */
@@ -212,7 +223,7 @@ export class AdaptiveOrchestrator {
 
     const run: OrchestratorRun = {
       id: runId,
-      workspaceId: input.workspaceId ?? "default",
+      workspaceId: input.workspaceId || "default",
       objective: input.objective,
       strategy,
       status: "planning",
@@ -223,6 +234,8 @@ export class AdaptiveOrchestrator {
       error: null,
       startedAt: new Date().toISOString(),
       completedAt: null,
+      model: input.model ?? null,
+      reasoningEffort: input.reasoningEffort ?? null,
     };
 
     if (strategy === "single-agent") {
@@ -237,12 +250,14 @@ export class AdaptiveOrchestrator {
     run.waitingOn = null;
     run.checkCommand = input.checkCommand?.trim() || null;
     run.plannedBy = "template";
-    this.#assignRealCoworkers(run, input.workspaceId ?? null);
-    const ceoBotId =
-      strategy === "multi-agent"
-        ? (this.#engineOptions?.planner?.(input.workspaceId ?? null) ?? null)
-        : null;
-    if (!ceoBotId) this.#routeWithIntelligence(run);
+    const workspaceId = run.workspaceId === "default" ? null : run.workspaceId;
+    const ceoBotId = strategy === "multi-agent" ? await this.#leadFor(run, workspaceId) : null;
+    // A planned run is staffed once its plan is known, so no member is made for a template
+    // task the lead then drops.
+    if (!ceoBotId) {
+      await this.#staff(run);
+      this.#routeWithIntelligence(run);
+    }
     run.status = ceoBotId ? "planning" : "running";
     await this.#store.saveRun(run);
     this.#emit({ type: "orchestrator-run-updated", run });
@@ -265,6 +280,34 @@ export class AdaptiveOrchestrator {
   }
 
   /**
+   * Who plans a team run: the workspace CEO when there is one, otherwise the team's own lead
+   * (made once). Null: planning is off, so the standard template is used.
+   */
+  async #leadFor(run: OrchestratorRun, workspaceId: string | null): Promise<string | null> {
+    const options = this.#engineOptions;
+    if (!options) return null;
+    const planningOn = options.aiPlanning
+      ? options.aiPlanning()
+      : Boolean(options.planner || options.teamMember);
+    if (!planningOn) return null;
+    let leadId = options.planner?.(workspaceId) ?? null;
+    if (!leadId && options.teamMember) {
+      const lead = await options.teamMember({
+        role: "lead",
+        workspaceId,
+        model: run.model ?? null,
+        reasoningEffort: run.reasoningEffort ?? null,
+      });
+      leadId = lead.id;
+    }
+    if (!leadId) return null;
+    const lead = options.port.listBots().find((bot) => bot.id === leadId);
+    run.leadBotId = leadId;
+    run.leadName = lead?.name ?? null;
+    return leadId;
+  }
+
+  /**
    * The workspace CEO plans the run as JSON (checked against a schema, sent back with the reason
    * at most twice). Any failure keeps the standard template, so a run always gets a plan.
    */
@@ -277,10 +320,12 @@ export class AdaptiveOrchestrator {
     const { planWithCeo } = await import("./team-run-planner");
     const bots = port?.listBots() ?? [];
     const team = bots.filter(
-      (bot) => bot.id !== ceoBotId && (!run.workspaceId || bot.workspaceId === run.workspaceId),
+      (bot) =>
+        bot.id !== ceoBotId &&
+        (!run.workspaceId || run.workspaceId === "default" || bot.workspaceId === run.workspaceId),
     );
     const outcome = port
-      ? await planWithCeo(port, ceoBotId, run.objective, team.length ? team : bots, {
+      ? await planWithCeo(port, ceoBotId, run.objective, team, {
           timeoutMs: this.#engineOptions?.planTimeoutMs,
           retryGraceMs: this.#engineOptions?.retryGraceMs,
         }).catch((error: unknown) => ({ ok: false as const, error: String(error), replans: 0 }))
@@ -290,15 +335,21 @@ export class AdaptiveOrchestrator {
     if (latest.status !== "planning") return latest;
     latest.replans = outcome?.replans ?? 0;
     if (outcome?.ok) {
-      this.#applyCeoPlan(latest, outcome.plan.tasks, workspacePath, bots);
+      // Only this workspace's coworkers (and the lead itself) may be named; a task for anyone
+      // else goes to this workspace's own team member for its role.
+      const allowed = bots.filter(
+        (bot) => bot.id === ceoBotId || team.some((member) => member.id === bot.id),
+      );
+      await this.#applyCeoPlan(latest, outcome.plan.tasks, workspacePath, allowed);
       latest.plannedBy = "ceo";
     } else {
+      await this.#staff(latest);
       this.#routeWithIntelligence(latest);
       this.#emit({
         type: "notice",
         botId: ceoBotId,
         code: "team_run_plan_fallback",
-        message: `The CEO's plan for "${latest.objective.slice(0, 80)}" could not be used (${outcome?.error ?? "no planner"}), so the team run uses the standard plan.`,
+        message: `${latest.leadName ?? "The lead"}'s plan for "${latest.objective.slice(0, 80)}" could not be used (${outcome?.error ?? "no planner"}), so the team run uses the standard plan.`,
       });
     }
     latest.status = "running";
@@ -307,12 +358,12 @@ export class AdaptiveOrchestrator {
     return saved;
   }
 
-  #applyCeoPlan(
+  async #applyCeoPlan(
     run: OrchestratorRun,
     planned: import("./team-run-planner").PlannedTask[],
     workspacePath: string,
     bots: BotSummary[],
-  ): void {
+  ): Promise<void> {
     const now = new Date().toISOString();
     const ids = planned.map(() => `task-${randomUUID().slice(0, 8)}`);
     const instances: OrchestratorRun["instances"] = [];
@@ -349,22 +400,46 @@ export class AdaptiveOrchestrator {
     });
     run.tasks = tasks;
     run.instances = instances;
-    this.#assignRealCoworkers(run, run.workspaceId === "default" ? null : run.workspaceId);
+    await this.#staff(run);
   }
 
   /**
    * The role map names the starter coworkers (Dev, Tara, ...). When the owner renamed or removed
-   * them, each task goes to a coworker that exists, preferring the run's workspace. A run with no
-   * coworker at all cannot start.
+   * them, each task goes to the team's own member for its role (made once, then reused), so the
+   * work is spread over a real team. Without that hook (tests, older wiring) every such task goes
+   * to one coworker that exists, preferring the run's workspace.
    */
-  #assignRealCoworkers(run: OrchestratorRun, workspaceId: string | null): void {
-    const bots = this.#engineOptions?.port.listBots() ?? [];
-    const known = new Set(bots.map((bot) => bot.id));
-    const fallback =
-      bots.find((bot) => workspaceId !== null && bot.workspaceId === workspaceId) ?? bots[0];
-    if (!fallback) throw new Error("Add a coworker before starting a team run.");
+  async #staff(run: OrchestratorRun): Promise<void> {
+    const options = this.#engineOptions;
+    const workspaceId = run.workspaceId === "default" ? null : run.workspaceId;
+    const bots = options?.port.listBots() ?? [];
+    // A coworker counts only in the run's own workspace: another workspace's starter (say
+    // Kavya in "Sharma Traders") must not do work for this one.
+    const known = new Set(
+      bots
+        .filter((bot) => workspaceId === null || bot.workspaceId === workspaceId)
+        .map((bot) => bot.id),
+    );
+    const members = new Map<string, BotSummary>();
     for (const instance of run.instances) {
       if (known.has(instance.botId)) continue;
+      if (options?.teamMember) {
+        const member =
+          members.get(instance.role) ??
+          (await options.teamMember({
+            role: instance.role,
+            workspaceId,
+            model: run.model ?? null,
+            reasoningEffort: run.reasoningEffort ?? null,
+          }));
+        members.set(instance.role, member);
+        instance.botId = member.id;
+        instance.botName = member.name;
+        continue;
+      }
+      const fallback =
+        bots.find((bot) => workspaceId !== null && bot.workspaceId === workspaceId) ?? bots[0];
+      if (!fallback) throw new Error("Add a coworker before starting a team run.");
       instance.botId = fallback.id;
       instance.botName = fallback.name;
     }
@@ -463,7 +538,7 @@ export class AdaptiveOrchestrator {
     const task: OrchestratorTask = {
       id: taskId,
       runId: run.id,
-      title: "Direct Implementation",
+      title: "Do the work",
       description: run.objective,
       role,
       assignedBotId: instance.botId,
@@ -506,18 +581,15 @@ export class AdaptiveOrchestrator {
     const task1: OrchestratorTask = {
       id: t1Id,
       runId: run.id,
-      title: "Architecture Analysis & Workstream Planning",
-      description: `Analyze requirements and specify interfaces for: ${run.objective}`,
+      title: "Plan the work",
+      description: `Work out what is needed and split it into clear parts for: ${run.objective}`,
       role: "architect",
       assignedBotId: archInstance.botId,
       assignedInstanceId: archInstance.instanceId,
       dependencies: [],
       inputs: { objective: run.objective },
-      deliverables: [{ name: "Execution Plan", summary: "Structured implementation plan" }],
-      acceptanceCriteria: [
-        "Identifies modified interfaces and files",
-        "Specifies dependency requirements",
-      ],
+      deliverables: [{ name: "Plan", summary: "The parts of the work, in order" }],
+      acceptanceCriteria: ["Lists every part of the work", "Says what each part needs first"],
       status: "pending",
       attemptCount: 0,
       maxAttempts: 3,
@@ -530,18 +602,15 @@ export class AdaptiveOrchestrator {
     const task2: OrchestratorTask = {
       id: t2Id,
       runId: run.id,
-      title: "Core Implementation",
-      description: `Implement functionality according to architecture specification`,
+      title: "Do the work",
+      description: `Do the work the plan describes for: ${run.objective}`,
       role: "code",
       assignedBotId: codeInstance.botId,
       assignedInstanceId: codeInstance.instanceId,
       dependencies: [t1Id],
       inputs: { objective: run.objective, specTaskId: t1Id },
-      deliverables: [{ name: "Code Modifications", summary: "Production code changes" }],
-      acceptanceCriteria: [
-        "All required components implemented",
-        "No syntax or contract violations",
-      ],
+      deliverables: [{ name: "The work", summary: "Everything the plan asked for" }],
+      acceptanceCriteria: ["Every part of the plan is done", "Files are saved where it says"],
       status: "pending",
       attemptCount: 0,
       maxAttempts: 3,
@@ -554,20 +623,15 @@ export class AdaptiveOrchestrator {
     const task3: OrchestratorTask = {
       id: t3Id,
       runId: run.id,
-      title: "Quality Assurance & Verification Gates",
-      description: `Run verification suite and review deliverables for: ${run.objective}`,
+      title: "Check the result",
+      description: `Check the finished work against the goal and say plainly what is missing or wrong: ${run.objective}`,
       role: "qa",
       assignedBotId: qaInstance.botId,
       assignedInstanceId: qaInstance.instanceId,
       dependencies: [t2Id],
       inputs: { targetTaskId: t2Id },
-      deliverables: [
-        { name: "Verification Report", summary: "Evidence-backed validation summary" },
-      ],
-      acceptanceCriteria: [
-        "Automated checks (lint, types, tests) verified",
-        "No regressions detected",
-      ],
+      deliverables: [{ name: "Check report", summary: "What was checked and what was found" }],
+      acceptanceCriteria: ["Every part of the goal is checked", "Problems are listed with where"],
       status: "pending",
       attemptCount: 0,
       maxAttempts: 3,

@@ -21,6 +21,7 @@ import {
 import type { BotProfile } from "../data";
 import { type MessageKey, t } from "../i18n";
 import { AgentAvatar } from "./AgentAvatar";
+import { RunNoteLine } from "./RunNoteLine";
 import {
   type CadenceDraft,
   CadencePicker,
@@ -680,6 +681,7 @@ export function RoutinesView(props: {
                                   </small>
                                 )}
                               </Show>
+                              <RunNoteLine note={routine().lastNote} />
                             </li>
                             <For each={routine().steps}>
                               {(step, index) => {

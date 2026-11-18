@@ -3,11 +3,14 @@ import {
   type AgentProviderId,
   type AgentProviderStatus,
   type AgentStatus,
+  DISCONNECTABLE_PROVIDERS,
   type ProviderSetupState,
   providerFeatureId,
+  SIGN_OUT_IN_OWN_APP,
 } from "../../../shared/ipc";
 import { PROVIDER_CATALOG, type ProviderCatalogEntry } from "../../../shared/provider-catalog";
 import { t } from "../i18n";
+import { AiAccounts } from "./AiAccounts";
 import { GeminiAccounts } from "./GeminiAccounts";
 import { ProviderLogo } from "./ProviderLogo";
 
@@ -90,7 +93,10 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
     } catch (cause) {
       setErrors((current) => ({
         ...current,
-        [id]: cause instanceof Error ? cause.message : String(cause),
+        [id]: (cause instanceof Error ? cause.message : String(cause)).replace(
+          /^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/,
+          "",
+        ),
       }));
     }
   }
@@ -168,11 +174,39 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
                 {t("connectReconnect")}
               </button>
             </Show>
+            <Show when={isOn() && DISCONNECTABLE_PROVIDERS.includes(id)}>
+              <button
+                type="button"
+                class="link-button provider-disconnect"
+                disabled={busy()}
+                onClick={() => {
+                  const warning =
+                    id === "codex"
+                      ? t("connectDisconnectCodex")
+                      : id === "claude"
+                        ? t("connectDisconnectClaude")
+                        : t("connectDisconnectOther", { name: rowProps.entry.name });
+                  if (!window.confirm(warning)) return;
+                  void act(id, () => window.sahkarmi.providerSetup.disconnect(id));
+                }}
+              >
+                {t("connectDisconnect")}
+              </button>
+            </Show>
           </div>
         </div>
 
         <Show when={id === "antigravity" && isOn()}>
           <GeminiAccounts busy={busy()} />
+        </Show>
+        <Show when={isOn() && SIGN_OUT_IN_OWN_APP.includes(id)}>
+          <p class="settings-meta provider-signout-hint">
+            {t("connectSignOutHint", { name: rowProps.entry.name })}
+          </p>
+        </Show>
+
+        <Show when={id === "codex" || id === "claude"}>
+          <AiAccounts provider={id as "codex" | "claude"} busy={busy()} />
         </Show>
 
         <Show

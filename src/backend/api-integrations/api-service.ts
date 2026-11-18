@@ -708,7 +708,7 @@ export class ApiIntegrationService {
       category: approvalCategory(`${label} ${request.path}`),
       details: [
         `${who} wants to use your ${item.name} connection to ${plainAction(request.method)}.`,
-        "If you approve: it happens for real, straight away, and only once.",
+        "What will happen: it happens for real, straight away, and only once.",
         `Nothing happens until you choose. If you reject, ${who} will not do this.`,
       ].join("\n"),
       // The mark comes first: only this service writes it, and the decision is checked against it.

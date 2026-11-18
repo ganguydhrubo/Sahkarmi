@@ -7,12 +7,14 @@ import { backgroundBn } from "./i18n-background";
 import { connectorsBn } from "./i18n-connectors";
 import { engineBn } from "./i18n-engine";
 import { extensionsBn } from "./i18n-extensions-bn";
+import { extrasBn } from "./i18n-extras";
 import { hostBn } from "./i18n-host";
 import { intelligenceBn } from "./i18n-intelligence";
 import { marketplaceBn } from "./i18n-marketplace-bn";
 import { mcpBn } from "./i18n-mcp";
 import { memoryBn } from "./i18n-memory";
 import { onboardingBn } from "./i18n-onboarding";
+import { revampBn } from "./i18n-revamp";
 import { safetyBn } from "./i18n-safety";
 import { securityBn } from "./i18n-security";
 import { skillPacksBn } from "./i18n-skill-packs";
@@ -176,14 +178,14 @@ export const bn: Dictionary = {
   toolKindApprovalMany: "{count}টি অনুমোদন",
   toolKindToolOne: "১টি অ্যাপ কাজ",
   toolKindToolMany: "{count}টি অ্যাপ কাজ",
-  approvalKeys: "Enter চাপলে অনুমোদন · Esc চাপলে প্রত্যাখ্যান",
+  approvalKeys: "Enter চাপলে একবার অনুমতি · Esc চাপলে অনুমতি নয়",
   planTitle: "পরিকল্পনা",
   planProgress: "{total}টির মধ্যে {done}টি শেষ",
   planStatus_pending: "শুরু হয়নি",
   planStatus_in_progress: "চলছে",
   planStatus_completed: "শেষ",
-  sendNow: "এখনই পাঠান",
-  sendNowHint: "এখনকার কাজ থামিয়ে এই বার্তাটি পরের কাজ হিসেবে চালান",
+  sendNow: "এখনই এই কাজে যোগ করুন",
+  sendNowHint: "বার্তাটি সহকর্মীকে এখনই দেয়। সে এক মুহূর্ত থেমে এটা পড়ে, আর আপনার কথা মেনে একই কাজ চালিয়ে যায়।",
   stopHint: "থামান (Esc)",
   queueHint: "পাঠান: এখনকার কাজ শেষ হলে এটি চলবে",
   steerHint: "পাঠান: সহকর্মী কাজ না থামিয়েই এটি পড়ে কাজ বদলে নেবে",
@@ -310,9 +312,11 @@ export const bn: Dictionary = {
   ...securityBn,
   ...apisBn,
   ...engineBn,
+  ...revampBn,
   ...safetyBn,
   ...assignBn,
   ...intelligenceBn,
+  ...extrasBn,
   ...mcpBn,
   ...connectorsBn,
   ...skillPacksBn,

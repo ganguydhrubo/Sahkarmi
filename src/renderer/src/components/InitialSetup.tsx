@@ -9,7 +9,15 @@ import type {
   MacPermissionsState,
 } from "../../../shared/ipc";
 import { ACP_AGENT_PROVIDERS, PROVIDER_LABELS } from "../../../shared/ipc";
+import { LANGUAGE_OPTIONS, t } from "../i18n";
+import { language, setLanguage, setTrade, trade } from "../preferences";
+import { TRADES, tradeName } from "../trade-names";
 import { ProviderPicker, type ProviderPickerOption } from "./ProviderPicker";
+
+/** The languages every new text is written in; the others are in Settings. */
+const START_LANGUAGES = LANGUAGE_OPTIONS.filter((option) =>
+  ["en", "hi", "bn"].includes(option.code),
+);
 
 interface InitialSetupProps {
   reviewing?: boolean;
@@ -146,23 +154,72 @@ export function InitialSetup(props: InitialSetupProps) {
         aria-describedby="initial-setup-description"
       >
         <header class="initial-setup-header">
-          <p class="initial-setup-eyebrow">Sahkarmi setup</p>
+          <p class="initial-setup-eyebrow">
+            {props.reviewing ? "Sahkarmi setup" : t("startEyebrow")}
+          </p>
           <h1 id="initial-setup-title">
-            {props.reviewing ? "Providers & permissions" : "Choose your provider"}
+            {props.reviewing ? "Providers & permissions" : t("startTitle")}
           </h1>
           <p id="initial-setup-description" class="initial-setup-intro">
             {props.reviewing
               ? "Choose the default provider for new agents and review macOS permissions."
-              : "New agents will use this provider by default. Each agent can use a different provider later."}
+              : t("startIntro")}
           </p>
         </header>
+
+        <Show when={!props.reviewing}>
+          <fieldset class="start-question">
+            <legend>{t("startLanguage")}</legend>
+            <div class="start-choices">
+              <For each={START_LANGUAGES}>
+                {(option) => (
+                  <button
+                    type="button"
+                    class="start-choice"
+                    classList={{ "start-choice-on": language() === option.code }}
+                    aria-pressed={language() === option.code}
+                    lang={option.code}
+                    onClick={() => setLanguage(option.code)}
+                  >
+                    {option.label}
+                  </button>
+                )}
+              </For>
+            </div>
+          </fieldset>
+          <fieldset class="start-question">
+            <legend>{t("startTrade")}</legend>
+            <p class="start-hint">{t("startTradeHint")}</p>
+            <div class="start-choices start-choices-trade">
+              <For each={TRADES}>
+                {(id) => (
+                  <button
+                    type="button"
+                    class="start-choice"
+                    classList={{ "start-choice-on": trade() === id }}
+                    aria-pressed={trade() === id}
+                    onClick={() => setTrade(id)}
+                  >
+                    {tradeName(id, language())}
+                  </button>
+                )}
+              </For>
+            </div>
+          </fieldset>
+          <div class="start-question start-question-ai">
+            <h2>{t("startAi")}</h2>
+            <p class="start-hint">{t("startAiHint")}</p>
+          </div>
+        </Show>
 
         <ProviderPicker
           value={selectedProvider()}
           options={providerOptions()}
-          ariaLabel="Default provider"
-          label="Default provider"
-          hint="Used for new agents. You can change it for each agent later."
+          ariaLabel={props.reviewing ? "Default provider" : t("startAiLabel")}
+          label={props.reviewing ? "Default provider" : t("startAiLabel")}
+          hint={
+            props.reviewing ? "Used for new agents. You can change it for each agent later." : ""
+          }
           disabled={saving()}
           allowUnavailableSelection
           focusFirst
@@ -229,12 +286,14 @@ export function InitialSetup(props: InitialSetupProps) {
             onClick={() => void save()}
           >
             {saving()
-              ? "Saving…"
+              ? props.reviewing
+                ? "Saving…"
+                : t("startSaving")
               : props.reviewing
                 ? "Save changes"
                 : selectedProvider()
-                  ? `Continue with ${providerName(selectedProvider())}`
-                  : "Choose a provider"}
+                  ? t("startContinue", { name: providerName(selectedProvider()) })
+                  : t("startChoose")}
           </button>
         </div>
       </section>

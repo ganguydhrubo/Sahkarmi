@@ -99,6 +99,9 @@ export const workspaceBn: WorkspaceDictionary = {
   noteBrowserDeclined: "আপনি ব্রাউজার নিজের হাতে নেননি।",
   noteSecureEntered: "🔒 আপনি {site}-এ গোপন তথ্য দিয়েছেন। এটি চ্যাটে যায়নি।",
   noteSecureDeclined: "আপনি {site}-এর গোপন তথ্যের অনুরোধ বন্ধ করেছেন।",
+  voiceSpeakIn: "আমি বলব",
+  voiceSpeakHint:
+    "যে ভাষায় বলবেন সেটা বেছে নিন। প্রতিটা ভাষার নিজের ফ্রি ভয়েস মডেল এই PC-তে চলে; Hinglish হিন্দিকে ইংরেজি অক্ষরে লেখে।",
   voiceSetupTitle: "এই PC-তে ফ্রি ভয়েস টাইপিং",
   voiceSetupBody:
     "বলুন, আপনার কথা বার্তার বাক্সে চলে আসবে, ChatGPT-এর মতো। এটি আপনার কম্পিউটারে চলে: ফ্রি, গোপন ও দ্রুত, কোনো AI টোকেন খরচ হয় না।",
@@ -596,6 +599,10 @@ export const workspaceBn: WorkspaceDictionary = {
   taskCancelled: "বাতিল",
   headerModel: "মডেল ও চিন্তার স্তর",
   headerReasoning: "চিন্তার স্তর",
+  composerEffort: "প্রচেষ্টা",
+  composerEffortHint:
+    "উত্তর দেওয়ার আগে AI কতটা ভাববে। বেশি স্তর ধীর এবং আপনার প্ল্যানের বেশি অংশ নেয়। এই সহকর্মীর পরের বার্তা থেকে প্রযোজ্য।",
+  composerEffortSingle: "এই মডেলে প্রচেষ্টার একটিই স্তর আছে।",
   modelConnectHint: "মডেল বাছতে একটি AI প্রোভাইডার যুক্ত করুন।",
   modelConnect: "যুক্ত করুন",
   updateBarReady: "আপডেট প্রস্তুত",
@@ -618,6 +625,11 @@ export const workspaceBn: WorkspaceDictionary = {
   connectError: "চালু করা যায়নি",
   connectSignIn: "সাইন ইন দরকার",
   connectButton: "কানেক্ট করুন",
+  connectDisconnect: "ডিসকানেক্ট করুন",
+  connectDisconnectClaude:
+    "Sahkarmi থেকে Claude ডিসকানেক্ট করবেন? আপনার সহকর্মী, চ্যাট আর ফাইল যেমন আছে থাকবে। Claude-এর সহকর্মীরা অপেক্ষা করবে, যতক্ষণ না আপনি আবার Claude (এই বা অন্য অ্যাকাউন্টে) যোগ করেন বা অন্য মডেল বাছেন।",
+  connectDisconnectCodex:
+    "ChatGPT ডিসকানেক্ট করবেন? আপনার সহকর্মী, চ্যাট আর ফাইল যেমন আছে থাকবে। মনে রাখবেন: ChatGPT-র সাইন-ইন এই কম্পিউটারের Codex অ্যাপের সঙ্গে ভাগ করা, তাই Sahkarmi-র বাইরে Codex থেকেও সাইন-আউট হবে।",
   connectReconnect: "আবার কানেক্ট করুন",
   connectCheck: "আবার দেখুন",
   connectOpenAgain: "ব্রাউজার খোলেনি? সাইন-ইন পেজ খুলুন",

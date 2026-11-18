@@ -10,6 +10,7 @@ import {
 import type { CenterView } from "./Sidebar";
 
 const SCREEN_HELP: Record<CenterView, { title: MessageKey; body: MessageKey }> = {
+  home: { title: "navHome", body: "helpAHome" },
   coworker: { title: "team", body: "screenCoworker" },
   tasks: { title: "navTasks", body: "screenTasks" },
   orchestrator: { title: "navOrchestrator", body: "screenOrchestrator" },
@@ -33,12 +34,20 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
     items: [
       ["helpQFree", "helpAFree"],
       ["helpQFirstTask", "helpAFirstTask"],
+      ["helpQHome", "helpAHome"],
       ["helpQModels", "helpAModels"],
+      ["helpQPickModel", "helpAPickModel"],
+      ["helpQVoice", "helpAVoice"],
+      ["helpQThumbs", "helpAThumbs"],
+      ["helpQPin", "helpAPin"],
     ],
   },
   {
     group: "helpGroupTeam",
     items: [
+      ["helpQTeamProject", "helpATeamProject"],
+      ["helpQAutoTeam", "helpAAutoTeam"],
+      ["helpQAddNow", "helpAAddNow"],
       ["helpQCeo", "helpTipCeo"],
       ["helpQAssign", "helpTipAssign"],
       ["helpQCrew", "helpTipCrew"],
@@ -53,6 +62,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
       ["helpQReadyMade", "helpAReadyMade"],
       ["helpQSteps", "helpASteps"],
       ["helpQRerun", "helpARerun"],
+      ["helpQRunLate", "helpARunLate"],
     ],
   },
   {
@@ -66,6 +76,11 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
   {
     group: "helpGroupConnect",
     items: [
+      ["helpQSwitchAccount", "helpASwitchAccount"],
+      ["helpQBackup", "helpABackup"],
+      ["helpQSwitchKeepsWork", "helpASwitchKeepsWork"],
+      ["helpQRepeat", "helpARepeat"],
+      ["helpQAiAccounts", "helpAAiAccounts"],
       ["helpQTelegram", "helpAPhone"],
       ["helpQBrowser", "helpTipBrowser"],
       ["helpQMcp", "helpTipMcp"],

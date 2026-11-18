@@ -5,12 +5,14 @@ import { backgroundEn } from "./i18n-background";
 import { connectorsEn } from "./i18n-connectors";
 import { engineEn } from "./i18n-engine";
 import { extensionsEn } from "./i18n-extensions";
+import { extrasEn } from "./i18n-extras";
 import { hostEn } from "./i18n-host";
 import { intelligenceEn } from "./i18n-intelligence";
 import { marketplaceEn } from "./i18n-marketplace";
 import { mcpEn } from "./i18n-mcp";
 import { memoryEn } from "./i18n-memory";
 import { onboardingEn } from "./i18n-onboarding";
+import { revampEn } from "./i18n-revamp";
 import { safetyEn } from "./i18n-safety";
 import { securityEn } from "./i18n-security";
 import { skillPacksEn } from "./i18n-skill-packs";
@@ -176,14 +178,15 @@ const en = {
   toolKindApprovalMany: "{count} approvals",
   toolKindToolOne: "1 app action",
   toolKindToolMany: "{count} app actions",
-  approvalKeys: "Enter approves · Esc rejects",
+  approvalKeys: "Enter allows once · Esc does not allow",
   planTitle: "Plan",
   planProgress: "{done} of {total} done",
   planStatus_pending: "Not started",
   planStatus_in_progress: "In progress",
   planStatus_completed: "Done",
-  sendNow: "Send now",
-  sendNowHint: "Stop the current task and run this message next",
+  sendNow: "Add to this task now",
+  sendNowHint:
+    "Gives this message to the coworker now. It pauses for a moment, reads it, and carries on with the same task using your instruction.",
   stopHint: "Stop (Esc)",
   queueHint: "Send: it waits until the current task is done",
   steerHint: "Send: the coworker reads it while it works and adjusts, without stopping",
@@ -315,11 +318,13 @@ const en = {
   ...safetyEn,
   ...assignEn,
   ...intelligenceEn,
+  ...extrasEn,
   ...mcpEn,
   ...connectorsEn,
   ...skillPacksEn,
   ...onboardingEn,
   ...hostEn,
+  ...revampEn,
 };
 
 export type Dictionary = typeof en;

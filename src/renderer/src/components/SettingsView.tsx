@@ -24,6 +24,7 @@ import {
 } from "../preferences";
 import { SETTINGS_SECTION_KEY } from "../settings-section";
 import { AboutCard } from "./AboutCard";
+import { AccountHealth, BackupOrder } from "./AiBackupHealth";
 import { AssignmentsSettings } from "./AssignmentsSettings";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { HostSettings } from "./HostSettings";
@@ -97,6 +98,24 @@ const SECTION_GROUPS: Array<{ label: MessageKey; items: SectionItem[] }> = [
   },
 ];
 const SECTIONS: SectionItem[] = SECTION_GROUPS.flatMap((group) => group.items);
+/** The settings most owners need. Everything else is one tap away under "Show all settings". */
+const SIMPLE_SECTIONS: SettingsSection[] = [
+  "general",
+  "voice",
+  "telegram",
+  "ai",
+  "updates",
+  "about",
+];
+const ALL_SETTINGS_KEY = "sahkarmi:settings-all";
+
+function storedShowAll(): boolean {
+  try {
+    return window.localStorage.getItem(ALL_SETTINGS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 const SECTION_KEY = SETTINGS_SECTION_KEY;
 
 function storedSection(): SettingsSection {
@@ -139,6 +158,26 @@ const ACTIVITY_STYLES: Array<{ value: ActivityStyle; label: MessageKey }> = [
 export function SettingsView(props: SettingsViewProps) {
   const [message, setMessage] = createSignal<string | null>(null);
   const [section, setSection] = createSignal<SettingsSection>(storedSection());
+  // Simple view: fewer places in the menu. Nothing is removed; "Show all settings" brings back
+  // every one, and a section opened from elsewhere (for example Permissions) always shows.
+  const [showAll, setShowAll] = createSignal(storedShowAll());
+  const simple = () => featureOn("simple-home") && !showAll();
+  const visibleGroups = () =>
+    SECTION_GROUPS.map((group) => ({
+      ...group,
+      items: simple()
+        ? group.items.filter((item) => SIMPLE_SECTIONS.includes(item.id) || item.id === section())
+        : group.items,
+    })).filter((group) => group.items.length > 0);
+  function toggleShowAll() {
+    const next = !showAll();
+    setShowAll(next);
+    try {
+      window.localStorage.setItem(ALL_SETTINGS_KEY, next ? "1" : "0");
+    } catch {
+      // The choice is a convenience; every setting is still reachable.
+    }
+  }
 
   function select(next: SettingsSection) {
     setSection(next);
@@ -233,7 +272,7 @@ export function SettingsView(props: SettingsViewProps) {
           aria-orientation="vertical"
           aria-label={t("settings")}
         >
-          <For each={SECTION_GROUPS}>
+          <For each={visibleGroups()}>
             {(group) => (
               <div class="settings-nav-group" role="presentation">
                 <span class="settings-nav-label" aria-hidden="true">
@@ -257,6 +296,16 @@ export function SettingsView(props: SettingsViewProps) {
               </div>
             )}
           </For>
+          <Show when={featureOn("simple-home")}>
+            <button
+              type="button"
+              class="settings-show-all"
+              aria-pressed={showAll()}
+              onClick={toggleShowAll}
+            >
+              {showAll() ? t("settingsShowFewer") : t("settingsShowAll")}
+            </button>
+          </Show>
         </div>
         <div class="settings-content">
           {panel("general", () => (
@@ -315,6 +364,16 @@ export function SettingsView(props: SettingsViewProps) {
 
           {panel("ai", () => (
             <>
+              <AccountHealth
+                agentStatus={props.agentStatus}
+                bots={props.bots}
+                onShowBackup={() =>
+                  document
+                    .getElementById("backup-order")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              />
+              <BackupOrder agentStatus={props.agentStatus} />
               <section class="settings-card">
                 <h2>{t("providers")}</h2>
                 <p>{t("connectIntro")}</p>

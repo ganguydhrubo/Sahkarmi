@@ -10,7 +10,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProviderSetupState } from "../shared/ipc";
 import { managedCodexPath, setToolsDirectory } from "./cli";
-import { CODEX_VERSION, ProviderSetup } from "./provider-setup";
+import { CODEX_VERSION, DISCONNECTABLE, ProviderSetup } from "./provider-setup";
 import { SecretCodec, SecretStore } from "./secret-store";
 
 let root: string;
@@ -85,6 +85,40 @@ async function fakeCli(name: string, version: string): Promise<string> {
 }
 
 describe("ProviderSetup", () => {
+  it("disconnects Claude with its own sign-out, then says how to connect again", async () => {
+    process.env.SAHKARMI_CLAUDE_PATH = await fakeCli("claude", "2.1.0 (Claude Code)");
+    const logout = new FakeLogin();
+    const spawnImpl = vi.fn((..._args: unknown[]) => {
+      setTimeout(() => logout.finish(0), 5);
+      return logout;
+    });
+    const recheck = vi.fn(async () => {
+      throw new Error("Run `claude auth login` to use Claude.");
+    });
+    const setup = new ProviderSetup({
+      toolsDirectory: join(root, "tools"),
+      recheck,
+      spawnImpl: spawnImpl as never,
+    });
+    const state = await setup.disconnect("claude");
+    const args = spawnImpl.mock.calls[0]?.[1] as string[];
+    expect(args.join(" ")).toContain("auth");
+    expect(args.join(" ")).toContain("logout");
+    expect(state.phase).toBe("idle");
+    expect(state.message).toContain("another account");
+    await expect(setup.disconnect("opencode")).rejects.toThrow("not available");
+  });
+
+  it("signs out only where the AI's own tool has a sign-out command", () => {
+    // Checked against each vendor's documentation; the rest are signed out in their own app.
+    expect([...DISCONNECTABLE].sort()).toEqual(["claude", "codex", "cursor", "kiro"]);
+  });
+
+  it("explains a code pasted after the sign-in already ended", () => {
+    const setup = new ProviderSetup({ toolsDirectory: join(root, "tools"), recheck: vi.fn() });
+    expect(() => setup.submitCode("claude", "abc")).toThrow("Press Reconnect");
+  });
+
   it("runs Claude's own sign-in, relays the link and pasted code, then re-checks", async () => {
     process.env.SAHKARMI_CLAUDE_PATH = await fakeCli("claude", "2.1.0 (Claude Code)");
     const login = new FakeLogin();

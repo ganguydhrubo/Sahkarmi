@@ -13,6 +13,7 @@ import { loadLanguage } from "./i18n";
 import { applyStoredPreferences, language } from "./preferences";
 import "./styles.css";
 import "./routines.css";
+import "./revamp.css";
 
 const root = document.getElementById("root");
 

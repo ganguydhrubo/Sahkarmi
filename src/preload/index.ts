@@ -182,6 +182,7 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     audit: () => ipcRenderer.invoke(IPC_CHANNELS.permissionsAudit),
     clearAudit: () => ipcRenderer.invoke(IPC_CHANNELS.permissionsClearAudit),
     setAutoMode: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.permissionsSetAutoMode, enabled),
+    setAskLess: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.permissionsSetAskLess, enabled),
   },
   usage: {
     overview: () => ipcRenderer.invoke(IPC_CHANNELS.usageOverview),
@@ -266,12 +267,23 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     setApiKey: (provider, apiKey) =>
       ipcRenderer.invoke(IPC_CHANNELS.providerSetupSetApiKey, { provider, apiKey }),
     check: (provider) => ipcRenderer.invoke(IPC_CHANNELS.providerSetupCheck, provider),
+    disconnect: (provider) => ipcRenderer.invoke(IPC_CHANNELS.providerSetupDisconnect, provider),
     onEvent: (listener) => {
       const handler = (_event: Electron.IpcRendererEvent, state: ProviderSetupState) =>
         listener(state);
       ipcRenderer.on(IPC_CHANNELS.providerSetupEvent, handler);
       return () => ipcRenderer.removeListener(IPC_CHANNELS.providerSetupEvent, handler);
     },
+  },
+  pins: {
+    list: (botId) => ipcRenderer.invoke(IPC_CHANNELS.pinsList, botId),
+    toggle: (input) => ipcRenderer.invoke(IPC_CHANNELS.pinsToggle, input),
+  },
+  aiAccounts: {
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsList),
+    add: (provider) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsAdd, provider),
+    use: (provider, id) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsUse, provider, id),
+    remove: (provider, id) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsRemove, provider, id),
   },
   geminiAccounts: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.geminiAccountsList),

@@ -5,7 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type ConversationSnapshot, DEFAULT_MODEL_FOR_PROVIDER } from "../shared/ipc";
-import { MCP_SERVER_SKIPPED_HINT, readModelOptions, stripLeakedToolCalls } from "./acp-client";
+import {
+  closestEffort,
+  MCP_SERVER_SKIPPED_HINT,
+  readEffortOption,
+  readModelOptions,
+  stripLeakedToolCalls,
+} from "./acp-client";
 import { createOpenCodeClient, openCodeModelValue, readAntigravityAccount } from "./acp-providers";
 import { AgentService } from "./agent-service";
 import { ApprovalStore } from "./approval-store";
@@ -106,6 +112,34 @@ describe.sequential("ACP providers (bundled OpenCode)", { timeout: 15_000 }, () 
     expect(JSON.stringify(prompt)).toContain("sahkarmi_coworker_instructions");
     // Sahkarmi answers each call itself and never hands the agent a standing "always allow".
     expect(log).toContainEqual({ method: "permission-answered", optionId: "once" });
+  });
+
+  it("sends the coworker's effort to an OpenCode model that has levels, nearest lower when missing", async () => {
+    const store = new BotStore(join(root, "user-data"), join(root, "home"));
+    const mailbox = new MailboxStore(join(root, "user-data"), store.sharedRoot);
+    const approvals = new ApprovalStore(join(root, "user-data"));
+    service = new AgentService(store, mailbox, fakeBrowser(), null, 30_000, "codex", approvals);
+    await service.initialize();
+    const listed = service.listModels().find((model) => model.id === "opencode:anthropic/x");
+    expect(listed?.supportedReasoningEfforts).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    await service.updateBot({
+      botId: "asha-accounts",
+      model: "opencode:anthropic/x",
+      reasoningEffort: "xhigh",
+    });
+    await service.sendMessage({ botId: "asha-accounts", text: "plain answer please" });
+    await waitFor(async () =>
+      (await service?.readConversation("asha-accounts"))?.messages.some(
+        (message) => message.author === "assistant" && message.text.includes("Done."),
+      ),
+    );
+    const sets = (await readLog()).filter((entry) => entry.method === "session/set_config_option");
+    // The model reports low, medium, high and max: "xhigh" is sent as the nearest lower level.
+    expect(sets).toContainEqual(
+      expect.objectContaining({
+        params: expect.objectContaining({ configId: "effort", value: "high" }),
+      }),
+    );
   });
 
   it("declines an ACP tool call that the owner's permission policy denies", async () => {
@@ -933,6 +967,28 @@ describe("provider helpers", () => {
       { value: "anthropic/paid", name: "Account model" },
     ]);
   });
+  it("reads a model's effort levels and picks the nearest one", () => {
+    expect(
+      readEffortOption({
+        configOptions: [
+          { id: "model", category: "model", currentValue: "a/b", options: [] },
+          {
+            id: "effort",
+            category: "thought_level",
+            currentValue: "low",
+            options: [{ value: "low" }, { value: "high" }, { value: "max" }, { value: "default" }],
+          },
+        ],
+      }),
+    ).toEqual({ id: "effort", options: ["low", "high", "max"], current: "low" });
+    expect(readEffortOption({ configOptions: [{ id: "model", options: [] }] })).toBeNull();
+    expect(closestEffort("high", ["low", "high", "max"])).toBe("high");
+    expect(closestEffort("ultra", ["low", "high", "max"])).toBe("max");
+    expect(closestEffort("medium", ["low", "high", "max"])).toBe("low");
+    expect(closestEffort("minimal", ["low", "high"])).toBe("low");
+    expect(closestEffort("high", [])).toBeNull();
+  });
+
   it("strips a tool call that a free model echoed as text", () => {
     const leaked =
       "I'll request approval first. ​type=tool_call tool=functions.sahkarmi_request_approval<|func_arg_name|>title<|func_arg_value|>Pay ₹10<|func_arg_name|>category<|func_arg_value|>payment<|func_arg_end|>";
@@ -1076,7 +1132,10 @@ async function handle(message) {
     serversBySession[newId] = params.mcpServers.map((server) => server.name);
     return write({ id, result: { sessionId: newId, configOptions: [{ id: "model", category: "model", type: "select", currentValue: "anthropic/x", options: [{ value: "opencode/big-pickle", name: "Big Pickle" }, { value: "opencode/nemotron-free", name: "Nemotron" }, { value: "anthropic/x", name: "X" }] }] } });
   }
-  if (method === "session/set_config_option") return write({ id, result: {} });
+  if (method === "session/set_config_option") {
+    if (params.configId === "model" && params.value === "anthropic/x") return write({ id, result: { configOptions: [{ id: "model", category: "model", currentValue: "anthropic/x", options: [{ value: "anthropic/x", name: "X" }] }, { id: "effort", category: "thought_level", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "medium", name: "Medium" }, { value: "high", name: "High" }, { value: "max", name: "Max" }, { value: "default", name: "Default" }] }] } });
+    return write({ id, result: {} });
+  }
   if (method === "session/cancel") { const pending = cancellable.get(params.sessionId); cancellable.delete(params.sessionId); pending?.(); return; }
   if (method === "session/prompt") {
     const text = params.prompt.map((part) => part.text || "").join(" ");

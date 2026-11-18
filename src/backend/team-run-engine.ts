@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { join } from "node:path";
 import { AsyncLocalStorageProviderSingleton } from "@langchain/core/singletons";
 import {
   Annotation,
@@ -198,6 +199,35 @@ function shorten(text: string | null | undefined, max = MAX_RESULT_CHARS): strin
   const trimmed = (text ?? "").trim();
   if (!trimmed) return null;
   return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
+}
+
+/**
+ * The team's result in one place: each task's result in plan order, with who did it, and where
+ * the files are. Tasks that did not finish say so instead of being left out.
+ */
+export function teamReport(run: OrchestratorRun): string | null {
+  if (run.tasks.length === 0) return null;
+  const names = new Map(run.instances.map((instance) => [instance.botId, instance.botName]));
+  const parts = run.tasks.map((task, index) => {
+    const who = names.get(task.assignedBotId) ?? "A coworker";
+    const result =
+      typeof task.inputs.result === "string" && task.inputs.result.trim()
+        ? task.inputs.result.trim()
+        : task.status === "completed"
+          ? "Finished, with no written summary."
+          : task.status === "failed"
+            ? `Not finished: ${task.error ?? "it failed."}`
+            : "Not started.";
+    return `${index + 1}. ${task.title} (${who})\n${result}`;
+  });
+  return [...parts, `Files: Shared/team-runs/${run.id}/`].join("\n\n");
+}
+
+/** A turn that failed because the AI provider's usage or rate limit ran out. */
+export function isUsageLimit(error: string | null | undefined): boolean {
+  return /usage limit|free limit|rate limit|quota|limit reached|too many requests|out of credits|insufficient credit|\b429\b/i.test(
+    error ?? "",
+  );
 }
 
 /** The message a coworker receives for its task. Earlier results are data, never instructions. */
@@ -499,6 +529,7 @@ export class TeamRunEngine {
           error: null,
           completedAt: new Date().toISOString(),
           deliverables: latest.tasks.flatMap((task) => task.deliverables),
+          report: teamReport(latest),
         });
       } else if (verdict === "failed") {
         await this.#saver.deleteThread(runId).catch(() => undefined);
@@ -508,6 +539,7 @@ export class TeamRunEngine {
           waitingOn: null,
           error: error ?? "A task failed.",
           completedAt: new Date().toISOString(),
+          report: teamReport(latest),
         });
       } else if (state.next.length > 0) {
         // Paused by the owner mid-way: the checkpoint has the rest.
@@ -703,6 +735,15 @@ export class TeamRunEngine {
       objective: input.objective,
       signal,
     };
+    if (!outcome.ok && isUsageLimit(outcome.error)) {
+      // Trying again at once meets the same limit; stop and say what to change.
+      return this.#finishTask(run, task, {
+        status: "failed",
+        attemptCount: attempt,
+        result: null,
+        error: `${bot.name} hit its AI usage limit, so the team stopped instead of retrying. Choose another model for the team (or wait for the limit to reset) and start again. Details: ${outcome.error}`,
+      });
+    }
     if (!outcome.ok) {
       return this.#verifyAndFinish(
         run,
@@ -761,6 +802,7 @@ export class TeamRunEngine {
       const verification = await this.#verifier.verifyTask(task, {
         workspacePath: where.workspacePath || where.sharedRoot,
         sharedRoot: where.sharedRoot,
+        taskFolder: join(where.sharedRoot, "team-runs", run.id, task.id),
         reply: where.fullReply ?? result,
         checkCommand: run.checkCommand ?? null,
         checkCwd: where.sharedRoot,

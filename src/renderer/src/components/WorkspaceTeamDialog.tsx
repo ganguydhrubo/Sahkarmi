@@ -39,6 +39,12 @@ export function WorkspaceTeamDialog(props: {
   const workspaceGrants = createMemo(() =>
     (grants() ?? []).filter((grant) => grant.workspaceId === workspace()?.id),
   );
+  /** The coworker whose role reads like a lead; else the one who has been here longest. */
+  const suggestedCeo = createMemo(
+    () =>
+      members().find((bot) => /\blead\b|ceo|chief|orchestrat|manager/i.test(bot.role)) ??
+      members().at(-1),
+  );
   const [chosen, setChosen] = createSignal<ApprovalCategory[]>([]);
   const [moveTo, setMoveTo] = createSignal<string>(others()[0]?.id ?? "");
   const [confirming, setConfirming] = createSignal(false);
@@ -64,6 +70,16 @@ export function WorkspaceTeamDialog(props: {
       >
         <h2 id="workspace-team-heading">{workspace()?.name}</h2>
 
+        <div class="ceo-explain">
+          <strong>{t("ceoWhatTitle")}</strong>
+          <ul>
+            <li>{t("ceoWhat1")}</li>
+            <li>{t("ceoWhat2")}</li>
+            <li>{t("ceoWhat3")}</li>
+          </ul>
+          <p>{t("ceoHow")}</p>
+        </div>
+
         <label class="workspace-team-field">
           <span>{t("workspaceCeo")}</span>
           <select
@@ -82,12 +98,30 @@ export function WorkspaceTeamDialog(props: {
               {(bot) => (
                 <option value={bot.id} selected={bot.id === workspace()?.ceoBotId}>
                   {bot.name}
+                  {bot.role ? ` · ${bot.role}` : ""}
                 </option>
               )}
             </For>
           </select>
         </label>
         <p class="workspace-team-hint">{t("workspaceCeoHint")}</p>
+        <Show when={!workspace()?.ceoBotId && suggestedCeo()}>
+          {(bot) => (
+            <button
+              type="button"
+              class="button-primary ceo-suggest"
+              onClick={() =>
+                void attempt(async () => {
+                  const id = workspace()?.id;
+                  if (id) await props.onSetCeo(id, bot().id);
+                  mutate(await window.sahkarmi.approvals.listAuthority());
+                })
+              }
+            >
+              {t("ceoSuggest", { name: bot().name })}
+            </button>
+          )}
+        </Show>
 
         <Show when={workspace()?.ceoBotId}>
           <h3>{t("approvalAuthority")}</h3>

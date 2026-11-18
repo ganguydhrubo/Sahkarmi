@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import { isTrade, type TradeId } from "./trade-names";
 
 export type ThemePreference = "system" | "light" | "dark";
 export type LanguageCode =
@@ -31,6 +32,7 @@ export const SUPPORTED_LANGUAGES: LanguageCode[] = [
 ];
 
 const THEME_KEY = "sahkarmi:theme";
+const TRADE_KEY = "sahkarmi:trade";
 const ACTIVITY_STYLE_KEY = "sahkarmi:activity-style";
 
 /**
@@ -63,8 +65,12 @@ function writeStored(key: string, value: string): void {
   }
 }
 
+/**
+ * The light, warm theme is what every owner sees until they choose otherwise. "system" is kept
+ * only for an owner who picked it in Settings.
+ */
 function parseTheme(value: string | null): ThemePreference {
-  return value === "light" || value === "dark" ? value : "system";
+  return value === "dark" || value === "system" ? value : "light";
 }
 
 function parseLanguage(value: string | null): LanguageCode {
@@ -96,7 +102,20 @@ function parseUiSize(value: string | null): UiSize {
   return value === "compact" || value === "large" ? value : "normal";
 }
 
-export { activityStyle, language, sendKey, theme, uiSize };
+/** The owner's line of work, asked on first open; null until they have chosen. */
+const [trade, setTradeSignal] = createSignal<TradeId | null>(
+  (() => {
+    const stored = readStored(TRADE_KEY);
+    return isTrade(stored) ? stored : null;
+  })(),
+);
+
+export function setTrade(next: TradeId): void {
+  setTradeSignal(next);
+  writeStored(TRADE_KEY, next);
+}
+
+export { activityStyle, language, sendKey, theme, trade, uiSize };
 
 export function setUiSize(next: UiSize): void {
   setUiSizeSignal(next);

@@ -4,6 +4,8 @@ import {
   approvalRequestProblem,
   commandCount,
   describePermissionRequest,
+  isLookOnlyCommand,
+  undoLine,
 } from "./approval-wording";
 import { classifyAcpTool } from "./permission-policy";
 
@@ -36,10 +38,68 @@ describe("describePermissionRequest", () => {
       "Asha",
       ROOTS,
     );
-    expect(card.title).toBe("Asha wants to run a small Python script on your computer");
-    expect(card.details).toContain("If you approve:");
+    expect(card.title).toBe(
+      "Asha wants to run a small Python script on your computer to read or write a file",
+    );
+    expect(card.details).toContain("What will happen:");
+    expect(card.details).toContain("Is this normal? Yes.");
     expect(card.details).not.toContain("open(r");
     expect(card.technical).toBe(action);
+  });
+
+  it("says plainly when a command only looks at files", () => {
+    expect(
+      isLookOnlyCommand("Get-ChildItem -Force; if (Test-Path AGENTS.md) { Get-Content AGENTS.md }"),
+    ).toBe(true);
+    expect(isLookOnlyCommand("dir && type notes.txt")).toBe(true);
+    expect(isLookOnlyCommand("Get-Content a.txt > b.txt")).toBe(false);
+    expect(isLookOnlyCommand("Get-ChildItem; Remove-Item old.txt")).toBe(false);
+    expect(isLookOnlyCommand("python make.py")).toBe(false);
+    const card = describePermissionRequest(
+      {
+        botId: "dev",
+        provider: "codex",
+        category: "shell",
+        action: "Get-ChildItem -Force",
+        paths: [],
+      },
+      "Dev",
+      ROOTS,
+    );
+    expect(card.title).toBe(
+      "Dev wants to look at the files in its work folder (nothing is changed)",
+    );
+    expect(card.details).toContain("It only looks at files");
+  });
+
+  it("says what a script is for and warns plainly when it can delete things", () => {
+    const excel = describePermissionRequest(
+      {
+        botId: "asha",
+        provider: "gemini",
+        category: "shell",
+        action: "python -c \"import openpyxl; wb = openpyxl.Workbook(); wb.save('sales.xlsx')\"",
+        paths: [],
+      },
+      "Asha",
+      ROOTS,
+    );
+    expect(excel.title).toContain("to make or read an Excel sheet");
+    expect(excel.details).toContain("It is safe to allow when it matches what you asked for.");
+
+    const wipe = describePermissionRequest(
+      {
+        botId: "asha",
+        provider: "gemini",
+        category: "shell",
+        action: "Remove-Item -Recurse C:Usersmeold",
+        paths: [],
+      },
+      "Asha",
+      ROOTS,
+    );
+    expect(wipe.details).toContain("Only if you expected it");
+    expect(wipe.details).toContain("ask Asha to explain");
   });
 
   it("names the site, the button, the reason and what is shared", () => {
@@ -156,5 +216,27 @@ describe("classifyAcpTool", () => {
     expect(classifyAcpTool(null, "sahkarmi_save_memory", [], {})).toBe("research");
     expect(classifyAcpTool(null, "sahkarmi_request_approval", [], {})).toBe("research");
     expect(classifyAcpTool(null, "something_else", [], {})).toBe("shell");
+  });
+});
+
+describe("can it be undone?", () => {
+  const ask = (category: PermissionCategory, detail = "") =>
+    undoLine({ category, action: "", detail } as never);
+
+  it("says no for money, deleting and anything that leaves the computer", () => {
+    expect(ask("payments")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("file_delete")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("external_messages")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("publication")).toMatch(/^Can it be undone\? No\./);
+  });
+
+  it("says yes where it is true, and nothing where it cannot know", () => {
+    expect(ask("file_create")).toBe("Can it be undone? Yes. A new file can simply be deleted.");
+    expect(ask("file_modify")).toContain("Only if you keep a copy");
+    expect(ask("shell", "dir")).toBe(
+      "Can it be undone? Nothing is changed, so there is nothing to undo.",
+    );
+    // An ordinary script: Sahkarmi cannot know, so it does not guess.
+    expect(ask("shell", "python make_report.py")).toBeNull();
   });
 });

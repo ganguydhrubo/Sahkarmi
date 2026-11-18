@@ -134,17 +134,84 @@ function browserPhrase(request: PermissionRequest, files: string[]): string | nu
   }
 }
 
+/** What a script or command is for, judged from what it uses; first match wins. */
+const PURPOSES: Array<[RegExp, string]> = [
+  [
+    /\b(os\.remove|os\.unlink|shutil\.rmtree|rmSync|unlinkSync|Remove-Item|rmdir|rm\s+-r?f?)\b|\bdel\s+\//i,
+    "delete files",
+  ],
+  [/\b(smtplib|sendmail|nodemailer|Send-MailMessage)\b/i, "send an email"],
+  [/\b(openpyxl|xlsxwriter|xlrd|read_excel|to_excel)\b|\.xlsx?\b/i, "make or read an Excel sheet"],
+  [/\b(docx|python-docx|Document\()|\.docx\b/i, "make or change a Word file"],
+  [/\b(reportlab|fpdf|pdfkit|PyPDF2?|pypdf|fitz|pdfplumber)\b|\.pdf\b/i, "make or read a PDF"],
+  [/\b(pptx|python-pptx)\b|\.pptx\b/i, "make a slide deck"],
+  [/\b(matplotlib|plotly|seaborn|chart)\b/i, "draw a chart"],
+  [/\b(PIL|Image\.open|sharp|cv2)\b|\.(png|jpe?g|webp)\b/i, "work with a picture"],
+  [/\b(csv|read_csv|to_csv)\b|\.csv\b/i, "work with a CSV sheet"],
+  [/\b(requests\.|urllib|httpx|fetch\(|axios)/i, "get information from a website"],
+  [/\b(json\.(load|dump)|JSON\.parse|readFile|open\()/i, "read or write a file"],
+  [/\bprint\(|console\.log\(/i, "work something out and show the answer"],
+];
+
+/** The plain purpose of a script's text, or null when nothing tells. */
+export function scriptPurpose(text: string): string | null {
+  return PURPOSES.find(([pattern]) => pattern.test(text))?.[1] ?? null;
+}
+
+/** A shell step that can lose data or change the PC itself; it gets a "be careful" line. */
+const RISKY_COMMAND =
+  /\b(os\.remove|shutil\.rmtree|rmSync|unlinkSync|Remove-Item|rmdir|format|diskpart|reg\s+(add|delete)|Set-ExecutionPolicy|shutdown|net\s+user|takeown|icacls|bcdedit|schtasks|Stop-Process|taskkill|git\s+push\s+(-f|--force)|git\s+reset\s+--hard)\b|\brm\s+-[rf]|\bdel\s+\/|\bgit\s+clean\b/i;
+
+/** Commands that only list or read files; every part of the line must be one of these. */
+const LOOK_ONLY =
+  /^(?:Get-ChildItem|Get-Content|Get-Item|Test-Path|Select-String|Get-Location|ls|dir|cat|type|pwd|head|tail|wc|find|tree|rg|grep|echo|Write-Output|Resolve-Path|Measure-Object|Select-Object|Sort-Object|Format-List|Format-Table|Out-String|if|else)\b/i;
+
+/** True when a shell line only lists or reads files (dir, Get-Content, cat, ...). */
+export function isLookOnlyCommand(command: string): boolean {
+  const unquoted = command.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
+  if (
+    />|\b(Set-|Remove-|New-|Move-|Copy-|Rename-|Invoke-|Start-|Stop-|Add-|Clear-|Out-File)/i.test(
+      unquoted,
+    )
+  ) {
+    return false;
+  }
+  const parts = unquoted
+    .split(/&&|\|\||[;&|\r\n{}()]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return (
+    parts.length > 0 &&
+    parts.every(
+      (part) => LOOK_ONLY.test(part) || (/^[-$\w.:\\/"' ]+$/.test(part) && !/\s/.test(part)),
+    )
+  );
+}
+
 /** Commands an owner meets often, said plainly. Anything else stays "a command". */
 function commandPhrase(command: string): string {
   const text = command.trim();
   const site = text.match(/https?:\/\/[^\s"'`]+/)?.[0];
   const host = site ? siteOf(site) : "";
   if (/^\s*(py|python3?)(\.exe)?\s+-c\b/i.test(text)) {
-    return "run a small Python script on your computer";
+    const purpose = scriptPurpose(text);
+    return purpose
+      ? `run a small Python script on your computer to ${purpose}`
+      : "run a small Python script on your computer";
   }
   if (/^\s*(node|bun)(\.exe)?\s+(-e|--eval)\b/i.test(text)) {
-    return "run a small script on your computer";
+    const purpose = scriptPurpose(text);
+    return purpose
+      ? `run a small script on your computer to ${purpose}`
+      : "run a small script on your computer";
   }
+  if (/^\s*(powershell|pwsh)(\.exe)?\b/i.test(text)) {
+    const purpose = scriptPurpose(text);
+    return purpose
+      ? `run a Windows command on your computer to ${purpose}`
+      : "run a Windows command on your computer";
+  }
+  if (isLookOnlyCommand(text)) return "look at the files in its work folder (nothing is changed)";
   const script = text.match(/^\s*(?:py|python3?|node|bun)(?:\.exe)?\s+"?([^\s"]+\.\w+)/i)?.[1];
   if (script) return `run the script ${path.basename(script.replaceAll("\\", "/"))}`;
   if (/\bgit\s+push\b/i.test(text)) return "send code changes to an online code repository";
@@ -222,6 +289,82 @@ function chainedLine(request: PermissionRequest): string | null {
     : `Note: this runs ${count} commands one after another. Open the technical details to see each one.`;
 }
 
+/** Categories that are everyday steps: reading, looking up, saving a new file. */
+const EVERYDAY = new Set<PermissionCategory>([
+  "research",
+  "file_read",
+  "file_create",
+  "browser_navigation",
+  "downloads",
+]);
+
+/**
+ * "Is this normal?": a plain answer for someone who cannot read the command. Everyday steps say
+ * so; steps that can lose data, spend money or reach other people say to allow them only if
+ * expected, and how to ask first.
+ */
+export function normalLine(request: PermissionRequest, botName: string): string | null {
+  const command = `${request.detail || ""} ${request.action || ""}`;
+  if (request.category === "shell") {
+    if (isLookOnlyCommand(request.detail || request.action || "")) {
+      return "Is this normal? Yes. It only looks at files so it knows what is there; nothing is changed.";
+    }
+    if (RISKY_COMMAND.test(command)) {
+      return `Is this normal? Only if you expected it: this can delete things or change how your computer works. If you are not sure, choose Do not allow and ask ${botName} to explain in the chat.`;
+    }
+    return "Is this normal? Yes. Coworkers often run small commands and scripts like this to make files and check their work. It is safe to allow when it matches what you asked for.";
+  }
+  if (EVERYDAY.has(request.category)) return "Is this normal? Yes, this is an everyday step.";
+  if (request.category === "file_modify") {
+    return "Is this normal? Yes, when you asked for this file to be updated. If not, choose Do not allow.";
+  }
+  if (
+    request.category === "file_delete" ||
+    request.category === "payments" ||
+    request.category === "external_messages" ||
+    request.category === "publication" ||
+    request.category === "official_forms"
+  ) {
+    return `Is this normal? Only if you asked for it. This cannot easily be undone, so if you are not sure, choose Do not allow and ask ${botName} first.`;
+  }
+  return null;
+}
+
+/**
+ * "Can it be undone?": said only where the answer is known. Money, deleting and anything that
+ * leaves the computer cannot be called back; a new file can simply be deleted.
+ */
+export function undoLine(request: PermissionRequest): string | null {
+  const command = `${request.detail || ""} ${request.action || ""}`;
+  switch (request.category) {
+    case "shell":
+      if (isLookOnlyCommand(request.detail || request.action || "")) {
+        return "Can it be undone? Nothing is changed, so there is nothing to undo.";
+      }
+      return RISKY_COMMAND.test(command)
+        ? "Can it be undone? Maybe not. Things that are deleted may not come back."
+        : null;
+    case "file_create":
+      return "Can it be undone? Yes. A new file can simply be deleted.";
+    case "file_modify":
+      return "Can it be undone? Only if you keep a copy: the old version of the file is replaced.";
+    case "file_delete":
+      return "Can it be undone? No. A deleted file may not come back.";
+    case "payments":
+      return "Can it be undone? No. Money that has gone cannot be called back from here.";
+    case "external_messages":
+    case "publication":
+    case "official_forms":
+      return "Can it be undone? No. Once it is sent or posted, other people can see it.";
+    case "browser_navigation":
+      return "Can it be undone? Yes. Opening a page changes nothing.";
+    case "downloads":
+      return "Can it be undone? Yes. A downloaded file can be deleted.";
+    default:
+      return null;
+  }
+}
+
 function whyLine(request: PermissionRequest, ownerAsked: string | null): string {
   if (request.reason?.trim()) return `Why: ${redact(request.reason, 300)}`;
   if (ownerAsked?.trim()) {
@@ -244,11 +387,13 @@ export function describePermissionRequest(
     `${botName} is asking your permission to ${phrase}.`,
     whyLine(request, ownerAsked),
     request.browser?.type === "upload"
-      ? "If you approve: a copy of the file leaves your computer and goes to that website."
-      : `If you approve: ${IF_APPROVED[request.category] ?? "it will go ahead with this."}`,
+      ? "What will happen: a copy of the file leaves your computer and goes to that website."
+      : `What will happen: ${IF_APPROVED[request.category] ?? "it will go ahead with this."}`,
     sharedLine(request, files),
     chainedLine(request),
-    `Nothing happens until you choose. If you reject, ${botName} will not do this.`,
+    undoLine(request),
+    normalLine(request, botName),
+    `What if I say no? Nothing happens. ${botName} will not do this.`,
   ];
   return {
     title: `${botName} wants to ${phrase}`,

@@ -1,0 +1,1599 @@
+/* Sahkarmi trust theme (2026 revamp for small-business owners).
+   Loaded after styles.css, so this file is the one place the revamp's look lives.
+
+   The light, warm theme is what every owner sees: soft cream surfaces, deep navy text,
+   Sahkarmi orange for the ONE main action on a screen, green only for "done / safe",
+   red only for money, deleting and sending. Calm, generous, readable: like a good CA's
+   office. Dark mode only has to stay readable; it gets no design of its own here. */
+
+:root,
+:root[data-theme="light"] {
+  /* Orange as TEXT or a link is the darker shade (7.0:1 on cream); bright orange is a fill. */
+  --link-ink: #b94700;
+  --primary-ink: #b94700;
+  /* A trusted, quiet card: white on cream with a hairline and a very soft navy shadow. */
+  --card-bg: #ffffff;
+  --card-line: rgb(30 42 90 / 0.1);
+  --card-shadow: 0 1px 2px rgb(30 42 90 / 0.04), 0 6px 20px rgb(30 42 90 / 0.05);
+  --card-radius: 16px;
+  --calm-bg: #f7f1e6;
+  --attention: #7a5a00;
+  --attention-soft: #fbf0cc;
+  --control-h: 42px;
+  --owner-bubble: #f3ead9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --link-ink: #f0904f;
+    --card-bg: var(--surface-1);
+    --card-line: rgb(var(--ink-rgb) / 0.14);
+    --card-shadow: none;
+    --card-radius: 16px;
+    --calm-bg: var(--surface-2);
+    --attention: #f2c94c;
+    --attention-soft: rgb(242 183 5 / 0.16);
+    --control-h: 42px;
+    --owner-bubble: var(--surface-3);
+  }
+}
+
+:root[data-theme="dark"] {
+  --link-ink: #f0904f;
+  --card-bg: var(--surface-1);
+  --card-line: rgb(var(--ink-rgb) / 0.14);
+  --card-shadow: none;
+  --card-radius: 16px;
+  --calm-bg: var(--surface-2);
+  --attention: #f2c94c;
+  --attention-soft: rgb(242 183 5 / 0.16);
+  --control-h: 42px;
+  --owner-bubble: var(--surface-3);
+}
+
+/* Links and text buttons: the readable orange, never the bright fill colour. */
+.link-button,
+.composer-connect-link {
+  color: var(--link-ink);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Settings cards: more air, rounder, one soft shadow                                        */
+/* ---------------------------------------------------------------------------------------- */
+
+.settings-card {
+  gap: 10px;
+  border-color: var(--card-line);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 20px 24px;
+}
+
+.settings-card h2 {
+  margin: 0;
+  font-size: var(--fs-xl);
+  letter-spacing: var(--tracking-tight);
+}
+
+.settings-card > p {
+  max-width: 68ch;
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Backup order of AIs                                                                       */
+/* ---------------------------------------------------------------------------------------- */
+
+.backup-card,
+.health-card {
+  align-items: stretch;
+}
+
+.backup-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 16px;
+}
+
+.backup-suggestion {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* The one main action of this card. */
+.settings-card .backup-empty .button-primary {
+  min-height: var(--control-h);
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  padding: 8px 20px;
+  color: var(--on-primary);
+  font-weight: 700;
+}
+
+.backup-list,
+.health-list {
+  display: grid;
+  margin: 4px 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  list-style: none;
+}
+
+.backup-row,
+.health-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+}
+
+.backup-row + .backup-row,
+.health-row + .health-row {
+  border-top: 1px solid var(--card-line);
+}
+
+.backup-row-off {
+  background: var(--calm-bg);
+  opacity: 0.75;
+}
+
+.backup-step {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.backup-row-text,
+.health-row-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.backup-row-text strong,
+.health-row-name strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+}
+
+.backup-row-text small,
+.health-row-text small {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.backup-row-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.icon-step {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-step:hover:not(:disabled) {
+  background: var(--sahkarmi-hover);
+}
+
+.icon-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.backup-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip-button {
+  min-height: 36px;
+  border: 1px dashed var(--sahkarmi-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  padding: 6px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-button:hover {
+  border-style: solid;
+  background: var(--sahkarmi-hover);
+}
+
+.backup-saved {
+  color: var(--success);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Account health                                                                            */
+/* ---------------------------------------------------------------------------------------- */
+
+.health-row-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-pill {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+/* Green means "working well" and nothing else. */
+.health-pill-ready {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* Anything that needs the owner is a calm amber, not an alarm. */
+.health-pill-near,
+.health-pill-limited,
+.health-pill-signed-out,
+.health-pill-not-set-up,
+.health-pill-problem {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+.health-fix {
+  flex: none;
+  min-height: var(--control-h);
+  border-radius: 10px;
+  padding: 8px 18px;
+}
+
+@media (max-width: 720px) {
+  .backup-row,
+  .health-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Home: "What do you want done today?"                                                      */
+/* ---------------------------------------------------------------------------------------- */
+
+/* Home is not a ".center-view": that class restyles every button inside it, and Home's
+   buttons (tiles, microphone, the voice box's click-away layer) have their own look. */
+.home-view {
+  overflow-y: auto;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+.app-frame > .home-view {
+  grid-column: 4;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.home-column {
+  display: grid;
+  width: min(760px, 100%);
+  gap: 20px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+.home-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-5xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.home-header p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-lg);
+  line-height: 1.5;
+}
+
+.home-needs-you {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--attention-soft);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-needs-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--warning-fill);
+}
+
+.home-needs-open {
+  margin-left: auto;
+  color: var(--link-ink);
+  white-space: nowrap;
+}
+
+.home-ask {
+  display: grid;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 20px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.home-ask:focus-within {
+  border-color: var(--indigo-accent);
+  box-shadow:
+    var(--card-shadow),
+    0 0 0 4px rgb(var(--ink-rgb) / 0.08);
+}
+
+.home-ask textarea {
+  width: 100%;
+  min-height: 108px;
+  resize: vertical;
+  border: 0;
+  border-radius: 20px 20px 0 0;
+  outline: none;
+  background: transparent;
+  padding: 20px 22px 8px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.home-ask textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.home-ask-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 14px;
+}
+
+.home-ask-spacer {
+  flex: 1;
+}
+
+.home-mic {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* The recorder's own small button is replaced here by the big one; its panel still opens. */
+.home-mic .voice-input-button {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.home-mic-button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 999px;
+  background: var(--calm-bg);
+  padding: 8px 20px 8px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-mic-button:hover {
+  border-color: var(--indigo-accent);
+}
+
+.home-mic-button svg {
+  width: 28px;
+  height: 28px;
+}
+
+.home-start {
+  min-width: 132px;
+  min-height: 52px;
+  border-radius: 999px;
+  padding: 10px 28px;
+  font-size: var(--fs-lg);
+}
+
+.home-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.home-who p {
+  flex: 1;
+  margin: 0;
+}
+
+.home-who strong {
+  color: var(--text-primary);
+}
+
+.home-who .bot-avatar,
+.home-recent-row .bot-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.home-who-change select {
+  min-height: 40px;
+  max-width: 220px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+
+.home-big {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px 16px;
+}
+
+.home-big p {
+  flex: 1;
+  min-width: 240px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.home-big strong {
+  color: var(--text-primary);
+}
+
+.home-big button {
+  min-height: var(--control-h);
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 16px;
+  color: var(--indigo-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-starters-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.home-starters h2,
+.home-recent h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.home-trades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  border: 0;
+  padding: 0;
+}
+
+.chip-button-on {
+  border-style: solid;
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.chip-button-on:hover {
+  background: var(--indigo-accent);
+}
+
+.home-starter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-starter {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--card-line);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.home-starter:hover {
+  border-color: var(--indigo-accent);
+  transform: translateY(-1px);
+}
+
+.home-starter-on {
+  border-color: var(--indigo-accent);
+  box-shadow: 0 0 0 3px rgb(var(--ink-rgb) / 0.1);
+}
+
+/* A small quiet mark per kind of work: navy tones only, so orange stays for the main button. */
+.home-starter-mark {
+  width: 10px;
+  height: 32px;
+  flex: none;
+  border-radius: 6px;
+  background: rgb(var(--ink-rgb) / 0.22);
+}
+
+.home-starter-accounts {
+  background: rgb(var(--ink-rgb) / 0.75);
+}
+
+.home-starter-content {
+  background: rgb(var(--ink-rgb) / 0.55);
+}
+
+.home-starter-sales {
+  background: rgb(var(--ink-rgb) / 0.45);
+}
+
+.home-starter-support {
+  background: rgb(var(--ink-rgb) / 0.35);
+}
+
+.home-recent ul {
+  display: grid;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
+  border-radius: 14px;
+  background: var(--card-bg);
+  list-style: none;
+}
+
+.home-recent li + li {
+  border-top: 1px solid var(--card-line);
+}
+
+.home-recent-row {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  padding: 10px 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-recent-row:hover {
+  background: var(--sahkarmi-hover);
+}
+
+.home-recent-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.home-recent-text strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+}
+
+.home-recent-text small {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-recent-open {
+  color: var(--link-ink);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* First open: language, line of work, AI                                                    */
+/* ---------------------------------------------------------------------------------------- */
+
+.initial-setup-screen {
+  background: var(--bg-deep);
+}
+
+.initial-setup {
+  width: min(100%, 640px);
+  border: 1px solid var(--card-line);
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 36px 40px 32px;
+}
+
+.initial-setup h1 {
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.initial-setup-intro {
+  font-size: var(--fs-lg);
+}
+
+.start-question {
+  min-width: 0;
+  margin: 24px 0 0;
+  border: 0;
+  padding: 0;
+}
+
+.start-question legend,
+.start-question h2 {
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.start-question-ai {
+  margin-bottom: 4px;
+}
+
+.start-hint {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.start-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.start-choices-trade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+
+.start-choice {
+  min-height: 48px;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 10px 18px;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-choice:hover {
+  border-color: var(--indigo-accent);
+}
+
+/* The chosen answer is navy, so orange stays for the one button that moves on. */
+.start-choice-on {
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.initial-setup .initial-setup-save {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  padding: 12px 28px;
+  color: var(--on-primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.initial-setup .initial-setup-save:disabled {
+  background: rgb(var(--ink-rgb) / 0.12);
+  color: rgb(var(--ink-rgb) / 0.45);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* The simple menu: five places with their names                                             */
+/* ---------------------------------------------------------------------------------------- */
+
+.app-frame.app-frame-simple {
+  grid-template-columns: 92px var(--left-panel-width, 320px) 0 minmax(0, 1fr);
+}
+
+.app-frame.app-frame-simple.app-frame-sidebar-collapsed {
+  grid-template-columns: 92px 0 0 minmax(0, 1fr);
+}
+
+.simple-rail {
+  align-items: stretch;
+  padding: 12px 6px 10px;
+}
+
+.simple-rail .app-rail-brand {
+  align-self: center;
+}
+
+.simple-rail-places {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.simple-rail .app-rail-bottom {
+  display: grid;
+  justify-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.simple-rail .app-rail-bottom .usage-rings {
+  align-items: center;
+}
+
+.simple-rail-place {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 62px;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  padding: 8px 2px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.simple-rail-place .rail-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.simple-rail-place:hover {
+  background: var(--sahkarmi-hover);
+  color: var(--text-primary);
+}
+
+.simple-rail-place.rail-nav-active {
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+}
+
+.simple-rail-place .rail-badge {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+}
+
+.simple-rail-more {
+  position: relative;
+}
+
+.simple-more-menu {
+  position: absolute;
+  z-index: 120;
+  top: -8px;
+  left: calc(100% + 10px);
+  display: none;
+  width: 248px;
+  max-height: 70vh;
+  overflow-y: auto;
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-pop);
+  padding: 8px;
+}
+
+.simple-more-menu.simple-more-open {
+  display: grid;
+  gap: 2px;
+}
+
+.simple-more-item {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.simple-more-item:hover,
+.simple-more-current {
+  background: var(--sahkarmi-hover);
+}
+/* ---------------------------------------------------------------------------------------- */
+/* Chat: a calm reading column                                                               */
+/* ---------------------------------------------------------------------------------------- */
+
+/* Everything in the chat sits in one column about 760 px wide, like a page of a letter. */
+.conversation-scroll > *,
+.composer-wrap > * {
+  width: 100%;
+  max-width: 760px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.conversation-scroll .message-copy {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* The coworker's reply reads as text on the page, not as a box. */
+.conversation-scroll .message-entry-bot .bot-bubble {
+  max-width: 100%;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding: 2px 0;
+}
+
+/* Cards inside a reply (choices, questions) keep their own box. */
+.conversation-scroll .message-entry-bot .bot-bubble:has(.choice-card) {
+  padding: 0;
+}
+
+/* The owner's own message: a soft cream bubble with navy words, never a dark block. */
+.conversation-scroll .message-entry-user .user-bubble {
+  max-width: min(600px, 86%);
+  border: 1px solid var(--card-line);
+  border-radius: 18px 18px 6px 18px;
+  background: var(--owner-bubble);
+  padding: 10px 16px;
+  color: var(--text-primary);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-copy,
+.conversation-scroll .message-entry-user .user-bubble .message-status,
+.conversation-scroll .message-entry-user .user-bubble .md-list li::marker {
+  color: var(--text-primary);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-link {
+  color: var(--link-ink);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-status {
+  color: var(--text-muted);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-resend {
+  border-color: var(--sahkarmi-line-strong);
+  background: var(--card-bg);
+  color: var(--link-ink);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Approvals: a clear, calm decision                                                         */
+/* ---------------------------------------------------------------------------------------- */
+
+.approval-card {
+  border-color: var(--card-line);
+  border-left-width: 4px;
+  border-left-color: var(--indigo-accent);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 20px 24px;
+}
+
+.approval-card-approved {
+  border-left-color: var(--success-fill);
+}
+
+.approval-card-rejected {
+  border-left-color: var(--sahkarmi-line-strong);
+}
+
+/* Red is kept for money, deleting and sending. */
+.approval-card-pending.approval-risk-high {
+  border-left-color: var(--danger);
+  background: var(--card-bg);
+}
+
+.approval-card .approval-details p {
+  margin: 6px 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+
+.approval-card .approval-details strong {
+  color: var(--text-primary);
+}
+
+.approval-card .approval-actions {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.approval-card .approval-no,
+.approval-card .approval-yes {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.approval-card .approval-no {
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.approval-card .approval-no:hover:not(:disabled) {
+  background: var(--sahkarmi-hover);
+}
+
+.approval-card-pending.approval-risk-high .approval-yes {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.approval-once-hint {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Who leads the team (CEO)                                                                  */
+/* ---------------------------------------------------------------------------------------- */
+
+.team-row-ceo {
+  flex: none;
+  border-radius: 6px;
+  background: var(--indigo-accent);
+  padding: 1px 7px;
+  color: var(--on-indigo);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 16px;
+}
+
+.ceo-nudge {
+  display: grid;
+  gap: 6px;
+  margin: 8px 12px 4px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px 14px;
+}
+
+.ceo-nudge strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+}
+
+.ceo-nudge p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.ceo-nudge-action {
+  justify-self: start;
+  min-height: 36px;
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  background: transparent;
+  padding: 6px 14px;
+  color: var(--indigo-accent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ceo-explain {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 16px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 14px 16px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.ceo-explain strong {
+  color: var(--text-primary);
+}
+
+.ceo-explain ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.ceo-explain p {
+  margin: 0;
+}
+
+.workspace-team-dialog .ceo-suggest {
+  justify-self: start;
+  min-height: var(--control-h);
+  margin: 4px 0 8px;
+  border-radius: 10px;
+  padding: 8px 18px;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Fixes found in the real app                                                               */
+/* ---------------------------------------------------------------------------------------- */
+
+/* On Home the microphone is near the top of the window, so its box opens BELOW the button
+   (in a chat it opens above the message box). It may never leave the window. */
+.home-mic .voice-recorder {
+  position: static;
+}
+
+.home-mic .voice-panel {
+  top: calc(100% + 12px);
+  bottom: auto;
+  left: 0;
+  z-index: 60;
+  width: min(380px, 86vw);
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  transform: none;
+  border-color: var(--card-line);
+  border-radius: 16px;
+  background: var(--card-bg);
+}
+
+/* Menu names always fit: two lines when a name is long, never cut off. */
+.app-frame.app-frame-simple {
+  grid-template-columns: 96px var(--left-panel-width, 320px) 0 minmax(0, 1fr);
+}
+
+.app-frame.app-frame-simple.app-frame-sidebar-collapsed {
+  grid-template-columns: 96px 0 0 minmax(0, 1fr);
+}
+
+.simple-rail-place {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.simple-rail-place > span:not(.rail-badge) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.simple-rail-place .rail-badge {
+  overflow: visible;
+}
+
+/* The click-away layer behind the voice box is a soft dim, never a solid sheet over the app. */
+.home-mic .voice-backdrop {
+  z-index: 59;
+  border: 0;
+  border-radius: 0;
+  background: rgb(var(--shade-rgb) / 0.18);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Voice notes and files waiting to go with the job from Home. */
+.home-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 18px 0;
+  list-style: none;
+}
+
+.home-file {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  background: var(--calm-bg);
+  padding: 4px 6px 4px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.home-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-file-remove {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--fs-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.home-file-remove:hover {
+  background: var(--sahkarmi-hover);
+  color: var(--text-primary);
+}
+
+/* Team projects: what the limit looks like before a big job starts. */
+.team-estimate {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  border-radius: 10px;
+  background: var(--calm-bg);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+.team-estimate strong {
+  color: var(--text-primary);
+}
+
+/* "How should it work?": Quick, Careful or Free, beside the exact-model picker. */
+.ai-outcome {
+  display: inline-flex;
+  min-width: 0;
+  flex: none;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  background: var(--calm-bg);
+  padding: 2px;
+}
+
+.ai-outcome-choice {
+  min-height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 4px 12px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-outcome-choice:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.ai-outcome-choice:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* The chosen way is navy; orange stays for the send button. */
+.ai-outcome-choice.ai-outcome-on {
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.composer-toolbar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Several accounts of one AI, pinned messages and run notes, in the trust theme             */
+/* ---------------------------------------------------------------------------------------- */
+
+/* Saved ChatGPT / Claude accounts: a calm panel under the AI's row. */
+.ai-accounts {
+  justify-items: stretch;
+  gap: 10px;
+  margin: 4px 0 4px 56px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 12px 14px;
+}
+
+.ai-accounts .settings-meta {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.ai-account-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.ai-account-row {
+  min-height: 46px;
+  padding: 6px 14px;
+  font-size: var(--fs-md);
+}
+
+.ai-account-row + .ai-account-row {
+  border-top: 1px solid var(--card-line);
+}
+
+.ai-account-name {
+  font-weight: 600;
+}
+
+.ai-account-name small {
+  font-weight: 400;
+}
+
+/* Green only says "this one is in use and working". */
+.ai-account-badge {
+  background: var(--success-soft);
+  padding: 2px 10px;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.ai-accounts .ai-account-row .link-button,
+.ai-accounts > .link-button {
+  min-height: 36px;
+  color: var(--link-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Removing a saved sign-in deletes it: the one place red is right here. */
+.ai-accounts .ai-account-row .ai-account-remove {
+  color: var(--danger);
+}
+
+.ai-accounts > .ai-account-add {
+  justify-self: start;
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  padding: 6px 16px;
+  color: var(--indigo-accent);
+}
+
+/* Why a scheduled task or routine ran late, waited or did not start: a quiet, readable line. */
+.run-note {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+/* A missed run needs a look, not an alarm. */
+.run-note-failed {
+  color: var(--attention);
+  font-weight: 600;
+}
+
+/* Pinned messages: a white card that stays at the very top of the chat. The chat has 8 px of
+   space above its first message; the card sticks over that space, so no message shows in a
+   gap above it. */
+.conversation-scroll > .pinned-bar {
+  top: -8px;
+  z-index: 5;
+  gap: 10px;
+  margin-bottom: 14px;
+  border-color: var(--card-line);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 10px 14px;
+}
+
+.pinned-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.pinned-chip {
+  min-height: 36px;
+  border-color: var(--card-line);
+  background: var(--calm-bg);
+  padding: 6px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.pinned-chip:hover {
+  border-color: var(--indigo-accent);
+}
+
+.pinned-chip[aria-expanded="true"] {
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.pinned-open {
+  gap: 8px;
+  border-top: 1px solid var(--card-line);
+  padding-top: 10px;
+}
+
+.pinned-open p {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.pinned-open-actions .link-button {
+  min-height: 36px;
+  color: var(--link-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Orange words are always the darker, readable shade, wherever a text button sits. */
+.settings-card .link-button,
+.provider-row .provider-row-actions .link-button,
+.provider-row .provider-key-toggle,
+.center-view .link-button {
+  color: var(--link-ink);
+}
+
+.ai-accounts .ai-account-row .ai-account-remove,
+.provider-row .provider-row-actions .provider-disconnect {
+  color: var(--danger);
+}
+
+/* When the message box's tools take two lines, Send stays at the right-hand end. */
+.composer-toolbar > .send-button {
+  margin-left: auto;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Easy wins: how much to ask, simple Settings, the first job                                */
+/* ---------------------------------------------------------------------------------------- */
+
+.ask-level {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 20px;
+  border: 1px solid var(--card-line);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 16px 20px;
+  color: var(--text-primary);
+}
+
+.ask-level-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ask-level .ask-level-choice {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ask-level .ask-level-choice small {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* The chosen answer has a navy edge and a calm fill; no orange, this is not the main action. */
+.ask-level .ask-level-choice.ask-level-on {
+  border-color: var(--indigo-accent);
+  background: var(--calm-bg);
+}
+
+.ask-level-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.settings-show-all {
+  justify-self: start;
+  min-height: 40px;
+  margin: 12px 0 0;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--link-ink);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-show-all:hover {
+  text-decoration: underline;
+}
+
+.home-guide {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--card-line);
+  border-left: 4px solid var(--indigo-accent);
+  border-radius: 14px;
+  background: var(--card-bg);
+  padding: 14px 18px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.home-guide strong {
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+}
+
+.home-guide ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.home-guide-done {
+  color: var(--success);
+}
+
+.home-guide-now {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.home-guide-try {
+  justify-self: start;
+  min-height: var(--control-h);
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 16px;
+  color: var(--indigo-accent);
+  font-weight: 700;
+  cursor: pointer;
+}

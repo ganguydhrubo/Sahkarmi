@@ -480,11 +480,13 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    expect(await screen.findByRole("dialog", { name: "Choose your provider" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Let us set up Sahkarmi for you" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Chief" })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 
-    const providers = screen.getByRole("radiogroup", { name: "Default provider" });
+    const providers = screen.getByRole("radiogroup", { name: "AI for your coworkers" });
     // OpenCode is listed first but not installed in this fixture, so Claude gets focus.
     const claude = within(providers).getByRole("radio", { name: /Claude.*Available/ });
     expect(claude).toHaveFocus();
@@ -525,7 +527,7 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    const providers = await screen.findByRole("radiogroup", { name: "Default provider" });
+    const providers = await screen.findByRole("radiogroup", { name: "AI for your coworkers" });
     const codex = within(providers).getByRole("radio", { name: /Codex.*Checking/ });
     const claude = within(providers).getByRole("radio", { name: /Claude.*Checking/ });
 
@@ -752,7 +754,7 @@ describe("Sahkarmi connected desktop shell", () => {
     render(() => <App />);
 
     expect(
-      within(await screen.findByRole("radiogroup", { name: "Default provider" })).getByRole(
+      within(await screen.findByRole("radiogroup", { name: "AI for your coworkers" })).getByRole(
         "radio",
         { name: /Claude.*Available/ },
       ),
@@ -807,7 +809,9 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    expect(await screen.findByRole("dialog", { name: "Choose your provider" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Let us set up Sahkarmi for you" }),
+    ).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Mac permissions")).not.toBeInTheDocument());
     expect(window.sahkarmi.getMacPermissions).not.toHaveBeenCalled();
   });
@@ -999,7 +1003,7 @@ describe("Sahkarmi connected desktop shell", () => {
     await fireEvent.input(screen.getByPlaceholderText("Add a note (optional)"), {
       target: { value: "Pay after GST invoice" },
     });
-    await fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
     await waitFor(() =>
       expect(window.sahkarmi.approvals.decide).toHaveBeenCalledWith({
         approvalId: "ap1",
@@ -1031,7 +1035,7 @@ describe("Sahkarmi connected desktop shell", () => {
     await screen.findByRole("heading", { name: "Chief" });
     const card = await screen.findByText("Allow: npm install");
     expect(card.closest(".inline-approvals")).not.toBeNull();
-    await fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
     await waitFor(() =>
       expect(window.sahkarmi.approvals.decide).toHaveBeenCalledWith({
         approvalId: "ap2",
@@ -1228,15 +1232,13 @@ describe("Sahkarmi connected desktop shell", () => {
     expect(await screen.findByRole("heading", { name: "Sales Outbound" })).toBeInTheDocument();
   });
 
-  it("changes the coworker's model and reasoning from the chat header", async () => {
+  it("changes the coworker's model and effort from under the message box", async () => {
     render(() => <App />);
     await screen.findByRole("heading", { name: "Chief" });
-    await fireEvent.click(
-      await screen.findByRole("button", { name: "Model and reasoning: Luna · Medium" }),
-    );
-    const popover = screen.getByRole("dialog", { name: "Model and reasoning" });
+    // One place to choose: the old duplicate chip in the top bar is gone.
+    expect(screen.queryByRole("button", { name: /^Model and reasoning:/ })).toBeNull();
 
-    await fireEvent.change(within(popover).getByRole("combobox", { name: "Reasoning" }), {
+    await fireEvent.change(await screen.findByRole("combobox", { name: "Effort" }), {
       target: { value: "high" },
     });
     await waitFor(() =>
@@ -1246,20 +1248,15 @@ describe("Sahkarmi connected desktop shell", () => {
       }),
     );
 
-    await fireEvent.click(within(popover).getByRole("button", { name: "Header model: Luna" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Agent model: Luna" }));
     const picker = screen.getByRole("dialog", { name: "Choose agent model" });
     await fireEvent.click(within(picker).getByRole("tab", { name: /^Claude:/ }));
     await fireEvent.click(within(picker).getByRole("option", { name: "Claude Opus 5, default" }));
     await waitFor(() =>
-      expect(window.sahkarmi.agent.updateBot).toHaveBeenCalledWith({
-        botId: "chief",
-        model: "claude-opus-5",
-        reasoningEffort: "high",
-      }),
+      expect(window.sahkarmi.agent.updateBot).toHaveBeenCalledWith(
+        expect.objectContaining({ botId: "chief", model: "claude-opus-5" }),
+      ),
     );
-    expect(
-      await screen.findByRole("button", { name: "Model and reasoning: Claude Opus 5 · High" }),
-    ).toBeInTheDocument();
   });
 
   it("offers Connect instead of a silent disabled model picker before a provider connects", async () => {
@@ -1285,10 +1282,9 @@ describe("Sahkarmi connected desktop shell", () => {
         fullAccess: true,
       },
     });
-    await fireEvent.click(await screen.findByRole("button", { name: /^Model and reasoning:/ }));
-    const popover = screen.getByRole("dialog", { name: "Model and reasoning" });
-    expect(popover).toHaveTextContent("Connect an AI provider to choose a model.");
-    await fireEvent.click(within(popover).getByRole("button", { name: "Connect" }));
+    const connect = await screen.findByRole("button", { name: "Connect" });
+    expect(connect).toHaveAttribute("title", "Connect an AI provider to choose a model.");
+    await fireEvent.click(connect);
     expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
     expect(window.localStorage.getItem("sahkarmi:settings-section")).toBe("ai");
   });

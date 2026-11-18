@@ -7,12 +7,14 @@ import { backgroundHi } from "./i18n-background";
 import { connectorsHi } from "./i18n-connectors";
 import { engineHi } from "./i18n-engine";
 import { extensionsHi } from "./i18n-extensions-hi";
+import { extrasHi } from "./i18n-extras";
 import { hostHi } from "./i18n-host";
 import { intelligenceHi } from "./i18n-intelligence";
 import { marketplaceHi } from "./i18n-marketplace-hi";
 import { mcpHi } from "./i18n-mcp";
 import { memoryHi } from "./i18n-memory";
 import { onboardingHi } from "./i18n-onboarding";
+import { revampHi } from "./i18n-revamp";
 import { safetyHi } from "./i18n-safety";
 import { securityHi } from "./i18n-security";
 import { skillPacksHi } from "./i18n-skill-packs";
@@ -177,14 +179,15 @@ export const hi: Dictionary = {
   toolKindApprovalMany: "{count} मंज़ूरियाँ",
   toolKindToolOne: "1 ऐप काम",
   toolKindToolMany: "{count} ऐप काम",
-  approvalKeys: "Enter से मंज़ूर · Esc से नामंज़ूर",
+  approvalKeys: "Enter से एक बार अनुमति · Esc से अनुमति नहीं",
   planTitle: "योजना",
   planProgress: "{total} में से {done} पूरे",
   planStatus_pending: "शुरू नहीं हुआ",
   planStatus_in_progress: "चल रहा है",
   planStatus_completed: "पूरा",
-  sendNow: "अभी भेजें",
-  sendNowHint: "अभी का काम रोकें और यह संदेश अगला चलाएँ",
+  sendNow: "अभी इस काम में जोड़ें",
+  sendNowHint:
+    "यह संदेश सहकर्मी को अभी देता है। वह पल भर रुककर इसे पढ़ता है और आपकी बात ध्यान में रखकर वही काम आगे बढ़ाता है।",
   stopHint: "रोकें (Esc)",
   queueHint: "भेजें: यह अभी के काम के बाद चलेगा",
   steerHint: "भेजें: सहकर्मी काम रोके बिना इसे पढ़कर काम बदल लेगा",
@@ -311,9 +314,11 @@ export const hi: Dictionary = {
   ...securityHi,
   ...apisHi,
   ...engineHi,
+  ...revampHi,
   ...safetyHi,
   ...assignHi,
   ...intelligenceHi,
+  ...extrasHi,
   ...mcpHi,
   ...connectorsHi,
   ...skillPacksHi,

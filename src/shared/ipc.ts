@@ -124,14 +124,22 @@ export const IPC_CHANNELS = {
   permissionsAudit: "permissions:audit",
   permissionsClearAudit: "permissions:clear-audit",
   permissionsSetAutoMode: "permissions:set-auto-mode",
+  permissionsSetAskLess: "permissions:set-ask-less",
 
   providerSetupList: "provider-setup:list",
   providerSetupConnect: "provider-setup:connect",
   providerSetupSubmitCode: "provider-setup:submit-code",
   providerSetupSetApiKey: "provider-setup:set-api-key",
   providerSetupCheck: "provider-setup:check",
+  providerSetupDisconnect: "provider-setup:disconnect",
   providerSetupEvent: "provider-setup:event",
   geminiAccountsList: "gemini-accounts:list",
+  aiAccountsList: "ai-accounts:list",
+  pinsList: "pins:list",
+  pinsToggle: "pins:toggle",
+  aiAccountsAdd: "ai-accounts:add",
+  aiAccountsUse: "ai-accounts:use",
+  aiAccountsRemove: "ai-accounts:remove",
   geminiAccountsAdd: "gemini-accounts:add",
   geminiAccountsSignIn: "gemini-accounts:sign-in",
   geminiAccountsUse: "gemini-accounts:use",
@@ -385,6 +393,21 @@ export function isAgentProvider(value: unknown): value is AgentProviderId {
   return typeof value === "string" && AGENT_PROVIDERS.includes(value as AgentProviderId);
 }
 
+/**
+ * AIs whose own tool has a documented sign-out command Sahkarmi can run (checked against each
+ * vendor's documentation on 18 Nov 2026): `codex logout`, `claude auth logout`, Cursor's
+ * `agent logout` and `kiro-cli logout`.
+ */
+export const DISCONNECTABLE_PROVIDERS: readonly AgentProviderId[] = [
+  "codex",
+  "claude",
+  "cursor",
+  "kiro",
+];
+
+/** AIs that can only be signed out inside their own window, by typing /logout there. */
+export const SIGN_OUT_IN_OWN_APP: readonly AgentProviderId[] = ["copilot", "kimi", "qoder"];
+
 /** Human-facing provider names. OpenCode is bundled with Sahkarmi and has free models. */
 export const PROVIDER_LABELS: Record<AgentProviderId, string> = {
   codex: "ChatGPT (Codex)",
@@ -419,6 +442,11 @@ export interface AgentProviderStatus {
   version: string | null;
   message: string | null;
   email?: string | null;
+  /**
+   * Set while this AI's limit is used up: when Sahkarmi will try it again. The owner's backup
+   * order skips it until then.
+   */
+  limitedUntil?: string | null;
 }
 
 export interface AppSetupState {
@@ -1123,6 +1151,45 @@ export interface GeminiAccountsState {
   accounts: GeminiAccount[];
 }
 
+/** A message the owner pinned in a chat; keeps its text so the pin bar can show it. */
+export interface PinnedMessage {
+  botId: string;
+  messageId: string;
+  text: string;
+  pinnedAt: string;
+}
+
+export interface PinsDesktopApi {
+  list: (botId: string) => Promise<PinnedMessage[]>;
+  /** Pins the message, or unpins it when it is pinned. Returns the chat's pins, newest first. */
+  toggle: (input: { botId: string; messageId: string; text: string }) => Promise<PinnedMessage[]>;
+}
+
+/** AIs that can keep more than one signed-in account in Sahkarmi. */
+export type AiAccountProvider = "codex" | "claude";
+
+export interface AiAccount {
+  id: string;
+  email: string | null;
+  /** The account coworkers on this AI use now. */
+  active: boolean;
+  /** Set while this account rests after reaching its usage limit. */
+  restingUntil: string | null;
+}
+
+export interface AiAccountsState {
+  providers: Record<AiAccountProvider, { accounts: AiAccount[]; adding: boolean }>;
+}
+
+export interface AiAccountsDesktopApi {
+  list: () => Promise<AiAccountsState>;
+  /** Keeps the account in use and starts a fresh sign-in for another one. */
+  add: (provider: AiAccountProvider) => Promise<AiAccountsState>;
+  /** Coworkers on this AI use this account from now on (the AI restarts on it). */
+  use: (provider: AiAccountProvider, id: string) => Promise<AiAccountsState>;
+  remove: (provider: AiAccountProvider, id: string) => Promise<AiAccountsState>;
+}
+
 export interface GeminiAccountsDesktopApi {
   list: () => Promise<GeminiAccountsState>;
   /** Adds a Google account and starts its sign-in; progress arrives as provider-setup events. */
@@ -1139,6 +1206,8 @@ export interface ProviderSetupDesktopApi {
   submitCode: (provider: AgentProviderId, code: string) => Promise<ProviderSetupState>;
   setApiKey: (provider: AgentProviderId, apiKey: string) => Promise<ProviderSetupState>;
   check: (provider: AgentProviderId) => Promise<ProviderSetupState>;
+  /** Signs Sahkarmi out of the provider; coworkers, chats and files stay as they are. */
+  disconnect: (provider: AgentProviderId) => Promise<ProviderSetupState>;
   onEvent: (listener: (state: ProviderSetupState) => void) => () => void;
 }
 
@@ -1151,6 +1220,12 @@ export interface PermissionPolicyState {
    * and anything set to "Block" stays blocked.
    */
   autoMode: boolean;
+  /**
+   * "Ask me less": everyday steps on this computer run by themselves (making and changing
+   * files, downloads, ordinary commands). Deleting, installing, internet commands, messages,
+   * posting, money, account changes and government forms still ask. Narrower than auto mode.
+   */
+  askLess?: boolean;
 }
 
 export interface PermissionAuditEntry {
@@ -1196,6 +1271,18 @@ export type ScheduleCadence =
   | { kind: "weekdays"; time: string }
   | { kind: "weekly"; day: Weekday; time: string };
 
+/**
+ * Why a scheduled task or routine did not run on time, kept until its next on-time run:
+ * late (Sahkarmi was closed or the computer slept), paused (all coworkers paused), busy (the
+ * previous run was still going) or failed (it could not be started).
+ */
+export interface RunNote {
+  kind: "late" | "paused" | "busy" | "failed";
+  at: string;
+  dueAt?: string;
+  detail?: string;
+}
+
 export interface ScheduledTask {
   id: string;
   botId: string;
@@ -1205,6 +1292,8 @@ export interface ScheduledTask {
   createdAt: string;
   lastRunAt: string | null;
   nextRunAt: string | null;
+  /** Why the last run was late or waited; null after an on-time run. */
+  lastNote?: RunNote | null;
 }
 
 /** Routines also accept "every N minutes" (N >= 1; under 5 needs explicit confirmation). */
@@ -1259,6 +1348,8 @@ export interface Routine {
   createdAt: string;
   lastRunAt: string | null;
   nextRunAt: string | null;
+  /** Why the last run was late or waited; null after an on-time run. */
+  lastNote?: RunNote | null;
 }
 
 export type RoutineStepStatus = "queued" | "running" | "waiting" | "done" | "failed" | "skipped";
@@ -1587,6 +1678,11 @@ export interface SendMessageInput {
    * (Codex/Claude) instead of waiting. Only the composer sets it; everything else queues.
    */
   steer?: boolean;
+  /**
+   * A job typed or spoken on Home: the coworker's AI first says what it understood, asks only
+   * what it cannot guess, and may pass the job to a better-suited coworker.
+   */
+  understandFirst?: boolean;
   /** Set by the app (never the renderer) for messages it sends on the owner's behalf. */
   origin?: MessageOrigin;
   /** Set by the app (never the renderer): the owner sent this from their phone. Labels only. */
@@ -1758,6 +1854,14 @@ export interface OrchestratorRun {
   plannedBy?: "ceo" | "template";
   /** Revised plans made after a failure (at most 2). */
   replans?: number;
+  /** The model and effort the owner chose for the team (new team members and the lead). */
+  model?: AgentModelId | null;
+  reasoningEffort?: AgentReasoningEffort | null;
+  /** The coworker that planned the run: the workspace CEO or the team's own lead. */
+  leadBotId?: string | null;
+  leadName?: string | null;
+  /** Every task's result in order, put together when the run ends. */
+  report?: string | null;
 }
 
 export interface OrchestratorWait {
@@ -1773,6 +1877,9 @@ export interface StartOrchestratorRunInput {
   forcedStrategy?: TaskExecutionStrategy;
   /** The owner's own check (e.g. "npm test"), run after each task through the permission rules. */
   checkCommand?: string | null;
+  /** The model and effort for the team's own members and lead; coworkers you have keep theirs. */
+  model?: AgentModelId | null;
+  reasoningEffort?: AgentReasoningEffort | null;
 }
 
 export interface RespondToPromptInput {
@@ -2029,6 +2136,8 @@ export interface PermissionsDesktopApi {
   audit: () => Promise<PermissionAuditEntry[]>;
   clearAudit: () => Promise<void>;
   setAutoMode: (enabled: boolean) => Promise<PermissionPolicyState>;
+  /** Optional: older preloads do not have it. */
+  setAskLess?: (enabled: boolean) => Promise<PermissionPolicyState>;
 }
 
 export interface UsageDesktopApi {
@@ -2227,6 +2336,12 @@ export interface EngineSettings {
   memoryWarnPercent: number;
   /** The most steps (tool calls) one Claude turn may take before it pauses (50-1000). */
   maxStepsPerTurn: number;
+  /**
+   * The owner's backup order of AIs. When a coworker's AI runs out of its limit, the same job
+   * carries on with the next AI in this list that is ready, with a note of the work so far.
+   * Empty (the default): only that one message is answered on the free model.
+   */
+  backupOrder?: AgentProviderId[];
 }
 
 export type ConcurrencyMode = "fixed" | "auto";
@@ -2364,6 +2479,8 @@ export interface SahkarmiDesktopApi {
   permissions: PermissionsDesktopApi;
   providerSetup: ProviderSetupDesktopApi;
   geminiAccounts: GeminiAccountsDesktopApi;
+  aiAccounts: AiAccountsDesktopApi;
+  pins: PinsDesktopApi;
   usage: UsageDesktopApi;
   features: FeaturesDesktopApi;
   business: BusinessDesktopApi;

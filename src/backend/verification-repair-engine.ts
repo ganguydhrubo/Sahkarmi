@@ -22,6 +22,11 @@ export interface VerificationCheckOptions {
   workspacePath: string;
   /** The Shared folder, for names like "Shared/report.pdf" or absolute paths inside it. */
   sharedRoot?: string | null;
+  /**
+   * The folder a team-run task was told to save into (Shared/team-runs/<run>/<task>): a bare
+   * name like "price-list.txt" in the reply is looked up there too.
+   */
+  taskFolder?: string | null;
   /** The coworker's final reply, where it says which files it made. */
   reply?: string | null;
   /** The owner's own check for this run (e.g. "npm test"), run only through the permission gate. */
@@ -58,6 +63,9 @@ export function claimedFiles(reply: string | null | undefined): string[] {
   const add = (candidate: string) => {
     const trimmed = candidate.trim().replace(/[.,;:)]+$/, "");
     if (!trimmed || /^(?:e\.g|i\.e)\b/i.test(trimmed)) return;
+    // A file type on its own (".xlsx"), a choice ("a.xlsx|.xls") or a pattern ("*.csv")
+    // describes files; it does not claim one was made.
+    if (/[|*?<>{}]/.test(trimmed) || /(?:^|[\\/])\.[A-Za-z0-9]+$/.test(trimmed)) return;
     if (new RegExp(`\\.(?:${FILE_EXTENSIONS})$`, "i").test(trimmed)) found.add(trimmed);
   };
   for (const match of text.matchAll(QUOTED)) add(match[1] ?? "");
@@ -80,6 +88,7 @@ function candidatePaths(name: string, options: VerificationCheckOptions): string
       : null;
   }
   const paths = [join(options.workspacePath, cleaned)];
+  if (options.taskFolder) paths.push(join(options.taskFolder, cleaned));
   const shared = /^shared[\\/](.+)$/i.exec(cleaned);
   if (options.sharedRoot) {
     paths.push(

@@ -459,9 +459,13 @@ export class BotStore {
   }
 
   async createBot(workspaceId = this.#state.activeWorkspaceId): Promise<BotSummary> {
-    this.#requireWorkspace(workspaceId);
+    const workspace = this.#requireWorkspace(workspaceId);
+    const first = !this.#state.bots.some((bot) => bot.workspaceId === workspaceId);
     const record = this.#createRecord(`bot-${randomUUID()}`, "New coworker", "", "", workspaceId);
     this.#state.bots.unshift(record);
+    // The first coworker of an empty workspace leads it as CEO, so a new team is never without
+    // someone to share out the work. The owner can change or remove the CEO at any time.
+    if (first && !workspace.ceoBotId) workspace.ceoBotId = record.id;
     await mkdir(record.workspacePath, { recursive: true, mode: 0o700 });
     await this.#persist();
     return { ...record };
@@ -518,6 +522,15 @@ export class BotStore {
     const bot = this.#requireBot(id);
     if (runtime) bot.pendingRuntime = { ...runtime };
     else delete bot.pendingRuntime;
+    bot.updatedAt = new Date().toISOString();
+    await this.#persist();
+  }
+
+  /** The coworker's next message starts a new chat on the same AI (a repeated job's clean chat). */
+  async clearThread(id: string): Promise<void> {
+    const bot = this.#requireBot(id);
+    if (bot.threadId === null) return;
+    bot.threadId = null;
     bot.updatedAt = new Date().toISOString();
     await this.#persist();
   }
