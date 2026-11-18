@@ -7,7 +7,7 @@
   <meta name="description" content="Free, open-source AI that uses your Windows PC: a team of AI coworkers that browse websites, use desktop apps, research and write, and ask before they post or pay." />
   <link rel="canonical" href="https://sahkarmi.site/" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-  <meta name="theme-color" content="#0F1220" />
+  <meta name="theme-color" content="#FBF7F0" />
   <meta name="sahkarmi-download-notify" content="" />
   <script src="/assets/download-notify.js" defer></script>
   <meta name="color-scheme" content="dark light" />
@@ -908,9 +908,17 @@
     @media (min-width: 901px) and (max-width: 1180px) { .nav a { padding: 8px 8px; font-size: 14.5px; } }
     @media (min-width: 901px) and (max-width: 1040px) { .nav-mid { display: none; } }
   </style>
+  <link rel="preload" as="image" href="/assets/cinema/dawn-poster.webp" />
+  <link rel="stylesheet" href="/assets/cinema.css" />
+  <script>try{if(sessionStorage.getItem("cine"))document.documentElement.classList.add("cine-seen");else sessionStorage.setItem("cine","1")}catch(e){}</script>
 </head>
 <body>
   <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+  <div class="cine-progress" aria-hidden="true"></div>
+  <div class="cine-grain" aria-hidden="true"></div>
+  <div class="letterbox letterbox-top" aria-hidden="true"></div>
+  <div class="letterbox letterbox-bottom" aria-hidden="true"></div>
+  <p class="cine-title-card" aria-hidden="true"><span data-i18n="cineCard">One working day in India</span></p>
 
   <header class="site-header">
     <div class="wrap">
@@ -952,6 +960,13 @@
   <main id="main">
     <!-- Hero -->
     <section class="hero hero-campaign">
+      <video class="scene-video" muted loop playsinline preload="none" poster="/assets/cinema/dawn-poster.webp" aria-hidden="true" tabindex="-1">
+        <source src="/assets/cinema/dawn-480.mp4" type="video/mp4" media="(max-width: 760px)" />
+        <source src="/assets/cinema/dawn.mp4" type="video/mp4" />
+      </video>
+      <div class="scene-veil" aria-hidden="true"></div>
+      <div class="scene-lamp" aria-hidden="true"></div>
+      <div class="petals" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
@@ -1009,6 +1024,16 @@
     </section>
 
     <!-- Video library teaser -->
+    <figure class="scene" id="scene-morning">
+      <img src="/assets/cinema/scene-shop-1920.webp" srcset="/assets/cinema/scene-shop-960.webp 960w, /assets/cinema/scene-shop-1920.webp 1920w" sizes="100vw" width="1920" height="1072" loading="lazy" decoding="async" alt="A shop owner in a cotton saree smiles at her laptop at the counter of her grocery shop, a cup of chai in her hand." />
+      <span class="scene-note" data-i18n="cineAi">Picture made with AI</span>
+      <figcaption>
+        <span class="scene-time" data-i18n="sc1Time">9:00 AM</span>
+        <span class="scene-line" data-i18n="sc1Line">The shop opens. The day's report is already waiting.</span>
+        <span class="scene-sub" data-i18n="sc1Sub">Routines run at the time you set. The sales report and today's posts are ready for your yes before the first customer walks in.</span>
+      </figcaption>
+    </figure>
+
     <section id="videos" class="vteaser" aria-labelledby="vt-h">
       <div class="wrap">
         <div class="vteaser-head reveal">
@@ -1211,6 +1236,16 @@
     </section>
 
     <!-- Learns -->
+    <figure class="scene" id="scene-noon">
+      <img src="/assets/cinema/scene-office-1920.webp" srcset="/assets/cinema/scene-office-960.webp 960w, /assets/cinema/scene-office-1920.webp 1920w" sizes="100vw" width="1920" height="1072" loading="lazy" decoding="async" alt="A young accountant works calmly at his desk in a small office, with tidy files, a tiffin box and a cup of tea beside his laptop." />
+      <span class="scene-note" data-i18n="cineAi">Picture made with AI</span>
+      <figcaption>
+        <span class="scene-time" data-i18n="sc2Time">1:00 PM</span>
+        <span class="scene-line" data-i18n="sc2Line">Lunch is on time today.</span>
+        <span class="scene-sub" data-i18n="sc2Sub">Invoices, follow-ups and replies are with your AI coworkers. Explain your way of working once; the team remembers it.</span>
+      </figcaption>
+    </figure>
+
     <section id="learns" aria-labelledby="ln-h">
       <div class="wrap">
         <div class="section-head reveal">
@@ -1428,6 +1463,16 @@
     </section>
 
     <!-- Team -->
+    <figure class="scene" id="scene-evening">
+      <img src="/assets/cinema/scene-saree-1920.webp" srcset="/assets/cinema/scene-saree-960.webp 960w, /assets/cinema/scene-saree-1920.webp 1920w" sizes="100vw" width="1920" height="1072" loading="lazy" decoding="async" alt="The owner of a handloom saree shop stands at his shop door in the evening light and looks at his phone with a small smile." />
+      <span class="scene-note" data-i18n="cineAi">Picture made with AI</span>
+      <figcaption>
+        <span class="scene-time" data-i18n="sc3Time">5:00 PM</span>
+        <span class="scene-line" data-i18n="sc3Line">One look at the phone is enough.</span>
+        <span class="scene-sub" data-i18n="sc3Sub">See the day's work from your phone and give the next job by message. The work happens on your own PC.</span>
+      </figcaption>
+    </figure>
+
     <section id="team" aria-labelledby="team-h">
       <div class="wrap">
         <div class="section-head reveal">
@@ -1572,6 +1617,16 @@
     </section>
 
     <!-- Privacy, security, open source -->
+    <figure class="scene" id="scene-night">
+      <img src="/assets/cinema/scene-home-1920.webp" srcset="/assets/cinema/scene-home-960.webp 960w, /assets/cinema/scene-home-1920.webp 1920w" sizes="100vw" width="1920" height="1072" loading="lazy" decoding="async" alt="A family sits together on a charpai on their terrace at dusk, sharing chai, with small clay lamps glowing along the wall." />
+      <span class="scene-note" data-i18n="cineAi">Picture made with AI</span>
+      <figcaption>
+        <span class="scene-time" data-i18n="sc4Time">8:00 PM</span>
+        <span class="scene-line" data-i18n="sc4Line">Home on time.</span>
+        <span class="scene-sub" data-i18n="sc4Sub">Nothing is sent, paid or deleted without your yes. Your data stays on your own PC, and your evening stays with your family.</span>
+      </figcaption>
+    </figure>
+
     <section id="privacy" aria-labelledby="priv-h">
       <div class="wrap">
         <div class="section-head reveal">
@@ -1594,6 +1649,11 @@
     <!-- Final call -->
     <section class="go" aria-labelledby="go-h">
       <div class="aurora soft" aria-hidden="true"><i></i><i></i><i></i></div>
+      <video class="go-film" muted loop playsinline preload="none" poster="/assets/cinema/dusk-poster.webp" aria-hidden="true" tabindex="-1">
+        <source src="/assets/cinema/dusk-480.mp4" type="video/mp4" media="(max-width: 760px)" />
+        <source src="/assets/cinema/dusk.mp4" type="video/mp4" />
+      </video>
+      <div class="go-veil" aria-hidden="true"></div>
       <div class="wrap go-inner reveal">
         <p class="eyebrow" data-i18n="goEyebrow">Ready when you are</p>
         <h2 id="go-h" data-i18n="goH2">Your AI team is ready to start.</h2>
@@ -1752,6 +1812,21 @@
     const STRINGS = {
       en: {
         skip: "Skip to content",
+        cineCard: "One working day in India",
+        cineAi: "Picture made with AI",
+        cineSound: "Music",
+        sc1Time: "9:00 AM",
+        sc1Line: "The shop opens. The day's report is already waiting.",
+        sc1Sub: "Routines run at the time you set. The sales report and today's posts are ready for your yes before the first customer walks in.",
+        sc2Time: "1:00 PM",
+        sc2Line: "Lunch is on time today.",
+        sc2Sub: "Invoices, follow-ups and replies are with your AI coworkers. Explain your way of working once; the team remembers it.",
+        sc3Time: "5:00 PM",
+        sc3Line: "One look at the phone is enough.",
+        sc3Sub: "See the day's work from your phone and give the next job by message. The work happens on your own PC.",
+        sc4Time: "8:00 PM",
+        sc4Line: "Home on time.",
+        sc4Sub: "Nothing is sent, paid or deleted without your yes. Your data stays on your own PC, and your evening stays with your family.",
         navSee: "See it working",
         navHow: "How it works",
         navFeatures: "Features",
@@ -2237,6 +2312,21 @@
       },
       hi: {
         skip: "सामग्री पर जाएँ",
+        cineCard: "भारत में काम का एक दिन",
+        cineAi: "AI से बनी तस्वीर",
+        cineSound: "संगीत",
+        sc1Time: "सुबह 9:00",
+        sc1Line: "दुकान खुलती है। दिन की रिपोर्ट पहले से तैयार है।",
+        sc1Sub: "रूटीन आपके तय किए समय पर चलते हैं। पहला ग्राहक आने से पहले बिक्री रिपोर्ट और आज की पोस्ट आपकी हाँ के लिए तैयार रहती हैं।",
+        sc2Time: "दोपहर 1:00",
+        sc2Line: "आज खाना समय पर।",
+        sc2Sub: "इनवॉइस, फ़ॉलो-अप और जवाब आपके AI सहकर्मी सँभालते हैं। काम का अपना तरीका एक बार समझाइए; टीम उसे याद रखती है।",
+        sc3Time: "शाम 5:00",
+        sc3Line: "फ़ोन पर एक नज़र काफ़ी है।",
+        sc3Sub: "दिन भर का काम फ़ोन पर देखिए और अगला काम संदेश से दीजिए। काम आपके अपने PC पर होता है।",
+        sc4Time: "रात 8:00",
+        sc4Line: "समय पर घर।",
+        sc4Sub: "आपकी हाँ के बिना कुछ भी भेजा, चुकाया या मिटाया नहीं जाता। आपका डेटा आपके PC पर रहता है, और आपकी शाम आपके परिवार के साथ।",
         navSee: "इसे काम करते देखें",
         navHow: "यह कैसे काम करता है",
         navFeatures: "फ़ीचर",
@@ -2982,6 +3072,8 @@
       }).observe(heroButton);
     }
   </script>
+  <button type="button" class="sound" aria-pressed="false" data-src="/assets/cinema/theme.mp3"><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-label" data-i18n="cineSound">Music</span></button>
+  <script src="/assets/cinema.js" defer></script>
   <script type="importmap">{ "imports": { "three": "/assets/3d/three.module.min.js" } }</script>
   <script type="module" src="/assets/crew.js"></script>
 </body>
