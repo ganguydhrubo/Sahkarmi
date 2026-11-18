@@ -154,7 +154,7 @@ function page(input: PageInput) {
   <meta name="description" content="${escapeHtml(input.description)}" />
   <link rel="canonical" href="${url}" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-video-preview:-1" />
-  <meta name="theme-color" content="#0F1220" />
+  <meta name="theme-color" content="#FBF7F0" />
   <meta name="sahkarmi-download-notify" content="" />
   <script src="/assets/download-notify.js" defer></script>
   <meta name="color-scheme" content="dark light" />
