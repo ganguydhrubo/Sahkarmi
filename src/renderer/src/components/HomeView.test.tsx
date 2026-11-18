@@ -123,7 +123,9 @@ describe("Home", () => {
 
     await fireEvent.click(screen.getByRole("button", { name: "Start" }));
     await waitFor(() => expect(onOpenBot).toHaveBeenCalledWith("acc"));
-    expect(onSend).toHaveBeenCalledWith("acc", expect.any(String), []);
+    expect(onSend).toHaveBeenCalledWith("acc", expect.any(String), [], {
+      understandFirst: false,
+    });
     expect(onSend.mock.calls[0][1]).toContain("payment reminders");
     // The job is remembered, so it comes first next time.
     expect(starterUseCounts()).toEqual({ "shop-payment-reminder": 1 });
@@ -153,6 +155,8 @@ describe("Home", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Start" }));
     await waitFor(() => expect(onSend).toHaveBeenCalled());
     expect(onSend.mock.calls[0][0]).toBe("lead");
+    // Typed words, not a ready job: the coworker's AI reads them first.
+    expect(onSend.mock.calls[0][3]).toEqual({ understandFirst: true });
   });
 
   it("keeps a recorded voice note and sends it with the job", async () => {
@@ -164,7 +168,7 @@ describe("Home", () => {
     expect(start).toBeEnabled();
     await fireEvent.click(start);
     await waitFor(() => expect(onSend).toHaveBeenCalled());
-    expect(onSend.mock.calls[0]).toEqual(["lead", "", ["draft-1"]]);
+    expect(onSend.mock.calls[0]).toEqual(["lead", "", ["draft-1"], { understandFirst: false }]);
   });
 
   it("sends a big job to a team by itself when that is switched on, unless the owner says no", async () => {

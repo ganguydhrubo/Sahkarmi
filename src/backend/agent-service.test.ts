@@ -2323,6 +2323,27 @@ describe.sequential("AgentService", () => {
     );
   });
 
+  it("has the AI say what it understood for a job from Home, and shows only the owner's words", async () => {
+    process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "I understood: a Diwali offer post for the shop.";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    await service.initialize();
+    const words = "dukan ka diwali offer post bana do";
+    await service.sendMessage({ botId: "chief", text: words, understandFirst: true });
+    await waitFor(() => service?.listQueue("chief").deliveries[0]?.status === "completed");
+    const start = (await protocolMessages()).find((message) => message.method === "turn/start");
+    const sent = String(
+      (start?.params as { input?: Array<{ text?: string }> } | undefined)?.input?.[0]?.text ?? "",
+    );
+    expect(sent).toContain('starts with the words for "I understood:"');
+    expect(sent.endsWith(words)).toBe(true);
+    const chat = await service.readConversation("chief");
+    expect(chat.messages.some((message) => message.text === words)).toBe(true);
+    expect(chat.messages.some((message) => message.text.includes("Note from Sahkarmi"))).toBe(
+      false,
+    );
+  });
+
   it("caps how many coworkers work at once; the next starts when one finishes", async () => {
     const { store, mailbox } = stores();
     service = new AgentService(store, mailbox, fakeBrowser());

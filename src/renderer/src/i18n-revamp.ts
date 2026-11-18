@@ -138,6 +138,8 @@ export const revampEn = {
     "To give work: open Home or the CEO's chat and say what you want. The other coworkers take work from the CEO or from you.",
   ceoSuggest: "Make {name} the CEO",
   homeWhyCeo: "It is this team's CEO, so it shares the job with the team.",
+  homeAiReads:
+    "Its AI reads your words first, tells you what it understood, and passes the job on if another coworker suits it better.",
   homeBigAuto: "This looks like a big job, so a team will do it.",
   homeBigOne: "Use one coworker instead",
   homeStartTeam: "Start with a team",
@@ -302,6 +304,8 @@ export const revampHi: RevampDictionary = {
     "काम देने के लिए: होम या CEO की चैट खोलें और बताएँ क्या चाहिए। बाक़ी सहकर्मी CEO से या आपसे काम लेते हैं।",
   ceoSuggest: "{name} को CEO बनाएँ",
   homeWhyCeo: "यह इस टीम का CEO है, इसलिए यह काम टीम में बाँटेगा।",
+  homeAiReads:
+    "इसका AI पहले आपके शब्द पढ़ता है, बताता है कि उसने क्या समझा, और अगर कोई दूसरा सहकर्मी ज़्यादा ठीक हो तो काम उसे दे देता है।",
   homeBigAuto: "यह बड़ा काम लगता है, इसलिए इसे टीम करेगी।",
   homeBigOne: "एक ही सहकर्मी से करवाएँ",
   homeStartTeam: "टीम के साथ शुरू करें",
@@ -462,6 +466,8 @@ export const revampBn: RevampDictionary = {
   ceoHow: "কাজ দিতে: হোম বা CEO-র চ্যাট খুলে বলুন কী চান। বাকি সহকর্মীরা CEO বা আপনার কাছ থেকে কাজ নেয়।",
   ceoSuggest: "{name}-কে CEO করুন",
   homeWhyCeo: "এ এই টিমের CEO, তাই সে কাজটি টিমের মধ্যে ভাগ করবে।",
+  homeAiReads:
+    "এর AI আগে আপনার কথা পড়ে, কী বুঝেছে তা জানায়, আর অন্য কোনো সহকর্মী বেশি উপযুক্ত হলে কাজটি তাকে দেয়।",
   homeBigAuto: "এটি বড় কাজ বলে মনে হচ্ছে, তাই একটি টিম এটি করবে।",
   homeBigOne: "একজন সহকর্মীকে দিয়েই করান",
   homeStartTeam: "টিম নিয়ে শুরু করুন",

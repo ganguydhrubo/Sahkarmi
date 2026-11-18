@@ -1076,6 +1076,8 @@ export function App() {
     replyToMessageId: string | null = null,
     /** Typed in the composer: may join the coworker's running turn. */
     steer = false,
+    /** From Home: the coworker's AI says what it understood before it works. */
+    understandFirst = false,
   ): Promise<boolean> {
     const text = body.trim();
     const pendingId = text ? `sending:${++sendSequence}` : null;
@@ -1110,6 +1112,7 @@ export function App() {
         attachmentDraftIds,
         ...(replyToMessageId ? { replyToMessageId } : {}),
         ...(steer ? { steer: true } : {}),
+        ...(understandFirst ? { understandFirst: true } : {}),
       });
       setUiErrors((current) => ({ ...current, [botId]: [] }));
       // The queued message arrives in a snapshot applied on the next frame: swap in that frame.
@@ -1564,8 +1567,15 @@ export function App() {
                       )?.ceoBotId ?? null
                     }
                     pendingApprovals={pendingApprovals().length}
-                    onSend={async (botId, text, attachmentDraftIds) => {
-                      await sendMessageToBot(botId, text, attachmentDraftIds);
+                    onSend={async (botId, text, attachmentDraftIds, options) => {
+                      await sendMessageToBot(
+                        botId,
+                        text,
+                        attachmentDraftIds,
+                        null,
+                        false,
+                        options?.understandFirst === true,
+                      );
                     }}
                     onOpenBot={selectBot}
                     onStartTeam={startTeamRun}

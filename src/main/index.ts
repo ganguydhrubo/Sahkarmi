@@ -3605,6 +3605,7 @@ function parseSendMessage(value: unknown): SendMessageInput {
     replyToMessageId: replyToMessageId?.trim() || null,
     // The composer asks to join a running turn; the renderer can never claim another origin.
     ...(value.steer === true ? { steer: true } : {}),
+    ...(value.understandFirst === true ? { understandFirst: true } : {}),
   };
 }
 

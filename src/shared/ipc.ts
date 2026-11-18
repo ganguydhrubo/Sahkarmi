@@ -1678,6 +1678,11 @@ export interface SendMessageInput {
    * (Codex/Claude) instead of waiting. Only the composer sets it; everything else queues.
    */
   steer?: boolean;
+  /**
+   * A job typed or spoken on Home: the coworker's AI first says what it understood, asks only
+   * what it cannot guess, and may pass the job to a better-suited coworker.
+   */
+  understandFirst?: boolean;
   /** Set by the app (never the renderer) for messages it sends on the owner's behalf. */
   origin?: MessageOrigin;
   /** Set by the app (never the renderer): the owner sent this from their phone. Labels only. */

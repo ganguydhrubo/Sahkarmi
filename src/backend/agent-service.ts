@@ -169,6 +169,7 @@ import type { DesktopHostLike } from "./desktop/desktop-host";
 import { desktopDynamicTools, SAHKARMI_DESKTOP_NAMESPACE } from "./desktop/desktop-tools";
 import type { GeminiAccountSource } from "./gemini-accounts";
 import { GeminiRotation, IdleWatch, pickPrewarmBots } from "./gemini-runtime";
+import { understandFirstPrompt } from "./home-brain";
 import type { ComposioClient } from "./integrations/composio-client";
 import { isActionSensitive } from "./integrations/composio-policy";
 import { ComposioSecurityGuard } from "./integrations/composio-security";
@@ -628,6 +629,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
    * coworker is paused only to read the message, then carries on with the same task.
    */
   readonly #steerInto = new Map<string, string>();
+  /** Messages from Home: the coworker's AI says what it understood before it works. */
+  readonly #understandFirst = new Set<string>();
   readonly #compactionTimers = new Map<string, NodeJS.Timeout>();
   #status: AgentStatus = structuredClone(INITIAL_STATUS);
   readonly #clients = new Map<AgentProvider, AgentClient>();
@@ -2832,6 +2835,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     const delivery = this.#mailbox.getDelivery(receipt.deliveries[0].id);
     if (!delivery) throw new Error("Unable to create queued message.");
+    if (input.understandFirst === true && input.text.trim()) {
+      if (this.#understandFirst.size >= MAX_REMEMBERED_FALLBACKS) this.#understandFirst.clear();
+      this.#understandFirst.add(delivery.delivery.id);
+    }
     if (input.remote === true) {
       this.#remoteMessageIds.add(receipt.messageId);
       if (this.#remoteMessageIds.size > 500) {
@@ -5864,6 +5871,11 @@ ${carryOver}`
           "--- user reply ---",
           delivery.text || "(The reply contains attachments only.)",
         ].join("\n");
+      }
+      if (this.#understandFirst.delete(delivery.id) && delivery.sender.kind === "user") {
+        // Only the CEO, or anyone in a team with no CEO, may pass work to another coworker.
+        const ceo = this.#ceoOf(bot);
+        text = understandFirstPrompt(text, { canHandOver: !ceo || ceo.id === bot.id });
       }
       const steeredFrom = this.#steerInto.get(delivery.id);
       if (steeredFrom !== undefined) {

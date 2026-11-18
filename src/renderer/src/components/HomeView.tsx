@@ -65,7 +65,13 @@ export function HomeView(props: {
   /** The workspace's CEO, when there is one: jobs with no clear owner go to it. */
   ceoBotId: string | null;
   pendingApprovals: number;
-  onSend: (botId: string, text: string, attachmentDraftIds: string[]) => void | Promise<void>;
+  onSend: (
+    botId: string,
+    text: string,
+    attachmentDraftIds: string[],
+    /** Words the owner typed or spoke (not an untouched ready job): the AI reads them first. */
+    options?: { understandFirst: boolean },
+  ) => void | Promise<void>;
   onOpenBot: (botId: string) => void;
   onOpenTeamProject: (goal: string) => void;
   /** Starts a team project with this goal at once (feature "auto-team"). */
@@ -159,7 +165,9 @@ export function HomeView(props: {
     if (!bot || chosen()) return "";
     if (advice()?.botId === bot.id) return advice()?.why ?? "";
     if (byRole()?.id === bot.id) return t("homeWhyRole", { role: bot.role });
-    return bot.id === props.ceoBotId ? t("homeWhyCeo") : t("homeWhyLead");
+    const lead = bot.id === props.ceoBotId ? t("homeWhyCeo") : t("homeWhyLead");
+    // Words the rules could not place: the coworker's AI reads them and decides.
+    return text().trim() && !jobId() ? `${lead} ${t("homeAiReads")}` : lead;
   });
 
   const recent = createMemo(() =>
@@ -204,6 +212,7 @@ export function HomeView(props: {
         bot.id,
         ask,
         files().map((file) => file.id),
+        { understandFirst: Boolean(ask) && !jobId() },
       );
       setFiles([]);
       const started = jobId();
