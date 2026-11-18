@@ -13,6 +13,7 @@ import { marketplaceBn } from "./i18n-marketplace-bn";
 import { mcpBn } from "./i18n-mcp";
 import { memoryBn } from "./i18n-memory";
 import { onboardingBn } from "./i18n-onboarding";
+import { revampBn } from "./i18n-revamp";
 import { safetyBn } from "./i18n-safety";
 import { securityBn } from "./i18n-security";
 import { skillPacksBn } from "./i18n-skill-packs";
@@ -310,6 +311,7 @@ export const bn: Dictionary = {
   ...securityBn,
   ...apisBn,
   ...engineBn,
+  ...revampBn,
   ...safetyBn,
   ...assignBn,
   ...intelligenceBn,

@@ -10,7 +10,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProviderSetupState } from "../shared/ipc";
 import { managedCodexPath, setToolsDirectory } from "./cli";
-import { CODEX_VERSION, ProviderSetup } from "./provider-setup";
+import { CODEX_VERSION, DISCONNECTABLE, ProviderSetup } from "./provider-setup";
 import { SecretCodec, SecretStore } from "./secret-store";
 
 let root: string;
@@ -107,6 +107,11 @@ describe("ProviderSetup", () => {
     expect(state.phase).toBe("idle");
     expect(state.message).toContain("another account");
     await expect(setup.disconnect("opencode")).rejects.toThrow("not available");
+  });
+
+  it("signs out only where the AI's own tool has a sign-out command", () => {
+    // Checked against each vendor's documentation; the rest are signed out in their own app.
+    expect([...DISCONNECTABLE].sort()).toEqual(["claude", "codex", "cursor", "kiro"]);
   });
 
   it("explains a code pasted after the sign-in already ended", () => {

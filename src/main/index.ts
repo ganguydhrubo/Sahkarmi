@@ -2382,6 +2382,7 @@ if (!hasSingleInstanceLock) {
       const features = new FeatureRegistry(app.getPath("userData"));
       mcpServers.setFeatureCheck((id) => features.isEnabled(id));
       service.configureContinuation(() => features.isEnabled("auto-continue"));
+      service.configureLeanRepeats(() => features.isEnabled("lean-repeat-runs"));
       const budgets = new BudgetStore(app.getPath("userData"));
       await budgets.initialize().catch((error) => {
         appLog.write("error", "work limits unreadable; no limits", String(error));

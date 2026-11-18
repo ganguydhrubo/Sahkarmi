@@ -83,6 +83,18 @@ import {
 import { createAntigravityClient, createOpenCodeClient } from "./acp-providers";
 import type { AgentClient, AgentProvider } from "./agent-client";
 import { AgentMemoryStore, MEMORY_PAGE_MAX, memoryCategory } from "./agent-memory-store";
+import {
+  AiSwitchStore,
+  awayNote,
+  friendlyAiName,
+  LimitWatch,
+  limitResetFromText,
+  nextBackup,
+  noteWindowStart,
+  switchNote,
+  WARM_START_PERCENT,
+  withHandover,
+} from "./ai-switch";
 import { API_TOOL_NAMESPACE, type ApiIntegrationService } from "./api-integrations/api-service";
 import { API_TOOL_DEFINITIONS, API_TOOLS_DESCRIPTION } from "./api-integrations/api-tools";
 import type { AppMemoryMonitor } from "./app-memory";
@@ -210,6 +222,15 @@ import {
   socialPlatformForTool,
   socialPlatformForUrl,
 } from "./publishing-accounts";
+import {
+  type RepeatJob,
+  type RepeatJobRef,
+  RepeatJobStore,
+  repeatJobOf,
+  repeatNote,
+  routeOf,
+  withRepeatNote,
+} from "./repeat-jobs";
 import type { ResourceAssignmentStore } from "./resource-assignments";
 import type { RoutineApprovalResult } from "./routine-store";
 import type { NewRunEvent } from "./run-events";
@@ -517,8 +538,39 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       reasoningEffort: BotSummary["reasoningEffort"];
       threadId: string | null;
       fallbackModel?: BotSummary["model"];
+      /** When the coworker left its own AI: what was said after this is told to it on return. */
+      since?: string;
+      /**
+       * The owner's backup order moved the coworker: it stays on the covering AI until its own
+       * AI's limit is back (ms since 1970), instead of going back with the very next message.
+       */
+      stayUntil?: number;
     }
   >();
+  /** Hand-over notes still to deliver, and the earlier chat kept on screen after an AI change. */
+  readonly #aiSwitch: AiSwitchStore;
+  /**
+   * Each coworker's latest task list. A chat re-read drops the plan from the screen copy, but a
+   * move to another AI still needs it for the hand-over note.
+   */
+  readonly #lastPlans = new Map<string, TurnPlan>();
+  /** Repeated jobs (schedules, routines): the route that worked and the latest results. */
+  readonly #repeatJobs: RepeatJobStore;
+  /** Settings > Features: repeated jobs start in a clean chat with their saved route. */
+  #leanRepeats: () => boolean = () => false;
+  /** The note each queued repeat run starts with, and whether it got a clean chat. */
+  readonly #repeatRuns = new Map<
+    string,
+    { ref: RepeatJobRef; note: string | null; lean: boolean }
+  >();
+  /** Coworkers whose chat a repeated job started afresh in this session. */
+  readonly #leanChats = new Set<string>();
+  /** Coworkers being moved because their AI ran out (not because the owner picked a model). */
+  readonly #limitSwitches = new Set<string>();
+  /** AIs that reported a used-up limit lately; the backup order skips them until they are back. */
+  readonly #limitWatch = new LimitWatch();
+  /** When a backup AI was last started ahead of need, per AI near its limit. */
+  readonly #warmStartedAt = new Map<AgentProvider, number>();
   /** The last error text each coworker's turn reported, to recognise a quota failure. */
   readonly #lastTurnError = new Map<string, string>();
   /** Per coworker: how often the current request was continued, and the open steps last seen. */
@@ -661,6 +713,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       log: (_level, line) => this.emit("log", line),
     });
     this.#codexThreads = new CodexThreadLedger(store.userDataPath);
+    this.#aiSwitch = new AiSwitchStore(store.userDataPath);
+    this.#repeatJobs = new RepeatJobStore(store.userDataPath);
     this.#mailbox = mailbox;
     this.#browser = browser;
     this.#approvals = approvals;
@@ -925,7 +979,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   }
 
   getStatus(): AgentStatus {
-    return structuredClone(this.#status);
+    const status = structuredClone(this.#status);
+    for (const provider of status.providers ?? []) {
+      const until = this.#limitWatch.until(provider.id);
+      if (until !== null) provider.limitedUntil = new Date(until).toISOString();
+    }
+    return status;
   }
 
   async getUsage(): Promise<AccountUsage> {
@@ -2198,6 +2257,19 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       input.description !== undefined ||
       input.model !== undefined ||
       input.reasoningEffort !== undefined;
+    if (
+      previous &&
+      input.model !== undefined &&
+      providerForModel(input.model) !== providerForBot(previous)
+    ) {
+      // The new AI starts a fresh chat: keep the earlier chat on screen and write the hand-over
+      // note it gets with its first message, so it carries on instead of starting again.
+      await this.#rememberBeforeSwitch(
+        previous,
+        providerForModel(input.model),
+        this.#limitSwitches.has(previous.id) ? "limit" : "owner",
+      );
+    }
     const bot = await this.#store.updateBot(input);
     if (previous?.threadId && !bot.threadId) {
       this.#threadToBot.delete(previous.threadId);
@@ -2219,6 +2291,69 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     }
     this.#emit({ type: "bots-changed", bots: this.#store.list() });
     return bot;
+  }
+
+  /**
+   * Called just before a coworker's chat moves to another AI. Takes what is on screen (or, for a
+   * chat not opened since start-up, a short read from the old AI), keeps it as the earlier chat
+   * and stores the hand-over note for the new AI's first message. Never blocks the move.
+   */
+  async #rememberBeforeSwitch(
+    bot: BotSummary,
+    to: AgentProvider,
+    reason: "owner" | "limit",
+  ): Promise<void> {
+    try {
+      const from = providerForBot(bot);
+      const live = this.#snapshots.get(bot.id) ?? null;
+      let messages = live?.messages ?? [];
+      const hasReply = (list: ConversationMessage[]) =>
+        list.some((message) => message.author === "assistant" && message.text.trim());
+      if (bot.threadId && !hasReply(messages)) {
+        const client = this.#clients.get(from) ?? this.#dormantClients.get(from);
+        if (client) {
+          try {
+            const response = await client.request<ThreadResponse>(
+              "thread/read",
+              { threadId: bot.threadId, includeTurns: true },
+              SWITCH_READ_TIMEOUT_MS,
+            );
+            const read = snapshotFromThread(bot.id, response.thread, (deliveryId) =>
+              this.#mailbox.getDelivery(deliveryId),
+            );
+            this.#syncMailboxMessages(read);
+            messages = read.messages;
+          } catch {
+            // The old AI is signed out or stopped: hand over what is known.
+          }
+        }
+      }
+      // What the job has already produced on disk: the new AI must reuse it, not make it again.
+      const jobStart = noteWindowStart(messages);
+      let files: string[] = [];
+      if (jobStart !== null) {
+        files = await deliverableFiles({
+          roots: [bot.workspacePath, this.#store.sharedRoot],
+          excludeRoots: [join(this.#store.sharedRoot, "Transfers")],
+          since: jobStart - 1_000,
+        }).catch(() => []);
+      }
+      const note = switchNote({
+        messages,
+        from,
+        to,
+        reason,
+        plan: live?.plan ?? this.#lastPlans.get(bot.id) ?? null,
+        files,
+      });
+      await this.#aiSwitch.remember(bot.id, bot.threadId, messages);
+      await this.#aiSwitch.setPending(
+        bot.id,
+        note ? { note, from, to, at: new Date().toISOString() } : null,
+      );
+    } catch (error) {
+      this.emit("log", `hand-over note for ${bot.id} skipped: ${String(error)}`);
+    }
   }
 
   /** Work that has begun: a turn in progress or a delivery that is starting. Queued messages wait. */
@@ -2247,6 +2382,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     await this.#approvals?.deleteBotData(botId);
     this.#desktop?.forgetBot(botId);
     await this.#store.deleteBot(botId);
+    this.#ownRuntime.delete(botId);
+    this.#lastPlans.delete(botId);
+    await this.#aiSwitch.forget(botId);
+    await this.#repeatJobs.forgetBot(botId);
     for (const [id, pending] of this.#secureInputs) {
       if (pending.request.botId === botId) {
         this.#secureInputs.delete(id);
@@ -2295,6 +2434,19 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
 
   async initialize(): Promise<void> {
     await this.#loadDeliverables();
+    await this.#aiSwitch.load();
+    await this.#repeatJobs.load();
+    // Coworkers that were on a backup AI when Sahkarmi closed go back when their limit ends.
+    for (const [botId, cover] of Object.entries(this.#aiSwitch.covers())) {
+      this.#ownRuntime.set(botId, {
+        model: cover.model as BotSummary["model"],
+        reasoningEffort: cover.reasoningEffort as BotSummary["reasoningEffort"],
+        threadId: cover.threadId,
+        fallbackModel: cover.coveringModel as BotSummary["model"],
+        since: cover.since,
+        stayUntil: cover.stayUntil,
+      });
+    }
     this.#stopping = false;
     await Promise.all([
       this.#store.initialize(),
@@ -5084,6 +5236,7 @@ ${carryOver}`
           return text ? [{ text, status: planStepStatus(getString(entry, "status")) }] : [];
         }),
       };
+      this.#lastPlans.set(senderBotId, snapshot.plan);
       this.#emitConversation(snapshot);
       return {
         success: true,
@@ -5417,6 +5570,8 @@ ${carryOver}`
         return;
       }
       await this.#restoreOwnRuntime(botId, context);
+      await this.#moveAheadOfLimit(botId);
+      await this.#prepareRepeatRun(botId, context);
       this.#recordBudgetTurn(botId);
       await this.#startDelivery(context);
     } finally {
@@ -5749,6 +5904,12 @@ ${carryOver}`
           this.emit("log", `team memory for ${bot.id} failed: ${String(error)}`);
         }
       }
+      // First message after a move to another AI: the new AI gets the hand-over note with it.
+      const handover = this.#aiSwitch.pending(bot.id);
+      if (handover?.to === providerForBot(bot)) text = withHandover(handover.note, text);
+      // A job that has run before starts with the route that worked, not with a blank mind.
+      const repeat = this.#repeatRuns.get(delivery.id);
+      if (repeat?.note) text = withRepeatNote(repeat.note, text);
       this.#turnStartedAt.set(bot.id, Date.now() - 1_000);
       this.#noteProgress(bot.id);
       const input: Array<Record<string, unknown>> = [{ type: "text", text }];
@@ -5796,6 +5957,8 @@ ${carryOver}`
           sandboxPolicy: { type: "dangerFullAccess" },
         },
       );
+      // The note went with this turn (or was written for an AI the coworker has left again).
+      if (handover) await this.#aiSwitch.setPending(bot.id, null);
       // Fast turns (and busy machines) can deliver turn/completed before the turn/start
       // response. Marking a finished turn active again left the coworker "busy" forever, so
       // nothing queued for it (steering messages, teammates' requests) could ever start.
@@ -6042,6 +6205,14 @@ ${carryOver}`
         changed = true;
       }
     }
+    // The chat before this coworker moved to another AI stays on screen. Back on the chat the
+    // messages were said in (a coworker returned to its own AI), that chat has them itself.
+    for (const item of this.#aiSwitch.earlier(snapshot.botId)) {
+      if (item.threadId === snapshot.threadId || indexes.has(item.message.id)) continue;
+      indexes.set(item.message.id, snapshot.messages.length);
+      snapshot.messages.push({ ...item.message });
+      changed = true;
+    }
     const reactions = this.#mailbox.reactionsFor(snapshot.botId);
     for (const message of snapshot.messages) {
       const reaction = reactions.get(message.id) ?? null;
@@ -6172,6 +6343,15 @@ ${carryOver}`
           "Claude Agent SDK rate_limit_event",
         ),
       });
+      this.#warmStartBackup(
+        provider,
+        Math.max(
+          -1,
+          ...(limits as ClaudePlanLimit[]).map((limit) =>
+            isRecord(limit) && typeof limit.usedPercent === "number" ? limit.usedPercent : -1,
+          ),
+        ),
+      );
       return;
     }
     const context = getRecord(params, "context");
@@ -6296,6 +6476,7 @@ ${carryOver}`
             return text ? [{ text, status: planStepStatus(getString(entry, "status")) }] : [];
           }),
         };
+        this.#lastPlans.set(botId, snapshot.plan);
         this.#emitUpsert(snapshot, null);
         return;
       }
@@ -6347,6 +6528,11 @@ ${carryOver}`
         const turnId = getString(turn, "id");
         if (!turnId) return;
         const status = getString(turn, "status") ?? "completed";
+        // A failed turn carries its error too; keep it when no "error" notice came before it.
+        if (status === "failed" && !this.#lastTurnError.has(botId)) {
+          const reason = agentErrorText(turn);
+          if (reason) this.#lastTurnError.set(botId, reason);
+        }
         if (this.#contextBudgets.get(threadId)?.compactionTurnId === turnId) {
           this.#finishContextCompaction(botId, threadId, status);
           return;
@@ -6432,7 +6618,7 @@ ${carryOver}`
           this.#emitRetrying(botId, params);
           return;
         }
-        const message = getString(params, "message") ?? notification.method;
+        const message = agentErrorText(params) ?? notification.method;
         if (notification.method === "warning" && isNonActionableCodexWarning(message)) return;
         if (notification.method === "error" && botId) this.#lastTurnError.set(botId, message);
         this.#emitError(`agent_${notification.method}`, message, botId);
@@ -6498,7 +6684,15 @@ ${carryOver}`
     }
     await this.#attachDeliverables(botId, snapshot, turnId, latestAssistant);
     if (latestAssistant) {
-      if (status === "completed") this.#geminiRotation?.forget(botId);
+      if (status === "completed") {
+        this.#geminiRotation?.forget(botId);
+        // An AI that answers is not at its limit (any more).
+        const answered = this.#store.list().find((candidate) => candidate.id === botId);
+        if (answered && this.#limitWatch.limited(providerForBot(answered))) {
+          this.#limitWatch.clear(providerForBot(answered));
+          this.#emit({ type: "status", status: this.getStatus() });
+        }
+      }
       await this.#store.updatePreview(botId, previewText(latestAssistant.text));
       this.#emit({ type: "bots-changed", bots: this.#store.list() });
     } else if (
@@ -6515,7 +6709,9 @@ ${carryOver}`
       const label = bot ? PROVIDER_LABELS[providerForBot(bot)] : "The AI";
       const quotaJustHit = this.#geminiQuotaJustHit();
       const fellBack = delivery
-        ? (quotaJustHit && (await this.#rotateGeminiAccount(botId, delivery))) ||
+        ? (quotaJustHit &&
+            ((await this.#rotateGeminiAccount(botId, delivery)) ||
+              (await this.#moveToBackup(botId, delivery, "quota used up")))) ||
           (await this.#fallBackToFreeModel(botId, delivery, "sent back an empty reply"))
         : false;
       if (!fellBack) {
@@ -6533,9 +6729,14 @@ ${carryOver}`
       if (reason.includes(NEXT_FREE_MODEL_HINT)) {
         await this.#resendOnNextFreeModel(botId, delivery);
       } else if (reason.includes(FREE_LIMIT_REACHED_HINT)) {
-        await this.#fallBackToOtherFreeProvider(botId, delivery);
+        if (!(await this.#moveToBackup(botId, delivery, "usage limit"))) {
+          await this.#fallBackToOtherFreeProvider(botId, delivery);
+        }
       } else if (isQuotaError(reason)) {
-        if (!(await this.#rotateGeminiAccount(botId, delivery))) {
+        if (
+          !(await this.#rotateGeminiAccount(botId, delivery)) &&
+          !(await this.#moveToBackup(botId, delivery, reason))
+        ) {
           await this.#fallBackToFreeModel(botId, delivery, "is at its usage limit");
         }
       } else if (reason.includes(MCP_SERVER_SKIPPED_HINT)) {
@@ -6550,6 +6751,16 @@ ${carryOver}`
       }
     }
     this.#lastTurnError.delete(botId);
+    if (delivery) {
+      await this.#learnRepeatRun(
+        botId,
+        turnId,
+        status,
+        delivery.delivery,
+        snapshot,
+        latestAssistant?.text ?? "",
+      );
+    }
     this.#recordRunEvent(
       botId,
       turnId,
@@ -6675,6 +6886,133 @@ ${carryOver}`
   /** Lets the app switch automatic continuation off (Settings > Features). */
   configureContinuation(enabled: () => boolean): void {
     this.#continuationEnabled = enabled;
+  }
+
+  /** Lets the app switch the cheaper path for repeated jobs off (Settings > Features). */
+  configureLeanRepeats(enabled: () => boolean): void {
+    this.#leanRepeats = enabled;
+  }
+
+  /** Repeated jobs Sahkarmi has learned, for Settings and tests. */
+  listRepeatJobs(): RepeatJob[] {
+    return structuredClone(this.#repeatJobs.list());
+  }
+
+  /**
+   * A scheduled task or routine that has run before: its message gets the saved route, and its
+   * first step starts in a clean chat, so the earlier runs are not read again with every step.
+   * The earlier chat stays on the owner's screen. Anything unsure keeps the old behaviour.
+   */
+  async #prepareRepeatRun(botId: string, context: DeliveryContext): Promise<void> {
+    const { delivery } = context;
+    if (this.#repeatRuns.has(delivery.id)) return;
+    const ref = repeatJobOf(delivery);
+    if (!ref) return;
+    // Runs that never ended (cancelled, deleted) must not pile up here.
+    if (this.#repeatRuns.size >= MAX_REMEMBERED_FALLBACKS) {
+      const oldest = this.#repeatRuns.keys().next().value;
+      if (oldest !== undefined) this.#repeatRuns.delete(oldest);
+    }
+    const job = this.#repeatJobs.get(ref.key);
+    if (!this.#leanRepeats() || !job || job.runs < 1) {
+      // Still remembered, so this run is learned from when it ends.
+      this.#repeatRuns.set(delivery.id, { ref, note: null, lean: false });
+      return;
+    }
+    let cleanChat = false;
+    try {
+      if (ref.step === 1) cleanChat = await this.#startCleanChat(botId, delivery.id);
+    } catch (error) {
+      this.emit("log", `clean chat for repeated job of ${botId} skipped: ${String(error)}`);
+    }
+    // Later steps of a routine run on in the chat its first step started.
+    const lean = cleanChat || (ref.step > 1 && this.#leanChats.has(botId));
+    this.#repeatRuns.set(delivery.id, {
+      ref,
+      note: repeatNote({ job, ref, cleanChat }),
+      lean,
+    });
+    if (cleanChat) {
+      this.#emit({
+        type: "notice",
+        botId,
+        code: "repeat_job_lean",
+        message: `This job has run ${job.runs === 1 ? "once" : `${job.runs} times`} before, so it starts in a clean chat with its saved steps instead of reading the old runs again. That uses far fewer tokens. Your earlier chat is still here.`,
+      });
+    }
+  }
+
+  /**
+   * Gives the coworker a new chat on the same AI, keeping what is on screen as the earlier chat.
+   * Only when nothing else is waiting for it and the chat on screen is complete; else false.
+   */
+  async #startCleanChat(botId: string, deliveryId: string): Promise<boolean> {
+    const bot = this.#store.list().find((candidate) => candidate.id === botId);
+    if (!bot?.threadId || this.#snapshots.get(botId)?.activeTurnId) return false;
+    const waiting = this.#mailbox
+      .listQueue(botId)
+      .deliveries.filter(
+        (item) =>
+          item.id !== deliveryId &&
+          (item.status === "queued" || item.status === "starting" || item.status === "running"),
+      );
+    if (waiting.length > 0) return false;
+    const snapshot = await this.#readConversationLive(botId);
+    if (snapshot.threadId !== bot.threadId || snapshot.activeTurnId) return false;
+    // A chat that could not be read must not be left behind: its replies would vanish.
+    if (!snapshot.messages.some((message) => message.author === "assistant")) return false;
+    const oldThreadId = bot.threadId;
+    await this.#aiSwitch.remember(botId, oldThreadId, snapshot.messages);
+    await this.#store.clearThread(botId);
+    this.#threadToBot.delete(oldThreadId);
+    this.#loadedThreads.delete(oldThreadId);
+    this.#freshReads.delete(botId);
+    this.#sentMemories.forget(oldThreadId);
+    this.#contextBudgets.delete(oldThreadId);
+    this.#snapshots.set(botId, {
+      botId,
+      threadId: null,
+      activeTurnId: null,
+      revision: snapshot.revision + 1,
+      messages: [],
+    });
+    this.#leanChats.add(botId);
+    this.emit("log", `repeated job of ${botId} starts in a clean chat (was ${oldThreadId})`);
+    this.#emit({ type: "bots-changed", bots: this.#store.list() });
+    return true;
+  }
+
+  /** A repeated job's step ended: learn its route and results for the next run. */
+  async #learnRepeatRun(
+    botId: string,
+    turnId: string,
+    status: string,
+    delivery: QueueDelivery,
+    snapshot: ConversationSnapshot,
+    replyText: string,
+  ): Promise<void> {
+    const run = this.#repeatRuns.get(delivery.id);
+    if (!run) return;
+    this.#repeatRuns.delete(delivery.id);
+    if (status === "interrupted") return;
+    const tokens = this.#turnTokens.get(botId);
+    const total = (tokens?.input ?? 0) + (tokens?.output ?? 0);
+    const files = snapshot.messages
+      .filter((message) => message.turnId === turnId)
+      .flatMap((message) => message.attachments ?? [])
+      .map((item) => item.name);
+    try {
+      await this.#repeatJobs.record(run.ref, {
+        ok: status === "completed" && Boolean(replyText.trim()),
+        lean: run.lean,
+        tokens: total > 0 ? total : null,
+        route: routeOf(snapshot.messages, turnId),
+        files: [...new Set(files)],
+        result: previewText(replyText) || replyText,
+      });
+    } catch (error) {
+      this.emit("log", `repeated job of ${botId} not recorded: ${String(error)}`);
+    }
   }
 
   /** Lets the app switch related team memories in each owner message off (Settings > Features). */
@@ -7099,6 +7437,15 @@ ${carryOver}`
       replace: true,
       windows: codexLimitWindows(usage),
     });
+    this.#warmStartBackup(
+      "codex",
+      Math.max(
+        -1,
+        ...usage.limits.flatMap((limit) =>
+          [limit.primary, limit.secondary].map((window) => window?.usedPercent ?? -1),
+        ),
+      ),
+    );
     this.#emit({ type: "usage-changed", usage: structuredClone(usage) });
     return structuredClone(usage);
   }
@@ -7394,26 +7741,144 @@ ${carryOver}`
     delivery: DeliveryContext,
     model: BotSummary["model"],
     notice: (botName: string) => string,
+    stayUntil?: number,
   ): Promise<boolean> {
     const bot = this.#store.list().find((candidate) => candidate.id === botId);
     if (!bot || !this.#canResend(delivery)) return false;
-    const own = this.#ownRuntime.get(botId) ?? {
-      model: bot.model,
-      reasoningEffort: bot.reasoningEffort,
-      threadId: bot.threadId,
-    };
     try {
       await this.#resend(botId, delivery, {
-        prepare: async () => {
-          await this.updateBot({ botId, model });
-          this.#ownRuntime.set(botId, { ...own, fallbackModel: model });
-        },
+        prepare: () => this.#coverOn(bot, model, stayUntil),
       });
     } catch {
       return false;
     }
-    this.#emitError("fallback_model", notice(bot.name), botId);
+    if (stayUntil)
+      this.#emit({ type: "notice", botId, code: "ai_switched", message: notice(bot.name) });
+    else this.#emitError("fallback_model", notice(bot.name), botId);
     return true;
+  }
+
+  /**
+   * Moves a coworker whose AI cannot answer onto `model`, remembering its own model and chat so
+   * it can go back. The new AI gets the hand-over note with its first message (see updateBot).
+   */
+  async #coverOn(bot: BotSummary, model: BotSummary["model"], stayUntil?: number): Promise<void> {
+    const own = this.#ownRuntime.get(bot.id) ?? {
+      model: bot.model,
+      reasoningEffort: bot.reasoningEffort,
+      threadId: bot.threadId,
+      since: new Date().toISOString(),
+    };
+    this.#limitSwitches.add(bot.id);
+    try {
+      await this.updateBot({ botId: bot.id, model });
+    } finally {
+      this.#limitSwitches.delete(bot.id);
+    }
+    const cover = { ...own, fallbackModel: model, ...(stayUntil ? { stayUntil } : {}) };
+    this.#ownRuntime.set(bot.id, cover);
+    if (cover.stayUntil) {
+      // Kept on disk, so a restart does not leave the coworker on the backup AI for good.
+      await this.#aiSwitch.setCover(bot.id, {
+        model: cover.model,
+        reasoningEffort: cover.reasoningEffort,
+        threadId: cover.threadId,
+        coveringModel: model,
+        since: cover.since ?? new Date().toISOString(),
+        stayUntil: cover.stayUntil,
+      });
+    }
+  }
+
+  /** The owner's backup order (Settings > AI and models); empty means the old one-message cover. */
+  #backupOrder(): AgentProvider[] {
+    return this.#engineSettings().backupOrder ?? [];
+  }
+
+  /** The AI that takes over from `from` now: next in the owner's order, ready, not at its limit. */
+  #backupFor(from: AgentProvider): AgentProvider | null {
+    return nextBackup(
+      this.#backupOrder(),
+      from,
+      (provider) =>
+        this.#providerState(provider) === "available" && !this.#limitWatch.limited(provider),
+    );
+  }
+
+  /**
+   * The owner set a backup order and this coworker's AI ran out: the same job carries on with
+   * the next AI in that order, with the hand-over note, and the coworker stays there until its
+   * own AI's limit is back. A message that cannot be sent again (it had files, or came from a
+   * teammate) still moves the coworker, so the next message works.
+   */
+  async #moveToBackup(botId: string, delivery: DeliveryContext, reason: string): Promise<boolean> {
+    const bot = this.#store.list().find((candidate) => candidate.id === botId);
+    if (!bot || this.#backupOrder().length === 0) return false;
+    const from = providerForBot(bot);
+    const until = this.#limitWatch.mark(from, limitResetFromText(reason));
+    // The account health card shows the limit and when it is back.
+    this.#emit({ type: "status", status: this.getStatus() });
+    const target = this.#backupFor(from);
+    if (!target) return false;
+    const model = DEFAULT_MODEL_FOR_PROVIDER[target];
+    const line = `${sentenceStart(friendlyAiName(from))}'s limit is used up, so ${friendlyAiName(target)} is carrying on from where it stopped.`;
+    if (this.#canResend(delivery)) {
+      return this.#fallBackTo(botId, delivery, model, () => line, until);
+    }
+    try {
+      await this.#coverOn(bot, model, until);
+    } catch {
+      return false;
+    }
+    this.#emit({
+      type: "notice",
+      botId,
+      code: "ai_switched",
+      message: `${sentenceStart(friendlyAiName(from))}'s limit is used up, so ${friendlyAiName(target)} takes over from here with a note of the work so far. Please send your last message once more.`,
+    });
+    return true;
+  }
+
+  /**
+   * Another coworker already found this AI at its limit: move this one to the backup AI before
+   * its message starts, instead of letting it fail first.
+   */
+  async #moveAheadOfLimit(botId: string): Promise<void> {
+    if (this.#backupOrder().length === 0) return;
+    const bot = this.#store.list().find((candidate) => candidate.id === botId);
+    if (!bot) return;
+    const from = providerForBot(bot);
+    const until = this.#limitWatch.until(from);
+    if (until === null) return;
+    const target = this.#backupFor(from);
+    if (!target) return;
+    try {
+      await this.#coverOn(bot, DEFAULT_MODEL_FOR_PROVIDER[target], until);
+    } catch (error) {
+      this.emit("log", `move of ${botId} to the backup AI skipped: ${String(error)}`);
+      return;
+    }
+    this.#emit({
+      type: "notice",
+      botId,
+      code: "ai_switched",
+      message: `${sentenceStart(friendlyAiName(from))}'s limit is used up, so ${friendlyAiName(target)} is carrying on from where it stopped.`,
+    });
+  }
+
+  /**
+   * An AI is close to its limit: start the next AI in the owner's order quietly now, so the
+   * move takes seconds when the limit is reached (Google's server alone needs up to a minute).
+   */
+  #warmStartBackup(from: AgentProvider, usedPercent: number | null): void {
+    if (usedPercent === null || usedPercent < WARM_START_PERCENT || this.#stopping) return;
+    const target = this.#backupFor(from);
+    if (!target || this.#clients.has(target)) return;
+    const now = Date.now();
+    if (now - (this.#warmStartedAt.get(from) ?? 0) < WARM_START_INTERVAL_MS) return;
+    this.#warmStartedAt.set(from, now);
+    this.emit("log", `${from} is at ${Math.round(usedPercent)}% of its limit; starting ${target}`);
+    void this.ensureProvider(target).catch(() => undefined);
   }
 
   #fallBackToFreeModel(botId: string, delivery: DeliveryContext, reason: string): Promise<boolean> {
@@ -7485,8 +7950,17 @@ ${carryOver}`
       .listQueue(botId)
       .deliveries.some((item) => item.retriedAs === context.delivery.id);
     if (resent) return;
+    // The owner's backup order: the coworker stays on the covering AI until its own AI's limit
+    // is back, so every message does not first fail on the used-up AI.
+    if (own.stayUntil && Date.now() < own.stayUntil && bot.model === own.fallbackModel) return;
     this.#ownRuntime.delete(botId);
+    if (own.stayUntil) await this.#aiSwitch.setCover(botId, null);
     if (bot.model !== own.fallbackModel) return;
+    const covering = providerForBot(bot);
+    const since = own.since;
+    const saidMeanwhile = since
+      ? (this.#snapshots.get(botId)?.messages ?? []).filter((message) => message.createdAt >= since)
+      : [];
     try {
       await this.updateBot({ botId, model: own.model, reasoningEffort: own.reasoningEffort });
       const restored = this.#store.list().find((candidate) => candidate.id === botId);
@@ -7501,6 +7975,21 @@ ${carryOver}`
           messages: [],
         });
         this.#threadToBot.set(own.threadId, botId);
+        this.#freshReads.delete(botId);
+        // Its own chat knows everything up to the move; it only needs what was said meanwhile.
+        await this.#aiSwitch.dropThread(botId, own.threadId);
+        const note = awayNote(saidMeanwhile, covering);
+        await this.#aiSwitch.setPending(
+          botId,
+          note
+            ? {
+                note,
+                from: covering,
+                to: providerForBot(restored),
+                at: new Date().toISOString(),
+              }
+            : null,
+        );
       }
       this.#emit({
         type: "notice",
@@ -8169,6 +8658,39 @@ function updateProviderStatus(
 
 /** How often a background refresh checks a signed-out provider again (Connect checks at once). */
 const SIGNED_OUT_RECHECK_MS = 3 * 60_000;
+/** Reading a chat from the AI being left may not hold a model change back for long. */
+const SWITCH_READ_TIMEOUT_MS = 5_000;
+/** An AI near its limit starts its backup at most this often. */
+const WARM_START_INTERVAL_MS = 30 * 60_000;
+
+/**
+ * The text of an AI's error. Codex sends `{ error: { message, codexErrorInfo, additionalDetails } }`
+ * (its own protocol, checked against `codex app-server generate-ts`); Sahkarmi's Claude and ACP
+ * clients send a plain `{ message }`. Codex names a used-up plan in `codexErrorInfo`, apart from
+ * the words, so that name is added when the words alone would not say it.
+ */
+export function agentErrorText(params: unknown): string | null {
+  const detail = getRecord(params, "error");
+  const base = getString(params, "message") ?? getString(detail, "message");
+  if (!detail) return base;
+  const info = detail.codexErrorInfo;
+  const code = typeof info === "string" ? info : isRecord(info) ? (Object.keys(info)[0] ?? "") : "";
+  const extra = getString(detail, "additionalDetails");
+  let text = [base, extra && !base?.includes(extra) ? extra : null].filter(Boolean).join(" ");
+  if (code === "usageLimitExceeded" && !isQuotaError(text)) {
+    text = `${text} (usage limit reached)`.trim();
+  } else if (code === "rateLimitExceeded" && !isQuotaError(text)) {
+    text = `${text} (rate limit reached)`.trim();
+  } else if (code === "serverOverloaded" && !isTransientError(text)) {
+    text = `${text} (server overloaded)`.trim();
+  }
+  return text || (code ? code : null);
+}
+
+/** "the free AI" at the start of a sentence reads "The free AI". */
+function sentenceStart(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 /** A coworker waiting for a sign-in says so again at most this often. */
 const SIGN_IN_NOTICE_INTERVAL_MS = 10 * 60_000;
 

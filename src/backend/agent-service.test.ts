@@ -17,6 +17,7 @@ const ACP_AGENT_PROVIDERS = ALL_ACP_AGENT_PROVIDERS.filter((id) => !providerFeat
 
 import {
   AgentService,
+  agentErrorText,
   isNoisyDiagnostic,
   isQuotaError,
   isTransientError,
@@ -95,6 +96,7 @@ afterEach(async () => {
   delete process.env.SAHKARMI_FAKE_EXIT_ONCE_FILE;
   delete process.env.SAHKARMI_FAKE_FAIL_TURNS;
   delete process.env.SAHKARMI_FAKE_FAIL_MESSAGE;
+  delete process.env.SAHKARMI_FAKE_FAIL_INFO;
   // Windows may briefly retain handles after the child process and atomic writes close.
   await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
@@ -2043,6 +2045,183 @@ describe.sequential("AgentService", () => {
     expect(service.listQueue("chief").deliveries[0]?.retriedAs).toBeUndefined();
   });
 
+  it("gives the new AI a hand-over note and keeps the earlier chat when a coworker moves", async () => {
+    process.env.SAHKARMI_CLAUDE_PATH = await createFakeClaude(root);
+    process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "The price list has 12 items.";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    await service.initialize();
+
+    await service.sendMessage({ botId: "chief", text: "Make the Diwali price list for my shop" });
+    await waitFor(() => service?.listQueue("chief").deliveries[0]?.status === "completed");
+    const ownModel = service.listBots().find((bot) => bot.id === "chief")?.model;
+    if (!ownModel) throw new Error("chief has no model");
+
+    // The owner picks another AI: the chat on screen keeps the earlier reply.
+    await service.updateBot({ botId: "chief", model: "claude-sonnet-5" });
+    const moved = await service.readConversation("chief");
+    expect(moved.threadId).toBeNull();
+    expect(
+      moved.messages.some(
+        (message) => message.author === "assistant" && message.text.includes("12 items"),
+      ),
+    ).toBe(true);
+    expect(moved.messages.some((message) => message.text.includes("Diwali price list"))).toBe(true);
+
+    // And back again: the fresh chat's first message carries the note, later ones do not.
+    await service.updateBot({ botId: "chief", model: ownModel });
+    await service.sendMessage({ botId: "chief", text: "Now add GST to each price" });
+    const turnTexts = async () =>
+      (await protocolMessages())
+        .filter((message) => message.method === "turn/start")
+        .map((message) => {
+          const input = (message.params as { input?: Array<{ text?: string }> }).input ?? [];
+          return String(input[0]?.text ?? "");
+        });
+    await waitFor(async () => (await turnTexts()).length === 2);
+    const second = (await turnTexts())[1];
+    expect(second).toContain("[Hand-over note from Sahkarmi. This is not from the owner.]");
+    expect(second).toContain("The owner moved this coworker from Claude to you");
+    expect(second).toContain("Make the Diwali price list for my shop");
+    expect(second).toContain("Your last reply was: The price list has 12 items.");
+    expect(second.endsWith("--- the message to answer now ---\nNow add GST to each price")).toBe(
+      true,
+    );
+    // The owner sees only what they typed.
+    await waitFor(() =>
+      service?.listQueue("chief").deliveries.every((item) => item.status === "completed"),
+    );
+    const after = await service.readConversation("chief");
+    expect(after.messages.some((message) => message.text.includes("Hand-over note"))).toBe(false);
+    // The earlier AI's reply is still there, kept under its old chat's id, beside the new one.
+    expect(
+      after.messages.some(
+        (message) => message.id.endsWith(":message-turn-1") && message.text.includes("12 items"),
+      ),
+    ).toBe(true);
+    expect(after.messages.some((message) => message.id === "message-turn-2")).toBe(true);
+
+    await service.sendMessage({ botId: "chief", text: "Thank you" });
+    await waitFor(async () => (await turnTexts()).length === 3);
+    expect((await turnTexts())[2]).toBe("Thank you");
+  });
+
+  it("carries the same job on with the next AI in the owner's backup order", async () => {
+    process.env.SAHKARMI_CLAUDE_PATH = await createFakeClaude(root);
+    process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
+    // Codex's real shape: the cause is named in codexErrorInfo, the words may not say "limit".
+    process.env.SAHKARMI_FAKE_FAIL_MESSAGE = "Your plan cannot take more work right now.";
+    process.env.SAHKARMI_FAKE_FAIL_INFO = "usageLimitExceeded";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    service.configureEngineSettings(() => ({
+      ...DEFAULT_ENGINE_SETTINGS,
+      backupOrder: ["codex", "claude"],
+    }));
+    const events: AgentEvent[] = [];
+    service.on("event", (event) => events.push(event));
+    await service.initialize();
+    await service.ensureProvider("claude");
+
+    await service.sendMessage({ botId: "chief", text: "Write the fee reminder letter" });
+    await waitFor(() =>
+      events.some((event) => event.type === "notice" && event.code === "ai_switched"),
+    );
+    const notice = events.find((event) => event.type === "notice" && event.code === "ai_switched");
+    expect(notice && "message" in notice ? notice.message : "").toBe(
+      "ChatGPT's limit is used up, so Claude is carrying on from where it stopped.",
+    );
+    // The coworker is on Claude now and the same message was queued again for it.
+    await waitFor(
+      () => service?.listBots().find((bot) => bot.id === "chief")?.model === "claude-opus-5",
+    );
+    await waitFor(() =>
+      service
+        ?.listQueue("chief")
+        .deliveries.some((item) => item.status === "failed" && Boolean(item.retriedAs)),
+    );
+    // Not the old one-message cover on the free model.
+    expect(events.some((event) => event.type === "error" && event.code === "fallback_model")).toBe(
+      false,
+    );
+  });
+
+  it("starts a repeated scheduled job in a clean chat with its saved route", async () => {
+    process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "Posted today's offer on the shop page.";
+    process.env.SAHKARMI_FAKE_TOOL_ITEM = JSON.stringify({
+      type: "commandExecution",
+      id: "tool-1",
+      command: "open https://business.example/composer",
+      status: "completed",
+      aggregatedOutput: "ok",
+    });
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    service.configureLeanRepeats(() => true);
+    const events: AgentEvent[] = [];
+    service.on("event", (event) => events.push(event));
+    await service.initialize();
+    const job = "[Scheduled task] Write and post today's offer";
+    const turns = async () =>
+      (await protocolMessages())
+        .filter((message) => message.method === "turn/start")
+        .map((message) => {
+          const params = message.params as { threadId: string; input?: Array<{ text?: string }> };
+          return { threadId: params.threadId, text: String(params.input?.[0]?.text ?? "") };
+        });
+    const allDone = () =>
+      service?.listQueue("chief").deliveries.every((item) => item.status === "completed");
+
+    // Day 1: an ordinary run, in the coworker's chat. Sahkarmi learns from it.
+    await service.sendMessage({ botId: "chief", text: job, origin: "schedule" });
+    await waitFor(async () => (await turns()).length === 1 && allDone());
+    await waitFor(() => service?.listRepeatJobs()[0]?.runs === 1);
+    expect((await turns())[0].text).toBe(job);
+    expect(service.listRepeatJobs()[0]).toMatchObject({ title: "Write and post today's offer" });
+
+    // Day 2: a clean chat, and the job's message carries the short note.
+    await service.sendMessage({ botId: "chief", text: job, origin: "schedule" });
+    await waitFor(async () => (await turns()).length === 2 && allDone());
+    const [first, second] = await turns();
+    expect(second.threadId).not.toBe(first.threadId);
+    expect(second.text).toContain("[Note from Sahkarmi about a repeated job.");
+    expect(second.text).toContain("You have done this same job once before.");
+    expect(second.text).toContain("- Posted today's offer on the shop page.");
+    expect(second.text.endsWith(job)).toBe(true);
+    expect(
+      events.some((event) => event.type === "notice" && event.code === "repeat_job_lean"),
+    ).toBe(true);
+    await waitFor(() => service?.listRepeatJobs()[0]?.runs === 2);
+    expect(service.listRepeatJobs()[0]?.history.map((run) => run.lean)).toEqual([false, true]);
+
+    // The owner still sees day 1, and never the note.
+    const chat = await service.readConversation("chief");
+    expect(chat.threadId).toBe(second.threadId);
+    expect(chat.messages.some((message) => message.id.startsWith(`${first.threadId}:`))).toBe(true);
+    expect(chat.messages.some((message) => message.text.includes("Note from Sahkarmi"))).toBe(
+      false,
+    );
+  });
+
+  it("keeps repeated jobs in the one long chat when the switch is off", async () => {
+    process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "Done";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    await service.initialize();
+    const job = "[Scheduled task] Send the daily sales summary";
+    await service.sendMessage({ botId: "chief", text: job, origin: "schedule" });
+    await waitFor(() => service?.listRepeatJobs()[0]?.runs === 1);
+    await service.sendMessage({ botId: "chief", text: job, origin: "schedule" });
+    await waitFor(() => service?.listRepeatJobs()[0]?.runs === 2);
+    const starts = (await protocolMessages()).filter((message) => message.method === "turn/start");
+    expect(starts).toHaveLength(2);
+    const params = starts.map(
+      (message) => message.params as { threadId: string; input: Array<{ text: string }> },
+    );
+    expect(params[1].threadId).toBe(params[0].threadId);
+    expect(params[1].input[0].text).toBe(job);
+  });
+
   it("caps how many coworkers work at once; the next starts when one finishes", async () => {
     const { store, mailbox } = stores();
     service = new AgentService(store, mailbox, fakeBrowser());
@@ -3619,7 +3798,7 @@ process.stdin.on("data", (chunk) => {
         }
         if ((process.env.SAHKARMI_FAKE_FAIL_TURNS || "").split(",").includes(String(turnCounter))) {
           setTimeout(() => {
-            write({ method: "error", params: { threadId: message.params.threadId, turnId, willRetry: false, message: process.env.SAHKARMI_FAKE_FAIL_MESSAGE || "failed" } });
+            write({ method: "error", params: { threadId: message.params.threadId, turnId, willRetry: false, error: { message: process.env.SAHKARMI_FAKE_FAIL_MESSAGE || "failed", codexErrorInfo: process.env.SAHKARMI_FAKE_FAIL_INFO || null, additionalDetails: null } } });
             const turn = turns.get(turnId);
             if (turn) turn.status = "failed";
             write({ method: "turn/completed", params: { threadId: message.params.threadId, turn: { id: turnId, status: "failed" } } });
@@ -3722,6 +3901,39 @@ fi
   }
   return executable;
 }
+
+describe("an AI's error text", () => {
+  it("reads Codex's nested error and names a used-up plan", () => {
+    expect(
+      agentErrorText({
+        error: { message: "You've hit your usage limit.", codexErrorInfo: "usageLimitExceeded" },
+        willRetry: false,
+      }),
+    ).toBe("You've hit your usage limit.");
+    const named = agentErrorText({
+      error: { message: "Request failed.", codexErrorInfo: "usageLimitExceeded" },
+    });
+    expect(named).toBe("Request failed. (usage limit reached)");
+    expect(isQuotaError(named ?? "")).toBe(true);
+    expect(
+      agentErrorText({
+        error: {
+          message: "stream error",
+          codexErrorInfo: { responseStreamDisconnected: { httpStatusCode: 502 } },
+          additionalDetails: "upstream closed",
+        },
+      }),
+    ).toBe("stream error upstream closed");
+  });
+
+  it("still reads the plain message other AIs send, and nothing when there is none", () => {
+    expect(agentErrorText({ message: "API Error: 529 overloaded_error" })).toBe(
+      "API Error: 529 overloaded_error",
+    );
+    expect(agentErrorText({ willRetry: false })).toBeNull();
+    expect(agentErrorText({ id: "turn-1", status: "failed" })).toBeNull();
+  });
+});
 
 describe("sidebar previews", () => {
   it("show the first line of a reply as plain text", () => {

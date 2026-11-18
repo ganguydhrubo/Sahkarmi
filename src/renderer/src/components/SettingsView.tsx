@@ -24,6 +24,7 @@ import {
 } from "../preferences";
 import { SETTINGS_SECTION_KEY } from "../settings-section";
 import { AboutCard } from "./AboutCard";
+import { AccountHealth, BackupOrder } from "./AiBackupHealth";
 import { AssignmentsSettings } from "./AssignmentsSettings";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { HostSettings } from "./HostSettings";
@@ -315,6 +316,16 @@ export function SettingsView(props: SettingsViewProps) {
 
           {panel("ai", () => (
             <>
+              <AccountHealth
+                agentStatus={props.agentStatus}
+                bots={props.bots}
+                onShowBackup={() =>
+                  document
+                    .getElementById("backup-order")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              />
+              <BackupOrder agentStatus={props.agentStatus} />
               <section class="settings-card">
                 <h2>{t("providers")}</h2>
                 <p>{t("connectIntro")}</p>

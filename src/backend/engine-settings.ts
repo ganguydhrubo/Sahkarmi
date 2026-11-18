@@ -1,10 +1,12 @@
 import { totalmem } from "node:os";
 import { join } from "node:path";
 import {
+  type AgentProviderId,
   type ConcurrencyMode,
   DEFAULT_ENGINE_SETTINGS,
   ENGINE_SETTINGS_LIMITS,
   type EngineSettings,
+  isAgentProvider,
   MIN_MEMORY_LIMIT_MB,
 } from "../shared/ipc";
 import { JsonFile } from "./json-file";
@@ -21,6 +23,7 @@ export function normaliseEngineSettings(
   base: EngineSettings = DEFAULT_ENGINE_SETTINGS,
 ): EngineSettings {
   const input = isRecord(value) ? value : {};
+  const order = backupOrder(input.backupOrder, base.backupOrder);
   return {
     maxConcurrentTurns: clamp(
       input.maxConcurrentTurns,
@@ -44,7 +47,19 @@ export function normaliseEngineSettings(
       ENGINE_SETTINGS_LIMITS.maxStepsPerTurn,
       base.maxStepsPerTurn ?? DEFAULT_ENGINE_SETTINGS.maxStepsPerTurn,
     ),
+    // Only present once the owner has set one, so files from before it stay as they were.
+    ...(order.length > 0 ? { backupOrder: order } : {}),
   };
+}
+
+/** Known AIs only, each once, in the owner's order; anything else keeps what was there. */
+function backupOrder(value: unknown, fallback: AgentProviderId[] | undefined): AgentProviderId[] {
+  if (!Array.isArray(value)) return [...(fallback ?? [])];
+  const order: AgentProviderId[] = [];
+  for (const item of value) {
+    if (isAgentProvider(item) && !order.includes(item)) order.push(item);
+  }
+  return order;
 }
 
 /** "fixed" or "auto"; anything else keeps what was there ("fixed" when nothing was). */

@@ -3,8 +3,10 @@ import {
   type AgentProviderId,
   type AgentProviderStatus,
   type AgentStatus,
+  DISCONNECTABLE_PROVIDERS,
   type ProviderSetupState,
   providerFeatureId,
+  SIGN_OUT_IN_OWN_APP,
 } from "../../../shared/ipc";
 import { PROVIDER_CATALOG, type ProviderCatalogEntry } from "../../../shared/provider-catalog";
 import { t } from "../i18n";
@@ -171,15 +173,18 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
                 {t("connectReconnect")}
               </button>
             </Show>
-            <Show when={isOn() && (id === "codex" || id === "claude")}>
+            <Show when={isOn() && DISCONNECTABLE_PROVIDERS.includes(id)}>
               <button
                 type="button"
                 class="link-button provider-disconnect"
                 disabled={busy()}
                 onClick={() => {
-                  const warning = t(
-                    id === "codex" ? "connectDisconnectCodex" : "connectDisconnectClaude",
-                  );
+                  const warning =
+                    id === "codex"
+                      ? t("connectDisconnectCodex")
+                      : id === "claude"
+                        ? t("connectDisconnectClaude")
+                        : t("connectDisconnectOther", { name: rowProps.entry.name });
                   if (!window.confirm(warning)) return;
                   void act(id, () => window.sahkarmi.providerSetup.disconnect(id));
                 }}
@@ -192,6 +197,11 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
 
         <Show when={id === "antigravity" && isOn()}>
           <GeminiAccounts busy={busy()} />
+        </Show>
+        <Show when={isOn() && SIGN_OUT_IN_OWN_APP.includes(id)}>
+          <p class="settings-meta provider-signout-hint">
+            {t("connectSignOutHint", { name: rowProps.entry.name })}
+          </p>
         </Show>
 
         <Show

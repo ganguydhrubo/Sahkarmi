@@ -11,6 +11,7 @@ import { marketplaceEn } from "./i18n-marketplace";
 import { mcpEn } from "./i18n-mcp";
 import { memoryEn } from "./i18n-memory";
 import { onboardingEn } from "./i18n-onboarding";
+import { revampEn } from "./i18n-revamp";
 import { safetyEn } from "./i18n-safety";
 import { securityEn } from "./i18n-security";
 import { skillPacksEn } from "./i18n-skill-packs";
@@ -321,6 +322,7 @@ const en = {
   ...skillPacksEn,
   ...onboardingEn,
   ...hostEn,
+  ...revampEn,
 };
 
 export type Dictionary = typeof en;

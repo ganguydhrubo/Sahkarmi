@@ -10,6 +10,7 @@ import { pipeline } from "node:stream/promises";
 import {
   type AcpAgentProviderId,
   type AgentProviderId,
+  DISCONNECTABLE_PROVIDERS,
   isAcpAgentProvider,
   PROVIDER_LABELS,
   type ProviderSetupState,
@@ -75,7 +76,7 @@ export interface ProviderSetupOptions {
 }
 
 /** AIs whose own tool has a sign-out command Sahkarmi can run. */
-export const DISCONNECTABLE: ReadonlySet<AgentProviderId> = new Set(["codex", "claude"]);
+export const DISCONNECTABLE: ReadonlySet<AgentProviderId> = new Set(DISCONNECTABLE_PROVIDERS);
 
 interface ProviderSetupEvents {
   state: [state: ProviderSetupState];
@@ -247,9 +248,16 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
     try {
       if (provider === "codex") {
         await this.#runToEnd(provider, await this.#codexExecutable(), ["logout"]);
-      } else {
+      } else if (provider === "claude") {
         const claude = await resolveClaudeCli();
         await this.#runToEnd(provider, claude.executable, ["auth", "logout"]);
+      } else if (isAcpAgentProvider(provider)) {
+        // Cursor ("agent logout") and Kiro ("kiro-cli logout"): the tool's own sign-out.
+        const executable = await findAcpAgentExecutable(ACP_AGENT_SPECS[provider]);
+        if (!executable) {
+          throw new Error(`${PROVIDER_LABELS[provider]} is not installed on this computer.`);
+        }
+        await this.#runToEnd(provider, executable, ["logout"]);
       }
       await this.#options.recheck(provider).catch(() => undefined);
       this.#set(provider, {

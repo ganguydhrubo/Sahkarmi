@@ -522,6 +522,15 @@ export class BotStore {
     await this.#persist();
   }
 
+  /** The coworker's next message starts a new chat on the same AI (a repeated job's clean chat). */
+  async clearThread(id: string): Promise<void> {
+    const bot = this.#requireBot(id);
+    if (bot.threadId === null) return;
+    bot.threadId = null;
+    bot.updatedAt = new Date().toISOString();
+    await this.#persist();
+  }
+
   async setThreadId(id: string, threadId: string): Promise<void> {
     const bot = this.#requireBot(id);
     bot.threadId = threadId;

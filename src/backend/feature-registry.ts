@@ -87,6 +87,15 @@ export const BUILT_IN_FEATURES: FeatureDefinition[] = [
     true,
   ),
   feature(
+    "lean-repeat-runs",
+    "Repeated jobs use fewer tokens",
+    "A scheduled task or routine that has run before starts in a clean chat with a short note of the route that worked, the files it made and its latest results, instead of reading all the earlier runs again. The earlier chat stays on your screen. Off: every run is added to the coworker's one long chat, as before.",
+    "core",
+    [],
+    true,
+    true,
+  ),
+  feature(
     "knowledge-base",
     "Knowledge Bases",
     "Index your PDFs, Word, Excel, PowerPoint and text files on this computer; coworkers search them and cite the page.",

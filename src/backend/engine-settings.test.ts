@@ -73,4 +73,25 @@ describe("engine settings", () => {
       maxConcurrentTurns: 5,
     });
   });
+
+  it("keeps the owner's backup order of AIs: known AIs only, each once", () => {
+    // Not set: the key is absent, so nothing changes for owners who never set one.
+    expect(normaliseEngineSettings({})).not.toHaveProperty("backupOrder");
+    const set = normaliseEngineSettings({
+      backupOrder: ["codex", "antigravity", "codex", "no-such-ai", 7, "opencode"],
+    });
+    expect(set.backupOrder).toEqual(["codex", "antigravity", "opencode"]);
+    // Another setting changes: the order stays. An empty list clears it.
+    expect(normaliseEngineSettings({ watchdogMinutes: 30 }, set).backupOrder).toEqual([
+      "codex",
+      "antigravity",
+      "opencode",
+    ]);
+    expect(normaliseEngineSettings({ backupOrder: [] }, set)).not.toHaveProperty("backupOrder");
+    expect(normaliseEngineSettings({ backupOrder: "codex" }, set).backupOrder).toEqual([
+      "codex",
+      "antigravity",
+      "opencode",
+    ]);
+  });
 });

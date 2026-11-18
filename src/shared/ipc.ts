@@ -386,6 +386,21 @@ export function isAgentProvider(value: unknown): value is AgentProviderId {
   return typeof value === "string" && AGENT_PROVIDERS.includes(value as AgentProviderId);
 }
 
+/**
+ * AIs whose own tool has a documented sign-out command Sahkarmi can run (checked against each
+ * vendor's documentation on 18 Nov 2026): `codex logout`, `claude auth logout`, Cursor's
+ * `agent logout` and `kiro-cli logout`.
+ */
+export const DISCONNECTABLE_PROVIDERS: readonly AgentProviderId[] = [
+  "codex",
+  "claude",
+  "cursor",
+  "kiro",
+];
+
+/** AIs that can only be signed out inside their own window, by typing /logout there. */
+export const SIGN_OUT_IN_OWN_APP: readonly AgentProviderId[] = ["copilot", "kimi", "qoder"];
+
 /** Human-facing provider names. OpenCode is bundled with Sahkarmi and has free models. */
 export const PROVIDER_LABELS: Record<AgentProviderId, string> = {
   codex: "ChatGPT (Codex)",
@@ -420,6 +435,11 @@ export interface AgentProviderStatus {
   version: string | null;
   message: string | null;
   email?: string | null;
+  /**
+   * Set while this AI's limit is used up: when Sahkarmi will try it again. The owner's backup
+   * order skips it until then.
+   */
+  limitedUntil?: string | null;
 }
 
 export interface AppSetupState {
@@ -2241,6 +2261,12 @@ export interface EngineSettings {
   memoryWarnPercent: number;
   /** The most steps (tool calls) one Claude turn may take before it pauses (50-1000). */
   maxStepsPerTurn: number;
+  /**
+   * The owner's backup order of AIs. When a coworker's AI runs out of its limit, the same job
+   * carries on with the next AI in this list that is ready, with a note of the work so far.
+   * Empty (the default): only that one message is answered on the free model.
+   */
+  backupOrder?: AgentProviderId[];
 }
 
 export type ConcurrencyMode = "fixed" | "auto";
