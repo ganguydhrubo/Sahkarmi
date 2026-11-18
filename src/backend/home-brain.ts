@@ -10,7 +10,7 @@ export function understandFirstPrompt(text: string, options: { canHandOver: bool
     "[Note from Sahkarmi. This is not from the owner.]",
     "The owner typed or spoke the job below on the Home screen. They run a small business and are not a technical person. The words may be in English, Hindi, Bengali or a mix, in any script, with spelling mistakes or words a microphone heard wrongly.",
     "Do this, in order:",
-    '1. Work out what the owner wants. Begin your reply with ONE short line, in the owner\'s own language, that starts with the words for "I understood:" and says the job in plain words.',
+    '1. Work out what the owner wants. Begin your reply with ONE short line, in the owner\'s own language, that starts with the words for "I understood:" and says the job in plain words. Say this line before you use any tool, so the owner sees at once that you understood.',
     "2. If something you cannot sensibly decide yourself is missing (a name, an amount, a date, a file), ask at most two short questions and stop there. Do not ask about things you can decide.",
     options.canHandOver
       ? "3. If another coworker in this team suits the job better, hand it to them with sahkarmi.send_message and tell the owner in one line who is doing it. Otherwise do the job yourself."
