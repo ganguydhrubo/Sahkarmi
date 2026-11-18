@@ -3,7 +3,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ScheduledTask } from "../shared/ipc";
 import { nextRunAfter, parseCadence, ScheduleStore } from "./schedule-store";
 
@@ -110,6 +110,77 @@ describe("ScheduleStore", () => {
     await store.tick();
     expect(ran).toEqual([task.id]);
     expect(store.list()[0]).toMatchObject({ enabled: false, nextRunAt: null });
+    store.stop();
+  });
+});
+
+describe("why a scheduled task ran late or waited", () => {
+  async function storeAt(clock: { now: Date }) {
+    const root = await mkdtemp(join(tmpdir(), "sk-schedule-notes-"));
+    roots.push(root);
+    const store = new ScheduleStore(root, () => clock.now);
+    await store.initialize();
+    return store;
+  }
+
+  it("says a run was late when Sahkarmi was closed at its time, and clears it on time", async () => {
+    const clock = { now: new Date(2026, 9, 20, 8, 0) };
+    const store = await storeAt(clock);
+    const ran: string[] = [];
+    await store.create({
+      botId: "chief",
+      text: "Send the stock list",
+      cadence: { kind: "daily", time: "09:00" },
+    });
+    store.start(async (task) => {
+      ran.push(task.id);
+    });
+    store.stop();
+    // The app was closed at 9:00 and opened at 11:30.
+    clock.now = new Date(2026, 9, 20, 11, 30);
+    store.start(async (task) => {
+      ran.push(task.id);
+    });
+    await vi.waitFor(() => expect(ran).toHaveLength(1));
+    store.stop();
+    const [late] = store.list();
+    expect(late?.lastNote).toMatchObject({
+      kind: "late",
+      dueAt: new Date(2026, 9, 20, 9, 0).toISOString(),
+    });
+
+    clock.now = new Date(2026, 9, 21, 9, 0, 20);
+    store.start(async (task) => {
+      ran.push(task.id);
+    });
+    await vi.waitFor(() => expect(ran).toHaveLength(2));
+    store.stop();
+    expect(store.list()[0]?.lastNote).toBeNull();
+  });
+
+  it("says it is waiting while coworkers are paused, and says why it could not start", async () => {
+    const clock = { now: new Date(2026, 9, 20, 8, 0) };
+    const store = await storeAt(clock);
+    await store.create({
+      botId: "chief",
+      text: "Check GST mails",
+      cadence: { kind: "daily", time: "09:00" },
+    });
+    store.setPaused(true);
+    store.start(async () => {
+      throw new Error("Chief is not connected to an AI.");
+    });
+    clock.now = new Date(2026, 9, 20, 9, 1);
+    await store.tick();
+    expect(store.list()[0]?.lastNote?.kind).toBe("paused");
+
+    store.setPaused(false);
+    await vi.waitFor(() =>
+      expect(store.list()[0]?.lastNote).toMatchObject({
+        kind: "failed",
+        detail: "Chief is not connected to an AI.",
+      }),
+    );
     store.stop();
   });
 });

@@ -83,6 +83,7 @@ import {
 import { createAntigravityClient, createOpenCodeClient } from "./acp-providers";
 import type { AgentClient, AgentProvider } from "./agent-client";
 import { AgentMemoryStore, MEMORY_PAGE_MAX, memoryCategory } from "./agent-memory-store";
+import { type AiAccountSource, isAiAccountProvider } from "./ai-accounts";
 import { API_TOOL_NAMESPACE, type ApiIntegrationService } from "./api-integrations/api-service";
 import { API_TOOL_DEFINITIONS, API_TOOLS_DESCRIPTION } from "./api-integrations/api-tools";
 import type { AppMemoryMonitor } from "./app-memory";
@@ -210,10 +211,12 @@ import {
   socialPlatformForTool,
   socialPlatformForUrl,
 } from "./publishing-accounts";
+import { reactionAnswer } from "./reaction-answer";
 import type { ResourceAssignmentStore } from "./resource-assignments";
 import type { RoutineApprovalResult } from "./routine-store";
 import type { NewRunEvent } from "./run-events";
 import { installedSkillNames, LearnedSkills, learnedSkillNames } from "./skill-library";
+import { startFirst } from "./start-order";
 import {
   describeSource,
   isTaintGuarded,
@@ -589,6 +592,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #codexThreads: CodexThreadLedger;
   #geminiAccounts: GeminiAccountSource | null = null;
   #geminiRotation: GeminiRotation | null = null;
+  /** The owner's saved ChatGPT and Claude accounts, tried in turn at a usage limit. */
+  #aiAccounts: AiAccountSource | null = null;
+  /** Accounts already tried for a coworker's message, so the last one ends in the usual fallback. */
+  readonly #accountTries = new Map<string, Set<string>>();
   /** The Google account the running Gemini server was started with. */
   #geminiClientAccount: string | null = null;
   /**
@@ -695,6 +702,27 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   /** Local usage ledger fed by provider notifications (see UsageService). */
   setUsageService(usage: UsageService): void {
     this.#usage = usage;
+  }
+
+  /** The owner's ChatGPT and Claude accounts: where to go when one reaches its usage limit. */
+  setAiAccounts(accounts: AiAccountSource): void {
+    this.#aiAccounts = accounts;
+  }
+
+  /**
+   * Puts another account of this AI in place: the AI stops, `apply` swaps the sign-in, and the
+   * AI starts again on it. Chats stay on this computer, so coworkers carry on where they were.
+   * When the AI is not running, the swap simply waits for its next start.
+   */
+  async switchProviderAccount(provider: AgentProvider, apply: () => Promise<void>): Promise<void> {
+    if (
+      !this.#initialized ||
+      (!this.#clients.has(provider) && !this.#providerStarts.has(provider))
+    ) {
+      await apply();
+      return;
+    }
+    await this.#restartProvider(provider, apply);
   }
 
   /** The owner's Google accounts for Gemini: which one to start on, and where to go at a limit. */
@@ -2936,9 +2964,14 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     if (!current.messages.some((message) => message.id === input.messageId)) {
       throw new Error("The message is no longer available.");
     }
+    const answer = reactionAnswer(current.messages, input.messageId, input.emoji);
     await this.#mailbox.setReaction(bot.id, input.messageId, input.emoji);
     this.#syncMailboxMessages(current);
     this.#emitConversation(current);
+    // A thumbs-up on the coworker's question is the owner's "yes" (a thumbs-down its "no").
+    if (answer && !this.#hasStartedWork(bot.id)) {
+      await this.sendMessage({ botId: bot.id, text: answer, replyToMessageId: input.messageId });
+    }
   }
 
   /** Any sign of life from a coworker's turn: text, a tool, a plan change. Feeds the watchdog. */
@@ -3213,7 +3246,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     };
     // The quick providers start side by side (a few at a time, so a low-memory PC is not
     // swamped): one after another, ten CLI checks kept the chat waiting for about a minute.
-    const quick = startOrder.filter((provider) => provider !== "antigravity");
+    const quick = startFirst(
+      startOrder.filter((provider) => provider !== "antigravity"),
+      this.#preferredProvider,
+      this.#store.list().map((bot) => providerForModel(bot.model)),
+    );
     await runWithLimit(quick, PARALLEL_PROVIDER_STARTS, startOne);
     if (!stopping && startOrder.includes("antigravity") && !geminiStart) {
       await startOne("antigravity");
@@ -3357,7 +3394,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   }
 
   /** Stops a provider and starts it again (another Google account was chosen for Gemini). */
-  async #restartProvider(provider: AgentProvider): Promise<void> {
+  async #restartProvider(provider: AgentProvider, apply?: () => Promise<void>): Promise<void> {
     const running = this.#providerStarts.get(provider);
     if (running) await running.catch(() => undefined);
     const task = (async () => {
@@ -3369,6 +3406,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }
       }
       await old?.stop().catch(() => undefined);
+      await apply?.();
       if (!this.#stopping) await this.#connect("restarting", [provider]);
     })();
     this.#providerStarts.set(provider, task);
@@ -6498,7 +6536,10 @@ ${carryOver}`
     }
     await this.#attachDeliverables(botId, snapshot, turnId, latestAssistant);
     if (latestAssistant) {
-      if (status === "completed") this.#geminiRotation?.forget(botId);
+      if (status === "completed") {
+        this.#geminiRotation?.forget(botId);
+        this.#accountTries.delete(botId);
+      }
       await this.#store.updatePreview(botId, previewText(latestAssistant.text));
       this.#emit({ type: "bots-changed", bots: this.#store.list() });
     } else if (
@@ -6535,7 +6576,10 @@ ${carryOver}`
       } else if (reason.includes(FREE_LIMIT_REACHED_HINT)) {
         await this.#fallBackToOtherFreeProvider(botId, delivery);
       } else if (isQuotaError(reason)) {
-        if (!(await this.#rotateGeminiAccount(botId, delivery))) {
+        if (
+          !(await this.#rotateGeminiAccount(botId, delivery)) &&
+          !(await this.#rotateAiAccount(botId, delivery))
+        ) {
           await this.#fallBackToFreeModel(botId, delivery, "is at its usage limit");
         }
       } else if (reason.includes(MCP_SERVER_SKIPPED_HINT)) {
@@ -7347,6 +7391,41 @@ ${carryOver}`
     );
     const nextId = await this.#resend(botId, delivery, { delayMs });
     this.#transientRetries.set(nextId, attempts + 1);
+    return true;
+  }
+
+  /**
+   * A ChatGPT or Claude coworker's message hit the account's usage limit: rest that account, put
+   * the owner's next saved account of the same AI in place and send the message again there. The
+   * same chat carries on. Every account tried for this coworker is remembered until a message
+   * completes, so the last one ends in the usual fallback instead of a loop.
+   */
+  async #rotateAiAccount(botId: string, delivery: DeliveryContext): Promise<boolean> {
+    const accounts = this.#aiAccounts;
+    const bot = this.#store.list().find((candidate) => candidate.id === botId);
+    if (!accounts || !bot) return false;
+    const provider = providerForBot(bot);
+    if (!isAiAccountProvider(provider) || !this.#canResend(delivery)) return false;
+    const tried = this.#accountTries.get(botId) ?? new Set<string>();
+    const current = accounts.activeId(provider);
+    if (current) tried.add(current);
+    const next = accounts.nextAccount(provider, tried);
+    if (!next) return false;
+    tried.add(next);
+    this.#accountTries.set(botId, tried);
+    await accounts.markLimited(provider).catch(() => undefined);
+    const ai = provider === "codex" ? "ChatGPT" : "Claude";
+    this.#emitError(
+      "fallback_model",
+      `${ai}'s limit on ${current ? accounts.label(provider, current) : "this account"} is used up, so ${bot.name} is carrying on the same work with your other ${ai} account (${accounts.label(provider, next)}).`,
+      botId,
+    );
+    await this.#resend(botId, delivery, {
+      prepare: async () => {
+        this.emit("log", `${provider} moved to the next saved account after a usage limit`);
+        await this.switchProviderAccount(provider, () => accounts.activate(provider, next));
+      },
+    });
     return true;
   }
 

@@ -274,6 +274,16 @@ const sahkarmiApi: SahkarmiDesktopApi = {
       return () => ipcRenderer.removeListener(IPC_CHANNELS.providerSetupEvent, handler);
     },
   },
+  pins: {
+    list: (botId) => ipcRenderer.invoke(IPC_CHANNELS.pinsList, botId),
+    toggle: (input) => ipcRenderer.invoke(IPC_CHANNELS.pinsToggle, input),
+  },
+  aiAccounts: {
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsList),
+    add: (provider) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsAdd, provider),
+    use: (provider, id) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsUse, provider, id),
+    remove: (provider, id) => ipcRenderer.invoke(IPC_CHANNELS.aiAccountsRemove, provider, id),
+  },
   geminiAccounts: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.geminiAccountsList),
     add: () => ipcRenderer.invoke(IPC_CHANNELS.geminiAccountsAdd),

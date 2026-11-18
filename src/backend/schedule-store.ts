@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { join } from "node:path";
 import { nextRunAfter } from "../shared/cadence";
 import type { CreateScheduleInput, ScheduleCadence, ScheduledTask } from "../shared/ipc";
+import { lateNote, noteWaiting } from "../shared/run-notes";
 import { JsonFile } from "./json-file";
 
 export { nextRunAfter };
@@ -116,22 +117,40 @@ export class ScheduleStore extends EventEmitter<ScheduleStoreEvents> {
 
   /** Runs every enabled task whose next run time has passed. Exposed for tests. */
   async tick(): Promise<void> {
-    if (this.#ticking || this.#paused) return;
+    if (this.#ticking) return;
+    if (this.#paused) {
+      // Due tasks wait; the list says why.
+      const now = this.#now();
+      let changed = false;
+      for (const task of this.#state.schedules) {
+        if (!task.enabled || !task.nextRunAt || Date.parse(task.nextRunAt) > now.getTime())
+          continue;
+        changed = noteWaiting(task, "paused", now) || changed;
+      }
+      if (changed) await this.#persist();
+      return;
+    }
     this.#ticking = true;
     try {
       const now = this.#now();
       for (const task of this.#state.schedules) {
         if (!task.enabled || !task.nextRunAt || Date.parse(task.nextRunAt) > now.getTime())
           continue;
-        await this.#run(task);
+        await this.#run(task, true);
       }
     } finally {
       this.#ticking = false;
     }
   }
 
-  async #run(task: ScheduledTask): Promise<void> {
+  async #run(task: ScheduledTask, onSchedule = false): Promise<void> {
     const now = this.#now();
+    // A run from its timer that starts well after its time says so; Run now clears the note.
+    task.lastNote = onSchedule
+      ? task.lastNote?.kind === "paused"
+        ? null
+        : lateNote(task.nextRunAt, now)
+      : null;
     task.lastRunAt = now.toISOString();
     const next = task.cadence.kind === "once" ? null : nextRunAfter(task.cadence, now);
     task.nextRunAt = next?.toISOString() ?? null;
@@ -141,6 +160,12 @@ export class ScheduleStore extends EventEmitter<ScheduleStoreEvents> {
       await this.#runner?.(structuredClone(task));
     } catch (error) {
       console.error("Scheduled task failed to queue:", error);
+      task.lastNote = {
+        kind: "failed",
+        at: now.toISOString(),
+        detail: error instanceof Error ? error.message : String(error),
+      };
+      await this.#persist();
     }
   }
 

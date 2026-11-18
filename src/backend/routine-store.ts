@@ -17,6 +17,7 @@ import type {
   RoutineTrigger,
   SaveRoutineInput,
 } from "../shared/ipc";
+import { lateNote, noteWaiting } from "../shared/run-notes";
 import { createFolderWatcher, type StopWatching, type WatchFolder } from "./folder-watch";
 import { JsonFile } from "./json-file";
 import { isRecord } from "./protocol";
@@ -292,13 +293,21 @@ export class RoutineStore extends EventEmitter<RoutineStoreEvents> {
 
   /** Starts every enabled routine whose next run time has passed. */
   async tick(): Promise<void> {
-    if (this.#ticking || !this.#executor || this.#paused) return;
+    if (this.#ticking || !this.#executor) return;
     this.#ticking = true;
     try {
       const now = this.#now();
+      let waited = false;
       for (const routine of this.#state.routines) {
         if (!routine.enabled || !routine.cadence || !routine.nextRunAt) continue;
-        if (Date.parse(routine.nextRunAt) > now.getTime() || this.#active.has(routine.id)) continue;
+        if (Date.parse(routine.nextRunAt) > now.getTime()) continue;
+        // Due but held back: the routine list says why until it runs.
+        if (this.#paused || this.#active.has(routine.id)) {
+          waited = noteWaiting(routine, this.#paused ? "paused" : "busy", now) || waited;
+          continue;
+        }
+        routine.lastNote =
+          routine.lastNote?.kind === "paused" ? null : lateNote(routine.nextRunAt, now);
         routine.lastRunAt = now.toISOString();
         routine.nextRunAt =
           routine.cadence.kind === "once"
@@ -308,6 +317,7 @@ export class RoutineStore extends EventEmitter<RoutineStoreEvents> {
         await this.#persist();
         this.#launch(routine.id, "schedule");
       }
+      if (waited) await this.#persist();
     } finally {
       this.#ticking = false;
     }

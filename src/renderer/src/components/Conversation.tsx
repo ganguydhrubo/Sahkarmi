@@ -30,6 +30,7 @@ import type {
   DraftAttachment,
   KnowledgeCitation,
   MessageReaction,
+  PinnedMessage,
   QueueSnapshot,
   ScheduleCadence,
   ScheduledTask,
@@ -67,6 +68,7 @@ import { ChoiceCard, PromptCard } from "./ConversationPrompts";
 import { CrewStage } from "./CrewStage";
 import { InterruptedTaskCard } from "./InterruptedTaskCard";
 import { PanelResizer, readPanelWidth, savePanelWidth } from "./PanelResizer";
+import { PinnedMessages } from "./PinnedMessages";
 import { PlanCard } from "./PlanCard";
 import { ProviderModelPicker } from "./ProviderModelPicker";
 import { RichMarkdown } from "./RichMarkdown";
@@ -868,6 +870,9 @@ function MessageActions(props: {
   onReadAloud: () => void;
   /** A new coworker that starts from this answer; off while the coworker works. */
   onBranch?: () => void;
+  /** Pins or unpins the message in the chat's pin bar. */
+  onTogglePin?: () => void;
+  pinned?: boolean;
   branchDisabled?: boolean;
 }) {
   return (
@@ -974,6 +979,12 @@ function MessageActions(props: {
               <button type="button" role="menuitem" onClick={props.onReadAloud}>
                 <SpeakerIcon />
                 <span>{props.speaking ? t("voiceStopReading") : t("voiceReadAloud")}</span>
+              </button>
+            </Show>
+            <Show when={props.onTogglePin && props.message.body.trim()}>
+              <button type="button" role="menuitem" onClick={props.onTogglePin}>
+                <span aria-hidden="true">📌</span>
+                <span>{props.pinned ? t("pinUnpin") : t("pinPin")}</span>
               </button>
             </Show>
             <Show when={props.message.author === "bot" && props.onBranch}>
@@ -1320,6 +1331,28 @@ export function Conversation(props: ConversationProps) {
   const [openMoreMessageId, setOpenMoreMessageId] = createSignal<string | null>(null);
   const [expandedEmojiMessageId, setExpandedEmojiMessageId] = createSignal<string | null>(null);
   const [copiedMessageId, setCopiedMessageId] = createSignal<string | null>(null);
+  const [pins, setPins] = createSignal<PinnedMessage[]>([]);
+  createEffect(() => {
+    const botId = props.bot?.id;
+    setPins([]);
+    if (!botId || !window.sahkarmi.pins) return;
+    void window.sahkarmi.pins
+      .list(botId)
+      .then((list) => {
+        if (props.bot?.id === botId) setPins(list);
+      })
+      .catch(() => undefined);
+  });
+  async function togglePin(messageId: string, text: string) {
+    const botId = props.bot?.id;
+    setOpenMoreMessageId(null);
+    if (!botId || !window.sahkarmi.pins) return;
+    try {
+      setPins(await window.sahkarmi.pins.toggle({ botId, messageId, text }));
+    } catch (error) {
+      setComposerError(error instanceof Error ? error.message : String(error));
+    }
+  }
   const [settingsPanelWidth, setSettingsPanelWidth] = createSignal(
     readPanelWidth(
       SETTINGS_PANEL_STORAGE_KEY,
@@ -2953,6 +2986,10 @@ export function Conversation(props: ConversationProps) {
               </Show>
             </article>
           </Show>
+          <PinnedMessages
+            pins={pins()}
+            onUnpin={(pin) => void togglePin(pin.messageId, pin.text)}
+          />
           <Show when={hiddenCount() > 0}>
             <button type="button" class="show-earlier" onClick={() => showEarlier()}>
               {t("showEarlier", { count: String(Math.min(MESSAGE_WINDOW, hiddenCount())) })}
@@ -3057,6 +3094,8 @@ export function Conversation(props: ConversationProps) {
                                   : undefined
                               }
                               branchDisabled={agentActivity() === "Working"}
+                              pinned={pins().some((pin) => pin.messageId === message.id)}
+                              onTogglePin={() => void togglePin(message.id, message.body)}
                             />
                           </div>
                           <Show when={message.reaction}>

@@ -2023,6 +2023,50 @@ describe.sequential("AgentService", () => {
     );
   });
 
+  it("moves ChatGPT to the owner's other saved account at a usage limit and carries on", async () => {
+    process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
+    process.env.SAHKARMI_FAKE_FAIL_MESSAGE =
+      "You've hit your usage limit. Upgrade to Pro or try again later.";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    let active = "first";
+    const activated: string[] = [];
+    const rested: string[] = [];
+    service.setAiAccounts({
+      activeId: () => active,
+      nextAccount: (_provider, exclude) => (exclude.has("second") ? null : "second"),
+      label: (_provider, id) => (id === "first" ? "shop@owner.in" : "home@owner.in"),
+      markLimited: async () => {
+        rested.push(active);
+      },
+      activate: async (_provider, id) => {
+        activated.push(id);
+        active = id;
+      },
+    });
+    const events: AgentEvent[] = [];
+    service.on("event", (event) => events.push(event));
+    await service.initialize();
+
+    await service.sendMessage({ botId: "chief", text: "Make the Diwali price list" });
+    await waitFor(
+      async () =>
+        (await protocolMessages()).filter((message) => message.method === "turn/start").length ===
+        2,
+    );
+    expect(activated).toEqual(["second"]);
+    expect(rested).toEqual(["first"]);
+    const note = events.find(
+      (event): event is Extract<AgentEvent, { type: "error" }> =>
+        event.type === "error" && event.code === "fallback_model",
+    );
+    expect(note?.message).toContain("shop@owner.in");
+    expect(note?.message).toContain("other ChatGPT account (home@owner.in)");
+    // Still on ChatGPT: no move to the free model.
+    const after = service.listBots().find((bot) => bot.id === "chief");
+    expect(after?.model.startsWith("gpt-")).toBe(true);
+  });
+
   it("does not take billing.ts in an error for a used-up plan", async () => {
     process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
     process.env.SAHKARMI_FAKE_FAIL_MESSAGE = "Failed to edit src/billing.ts: old_string not found";
