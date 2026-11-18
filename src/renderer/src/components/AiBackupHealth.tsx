@@ -404,3 +404,63 @@ export function AccountHealth(props: {
     </Show>
   );
 }
+
+/**
+ * Team projects: one line before the start. It gives the share of the limit the AI itself
+ * reports as used (nothing when it reports none), says that a team uses much more than one
+ * chat, and says what happens when the limit runs out.
+ */
+export function TeamLimitNote(props: { provider: AgentProviderId; agentStatus: AgentStatus }) {
+  const [usage, setUsage] = createSignal<UsageOverview | null>(null);
+
+  onMount(() => {
+    void window.sahkarmi?.usage
+      ?.overview?.()
+      .then(setUsage)
+      .catch(() => undefined);
+    if (order() === null) {
+      void window.sahkarmi?.orchestrator
+        ?.getEngineSettings?.()
+        .then((settings) => setOrder(settings.backupOrder ?? []))
+        .catch(() => undefined);
+    }
+  });
+
+  const percent = createMemo(() => {
+    const windows =
+      usage()?.providers.find((item) => item.provider === props.provider)?.limits ?? [];
+    const used = windows
+      .map((window) => window.usedPercent)
+      .filter((value): value is number => typeof value === "number");
+    return used.length > 0 ? Math.round(Math.max(...used)) : null;
+  });
+  const backup = createMemo(() => {
+    const list = order() ?? [];
+    const at = list.indexOf(props.provider);
+    const rotated = at === -1 ? list : [...list.slice(at + 1), ...list.slice(0, at)];
+    return (
+      rotated.find(
+        (candidate) =>
+          candidate !== props.provider &&
+          (props.agentStatus.providers ?? []).some(
+            (provider) =>
+              provider.id === candidate && provider.state === "available" && !provider.limitedUntil,
+          ),
+      ) ?? null
+    );
+  });
+
+  return (
+    <p class="team-estimate" role="note">
+      <Show when={percent() !== null}>
+        <strong>
+          {t("teamEstimateUsed", { name: nameOf(props.provider), percent: String(percent()) })}
+        </strong>{" "}
+      </Show>
+      {t("teamEstimateBig")}{" "}
+      {backup()
+        ? t("teamEstimateBackup", { name: nameOf(backup() as AgentProviderId) })
+        : t("teamEstimateNoBackup")}
+    </p>
+  );
+}

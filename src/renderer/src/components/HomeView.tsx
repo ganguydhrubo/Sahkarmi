@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from "solid-js";
+import type { DraftAttachment } from "../../../shared/ipc";
 import type { BotProfile } from "../data";
 import { featureOn } from "../features";
 import { t } from "../i18n";
@@ -71,12 +72,14 @@ export function HomeView(props: {
   /** The workspace's CEO, when there is one: jobs with no clear owner go to it. */
   ceoBotId: string | null;
   pendingApprovals: number;
-  onSend: (botId: string, text: string) => void | Promise<void>;
+  onSend: (botId: string, text: string, attachmentDraftIds: string[]) => void | Promise<void>;
   onOpenBot: (botId: string) => void;
   onOpenTeamProject: (goal: string) => void;
   onOpenApprovals: () => void;
 }) {
   const [text, setText] = createSignal("");
+  /** Voice notes (and any other files) recorded here; they go with the job when it starts. */
+  const [files, setFiles] = createSignal<DraftAttachment[]>([]);
   const [jobRole, setJobRole] = createSignal<JobRole | null>(null);
   const [jobId, setJobId] = createSignal<string | null>(null);
   const [chosen, setChosen] = createSignal<string | null>(null);
@@ -161,11 +164,16 @@ export function HomeView(props: {
   async function start() {
     const ask = text().trim();
     const bot = target();
-    if (!ask || !bot || sending()) return;
+    if ((!ask && files().length === 0) || !bot || sending()) return;
     setSending(true);
     setError("");
     try {
-      await props.onSend(bot.id, ask);
+      await props.onSend(
+        bot.id,
+        ask,
+        files().map((file) => file.id),
+      );
+      setFiles([]);
       const started = jobId();
       if (started) setUseCounts(noteStarterUsed(started));
       setText("");
@@ -225,6 +233,30 @@ export function HomeView(props: {
               }
             }}
           />
+          <Show when={files().length > 0}>
+            <ul class="home-files">
+              <For each={files()}>
+                {(file) => (
+                  <li class="home-file">
+                    <span class="home-file-name">{file.name}</span>
+                    <button
+                      type="button"
+                      class="home-file-remove"
+                      aria-label={t("homeRemoveFile", { name: file.name })}
+                      onClick={() => {
+                        setFiles((current) => current.filter((item) => item.id !== file.id));
+                        void window.sahkarmi?.agent
+                          ?.discardDraftAttachment?.(file.id)
+                          ?.catch(() => undefined);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </li>
+                )}
+              </For>
+            </ul>
+          </Show>
           <div class="home-ask-bar">
             <div class="home-mic">
               <button
@@ -247,11 +279,14 @@ export function HomeView(props: {
               </button>
               <VoiceRecorder
                 startRequest={micRequest()}
-                onAttach={(_attachments, transcript) => {
-                  if (!transcript.trim()) return;
-                  setText(
-                    (current) => `${current}${current.trim() ? " " : ""}${transcript.trim()}`,
-                  );
+                onAttach={(attachments, transcript) => {
+                  // A voice note is a file: keep it, or the recording is lost.
+                  if (attachments.length > 0) setFiles((current) => [...current, ...attachments]);
+                  if (transcript.trim()) {
+                    setText(
+                      (current) => `${current}${current.trim() ? " " : ""}${transcript.trim()}`,
+                    );
+                  }
                   box?.focus();
                 }}
                 onError={setError}
@@ -261,7 +296,7 @@ export function HomeView(props: {
             <button
               type="submit"
               class="button-primary home-start"
-              disabled={!text().trim() || !target() || sending()}
+              disabled={(!text().trim() && files().length === 0) || !target() || sending()}
             >
               {sending() ? t("homeStarting") : t("homeStart")}
             </button>

@@ -14,6 +14,7 @@ import {
 import type { BotProfile } from "../data";
 import { t } from "../i18n";
 import { AgentAvatar } from "./AgentAvatar";
+import { TeamLimitNote } from "./AiBackupHealth";
 import { PerformanceView } from "./PerformanceView";
 import { ProviderModelPicker } from "./ProviderModelPicker";
 import { WorkflowExportMenu } from "./WorkflowExportMenu";
@@ -348,6 +349,10 @@ export function OrchestratorView(props: {
                 </label>
               </Show>
               <small class="settings-meta">{t("teamModelHint")}</small>
+              <TeamLimitNote
+                provider={providerForModel(model())}
+                agentStatus={props.agentStatus as AgentStatus}
+              />
             </div>
           )}
         </Show>

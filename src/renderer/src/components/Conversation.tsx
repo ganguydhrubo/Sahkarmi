@@ -59,6 +59,7 @@ import { starterPrompts } from "../starter-prompts";
 import { speakingId, speakText, stopSpeaking } from "../voice-store";
 import { ActivityIndicator } from "./ActivityIndicator";
 import { AgentAvatar } from "./AgentAvatar";
+import { AiOutcomeChoice } from "./AiOutcomeChoice";
 import { ApprovalCard } from "./ApprovalsView";
 import { AvatarAura, statusAura } from "./AvatarAura";
 import { BrowserPageList, type BrowserStartAction, BrowserStartMenu } from "./BrowserPages";
@@ -3336,6 +3337,15 @@ export function Conversation(props: ConversationProps) {
               <PaperclipIcon />
             </button>
             <Show when={props.bot}>
+              <Show when={featureOn("simple-home")}>
+                <AiOutcomeChoice
+                  value={settingsModel()}
+                  modelOptions={props.modelOptions}
+                  agentStatus={props.agentStatus}
+                  disabled={!agentReady()}
+                  onChange={(model) => void selectAndConfirmModel(model)}
+                />
+              </Show>
               <ProviderModelPicker
                 value={settingsModel()}
                 modelOptions={props.modelOptions}

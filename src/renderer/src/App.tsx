@@ -1516,8 +1516,8 @@ export function App() {
                       )?.ceoBotId ?? null
                     }
                     pendingApprovals={pendingApprovals().length}
-                    onSend={async (botId, text) => {
-                      await sendMessageToBot(botId, text, []);
+                    onSend={async (botId, text, attachmentDraftIds) => {
+                      await sendMessageToBot(botId, text, attachmentDraftIds);
                     }}
                     onOpenBot={selectBot}
                     onOpenTeamProject={(goal) => {

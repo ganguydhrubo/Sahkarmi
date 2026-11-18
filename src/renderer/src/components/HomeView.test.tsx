@@ -6,6 +6,20 @@ import { TRADES } from "../trade-names";
 import { noteStarterUsed, starterJobs, starterUseCounts } from "../trades";
 import { HomeView } from "./HomeView";
 
+// The recorder itself needs a microphone; here a stand-in hands over a finished voice note.
+vi.mock("./VoiceRecorder", () => ({
+  VoiceRecorder: (props: {
+    onAttach: (attachments: Array<{ id: string; name: string }>, transcript: string) => void;
+  }) => (
+    <button
+      type="button"
+      onClick={() => props.onAttach([{ id: "draft-1", name: "voice-note.webm" }], "")}
+    >
+      fake voice note
+    </button>
+  ),
+}));
+
 function bot(id: string, name: string, role: string): BotProfile {
   return {
     id,
@@ -107,7 +121,7 @@ describe("Home", () => {
 
     await fireEvent.click(screen.getByRole("button", { name: "Start" }));
     await waitFor(() => expect(onOpenBot).toHaveBeenCalledWith("acc"));
-    expect(onSend).toHaveBeenCalledWith("acc", box.value || expect.any(String));
+    expect(onSend).toHaveBeenCalledWith("acc", expect.any(String), []);
     expect(onSend.mock.calls[0][1]).toContain("payment reminders");
     // The job is remembered, so it comes first next time.
     expect(starterUseCounts()).toEqual({ "shop-payment-reminder": 1 });
@@ -137,6 +151,18 @@ describe("Home", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Start" }));
     await waitFor(() => expect(onSend).toHaveBeenCalled());
     expect(onSend.mock.calls[0][0]).toBe("lead");
+  });
+
+  it("keeps a recorded voice note and sends it with the job", async () => {
+    const { onSend } = show();
+    await fireEvent.click(screen.getByRole("button", { name: "fake voice note" }));
+    // The note shows under the box, and Start works even with no typed words.
+    expect(screen.getByText("voice-note.webm")).toBeInTheDocument();
+    const start = screen.getByRole("button", { name: "Start" });
+    expect(start).toBeEnabled();
+    await fireEvent.click(start);
+    await waitFor(() => expect(onSend).toHaveBeenCalled());
+    expect(onSend.mock.calls[0]).toEqual(["lead", "", ["draft-1"]]);
   });
 
   it("says when approvals are waiting", () => {
