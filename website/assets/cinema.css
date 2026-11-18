@@ -1,0 +1,557 @@
+/* Sahkarmi site: the film layer.
+   The page is told like a quiet film about one working day of a small Indian business:
+   an opening scene, scene pictures between the chapters, and slow, peaceful motion on
+   everything. Nothing here hijacks scrolling, and every effect switches off for people who
+   ask their device for less motion. Colours: warm cream, deep navy, saffron for the one main
+   action, leaf green only for "done / safe". */
+
+/* The calm light theme is the default look; "dark" stays for those who choose it. */
+:root:not([data-theme="dark"]) {
+  --ms-ink: #0067b8;
+  --bg: #fbf7f0;
+  --bg-2: #f5efe4;
+  --bg-3: #ffffff;
+  --card: rgba(255, 255, 255, 0.82);
+  --card-solid: #ffffff;
+  --text: #141829;
+  --text-2: #3a3f55;
+  --muted: #646a85;
+  --line: rgba(20, 24, 41, 0.1);
+  --line-2: rgba(20, 24, 41, 0.18);
+  --saffron-ink: #a84e14;
+  --leaf-ink: #22703f;
+  --shadow: 0 24px 60px rgba(30, 42, 90, 0.16);
+  color-scheme: light;
+}
+
+:root {
+  --cine-navy: #1e2a5a;
+  --cine-cream: #fbf7f0;
+  --cine-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --cine-wait: 1250ms;
+}
+
+/* The opening plays once per visit; later pages of the same visit start at once. */
+:root.cine-seen { --cine-wait: 0ms; }
+:root.cine-seen .letterbox,
+:root.cine-seen .cine-title-card { display: none; }
+
+/* ------------------------------------------------------------------ film strip progress */
+.cine-progress {
+  position: fixed;
+  z-index: 120;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  transform: scaleX(var(--cine-scroll, 0));
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #e8772e, #f2b705 60%, #2e8b57);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ soft film grain */
+.cine-grain {
+  position: fixed;
+  z-index: 110;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.1  0 0 0 0 0.2  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.05;
+  pointer-events: none;
+  animation: cine-grain 1.2s steps(6) infinite;
+}
+
+@keyframes cine-grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -2%); }
+  80% { transform: translate(3%, 3%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ------------------------------------------------------------------ opening scene */
+.hero.hero-campaign {
+  position: relative;
+  isolation: isolate;
+  min-height: min(100svh, 980px);
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero.hero-campaign > .aurora { opacity: 0.3; }
+
+.scene-video,
+.scene-poster {
+  position: absolute;
+  z-index: -3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(calc(1.06 + var(--cine-hero, 0) * 0.08));
+  filter: saturate(1.05);
+}
+
+/* A cream veil keeps every word readable over the moving picture. */
+.scene-veil {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background:
+    linear-gradient(100deg, rgba(251, 247, 240, 0.97) 0%, rgba(251, 247, 240, 0.9) 38%, rgba(251, 247, 240, 0.35) 72%, rgba(251, 247, 240, 0.12) 100%),
+    linear-gradient(0deg, rgba(251, 247, 240, 1) 0%, rgba(251, 247, 240, 0) 22%);
+}
+
+:root[data-theme="dark"] .scene-veil {
+  background:
+    linear-gradient(100deg, rgba(11, 13, 23, 0.95) 0%, rgba(11, 13, 23, 0.86) 40%, rgba(11, 13, 23, 0.4) 75%, rgba(11, 13, 23, 0.2) 100%),
+    linear-gradient(0deg, rgba(11, 13, 23, 1) 0%, rgba(11, 13, 23, 0) 22%);
+}
+
+/* The warm light that follows the pointer, like a lamp being carried through the shop. */
+.scene-lamp {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(420px circle at var(--lamp-x, 70%) var(--lamp-y, 35%), rgba(242, 183, 5, 0.22), transparent 65%);
+  transition: opacity 600ms var(--cine-ease);
+  pointer-events: none;
+}
+
+/* Letterbox bars open like the first frame of a film. */
+.letterbox {
+  position: fixed;
+  z-index: 130;
+  left: 0;
+  width: 100%;
+  height: 50vh;
+  background: var(--cine-navy);
+  pointer-events: none;
+  animation: cine-open 1400ms 250ms var(--cine-ease) forwards;
+}
+
+.letterbox-top { top: 0; transform-origin: 50% 0; }
+.letterbox-bottom { bottom: 0; transform-origin: 50% 100%; }
+
+@keyframes cine-open {
+  to { transform: scaleY(0); }
+}
+
+.cine-title-card {
+  position: fixed;
+  z-index: 131;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--cine-cream);
+  font: 600 clamp(15px, 2.2vw, 20px) / 1.4 var(--font-ui, system-ui);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: cine-card 1500ms var(--cine-ease) forwards;
+}
+
+@keyframes cine-card {
+  0% { opacity: 0; letter-spacing: 0.5em; }
+  25% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; letter-spacing: 0.32em; }
+}
+
+/* The headline rises line by line. */
+.hero.hero-campaign h1 > span {
+  display: inline-block;
+  animation: cine-rise 1100ms var(--cine-ease) both;
+  animation-delay: var(--cine-wait);
+}
+
+.hero.hero-campaign h1 > span + span { animation-delay: calc(var(--cine-wait) + 250ms); }
+
+.hero.hero-campaign .hero-copy > *:not(h1) {
+  animation: cine-rise 1000ms var(--cine-ease) both;
+  animation-delay: calc(var(--cine-wait) + 500ms);
+}
+
+.hero.hero-campaign .hero-stage {
+  animation: cine-float-in 1400ms var(--cine-ease) both;
+  animation-delay: calc(var(--cine-wait) + 650ms);
+}
+
+@keyframes cine-rise {
+  from { opacity: 0; transform: translateY(26px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes cine-float-in {
+  from { opacity: 0; translate: 0 40px; scale: 0.97; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+/* The app screen breathes gently, as if the camera is hand-held. */
+.hero.hero-campaign .hero-shot {
+  animation: cine-breathe 9s ease-in-out infinite;
+}
+
+/* "translate" moves the screen without touching the tilt the page already gives it. */
+@keyframes cine-breathe {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+
+/* Marigold petals drifting through the morning light. */
+.petals {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.petals i {
+  position: absolute;
+  top: -6%;
+  width: 14px;
+  height: 10px;
+  border-radius: 60% 40% 60% 40%;
+  background: linear-gradient(135deg, #f2b705, #e8772e);
+  opacity: 0.7;
+  animation: cine-petal linear infinite;
+}
+
+.petals i:nth-child(1) { left: 8%; animation-duration: 17s; animation-delay: -2s; }
+.petals i:nth-child(2) { left: 22%; animation-duration: 21s; animation-delay: -9s; width: 10px; height: 8px; }
+.petals i:nth-child(3) { left: 41%; animation-duration: 19s; animation-delay: -5s; }
+.petals i:nth-child(4) { left: 58%; animation-duration: 23s; animation-delay: -14s; width: 9px; height: 7px; }
+.petals i:nth-child(5) { left: 73%; animation-duration: 18s; animation-delay: -7s; }
+.petals i:nth-child(6) { left: 88%; animation-duration: 22s; animation-delay: -11s; width: 11px; height: 8px; }
+
+@keyframes cine-petal {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(40px, 55vh, 0) rotate(180deg); }
+  100% { transform: translate3d(-20px, 112vh, 0) rotate(360deg); }
+}
+
+/* ------------------------------------------------------------------ everything arrives */
+.cine {
+  opacity: 0;
+  translate: 0 26px;
+  transition:
+    opacity 900ms var(--cine-ease),
+    translate 900ms var(--cine-ease);
+  transition-delay: calc(var(--cine-i, 0) * 70ms);
+}
+
+.cine.cine-in {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* Section headings draw a saffron line under themselves when they arrive. */
+main section:not(.go) h2::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 3px;
+  margin-top: 14px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #e8772e, #f2b705);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 900ms 250ms var(--cine-ease);
+}
+
+main section:not(.go) h2.cine-seen-h::after {
+  transform: scaleX(1);
+}
+
+/* Cards lift and catch the light. */
+@media (hover: hover) and (pointer: fine) {
+  .cine-tilt {
+    transform-style: preserve-3d;
+    transition: transform 300ms var(--cine-ease), box-shadow 300ms var(--cine-ease);
+    will-change: transform;
+  }
+
+  .cine-tilt:hover {
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(-4px);
+    box-shadow: 0 28px 60px rgba(30, 42, 90, 0.18);
+  }
+}
+
+/* The main button has a slow sheen, like light crossing brass. */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg);
+  animation: cine-sheen 5.5s ease-in-out infinite;
+}
+
+@keyframes cine-sheen {
+  0%, 70% { left: -60%; }
+  100% { left: 130%; }
+}
+
+/* ------------------------------------------------------------------ scene pictures */
+.scene {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  isolation: isolate;
+  height: min(86svh, 820px);
+  display: grid;
+  align-items: end;
+  background: var(--cine-navy);
+}
+
+.scene img {
+  position: absolute;
+  z-index: -2;
+  inset: -8% 0;
+  width: 100%;
+  height: 116%;
+  object-fit: cover;
+  transform: translate3d(0, calc(var(--scene-p, 0) * -6%), 0) scale(calc(1.04 + var(--scene-p, 0) * 0.07));
+  will-change: transform;
+}
+
+.scene::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(15, 18, 32, 0.82) 0%, rgba(15, 18, 32, 0.25) 46%, rgba(15, 18, 32, 0) 70%);
+}
+
+.scene figcaption {
+  width: min(1120px, 100% - 40px);
+  margin: 0 auto;
+  padding: 0 0 clamp(28px, 6vh, 64px);
+  color: #fbf7f0;
+}
+
+.scene-time {
+  display: inline-block;
+  margin-bottom: 12px;
+  border: 1px solid rgba(251, 247, 240, 0.5);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: 600 13px / 1 var(--font-ui, system-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.scene-line {
+  display: block;
+  max-width: 22ch;
+  font: 700 clamp(28px, 5vw, 56px) / 1.12 var(--font-display, var(--font-ui, system-ui));
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.scene-sub {
+  display: block;
+  max-width: 46ch;
+  margin-top: 14px;
+  color: rgba(251, 247, 240, 0.88);
+  font-size: clamp(16px, 2.1vw, 20px);
+  line-height: 1.5;
+}
+
+.scene-note {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  border-radius: 999px;
+  background: rgba(15, 18, 32, 0.55);
+  padding: 4px 10px;
+  color: rgba(251, 247, 240, 0.85);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* The caption's lines arrive one after another when the scene is on screen. */
+.scene figcaption > * {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 900ms var(--cine-ease), transform 900ms var(--cine-ease);
+}
+
+.scene.cine-in figcaption > * { opacity: 1; transform: none; }
+.scene.cine-in figcaption > *:nth-child(2) { transition-delay: 180ms; }
+.scene.cine-in figcaption > *:nth-child(3) { transition-delay: 360ms; }
+
+/* The closing call sits over the last scene: lamps on the terrace at dusk. The section
+   carries its own night colours, whatever the page theme is. */
+main .go {
+  --text: #fbf7f0;
+  --text-2: #ebe5d8;
+  --muted: #cfc9bc;
+  --saffron-ink: #f5a565;
+  --line-2: rgba(251, 247, 240, 0.3);
+  background: #0f1220 url("/assets/cinema/dusk-poster.webp") center / cover no-repeat;
+  color: var(--text);
+}
+
+.go > .aurora { display: none; }
+
+.go .go-film {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.go .go-veil {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(15, 18, 32, 0.9) 0%, rgba(15, 18, 32, 0.55) 55%, rgba(15, 18, 32, 0.78) 100%);
+}
+
+.go .go-inner { position: relative; z-index: 1; }
+
+/* ------------------------------------------------------------------ music */
+.sound {
+  position: fixed;
+  z-index: 115;
+  left: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--card-solid);
+  box-shadow: 0 10px 30px rgba(30, 42, 90, 0.16);
+  padding: 8px 16px 8px 12px;
+  color: var(--text);
+  font: 600 14px / 1 var(--font-ui, system-ui);
+  cursor: pointer;
+}
+
+.sound-bars {
+  display: inline-flex;
+  height: 16px;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.sound-bars i {
+  width: 3px;
+  height: 5px;
+  border-radius: 2px;
+  background: var(--saffron);
+}
+
+.sound[aria-pressed="true"] .sound-bars i {
+  animation: cine-bars 900ms ease-in-out infinite;
+}
+
+.sound[aria-pressed="true"] .sound-bars i:nth-child(2) { animation-delay: 150ms; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(3) { animation-delay: 300ms; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(4) { animation-delay: 450ms; }
+
+@keyframes cine-bars {
+  0%, 100% { height: 5px; }
+  50% { height: 16px; }
+}
+
+/* ------------------------------------------------------------------ small screens */
+@media (max-width: 760px) {
+  .hero.hero-campaign { min-height: auto; padding-top: 12px; }
+  .scene-veil {
+    background: linear-gradient(0deg, rgba(251, 247, 240, 1) 0%, rgba(251, 247, 240, 0.93) 55%, rgba(251, 247, 240, 0.7) 100%);
+  }
+  :root[data-theme="dark"] .scene-veil {
+    background: linear-gradient(0deg, rgba(11, 13, 23, 1) 0%, rgba(11, 13, 23, 0.9) 55%, rgba(11, 13, 23, 0.7) 100%);
+  }
+  .cine-grain { display: none; }
+  .scene { height: min(78svh, 620px); }
+  .scene-note { top: 10px; right: 10px; }
+  .petals i:nth-child(n + 4) { display: none; }
+  .sound { left: 10px; bottom: 84px; padding: 8px 12px; }
+  .sound span.sound-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* ------------------------------------------------------------------ less motion, when asked */
+@media (prefers-reduced-motion: reduce) {
+  .cine-grain,
+  .petals,
+  .letterbox,
+  .cine-title-card { display: none; }
+  .cine,
+  .scene figcaption > * { opacity: 1; transform: none; translate: 0 0; transition: none; }
+  .hero.hero-campaign h1 > span,
+  .hero.hero-campaign .hero-copy > *:not(h1),
+  .hero.hero-campaign .hero-stage,
+  .hero.hero-campaign .hero-shot,
+  .btn-primary::after { animation: none; }
+  .scene img,
+  .scene-video,
+  .scene-poster { transform: none; }
+  main section:not(.go) h2::after { transform: scaleX(1); transition: none; }
+  .go .go-film { display: none; }
+}
+
+/* Each picture keeps its person in view when a narrow screen crops it. */
+.scene img { object-position: var(--scene-focus, 50%) 50%; }
+#scene-morning { --scene-focus: 56%; }
+#scene-noon { --scene-focus: 76%; }
+#scene-evening { --scene-focus: 66%; }
+#scene-night { --scene-focus: 74%; }
+
+/* Scene pictures never sit still: a slow push-in, like a camera on a dolly. */
+.scene img { animation: cine-drift 16s ease-in-out infinite alternate; }
+
+@keyframes cine-drift {
+  from { scale: 1; }
+  to { scale: 1.07; }
+}
+
+/* A band of light crosses each scene once it is on screen. */
+.scene::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -40%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 236, 200, 0.16), transparent);
+  transform: skewX(-14deg);
+}
+
+.scene.cine-in::before { animation: cine-sweep 2600ms 300ms var(--cine-ease) forwards; }
+
+@keyframes cine-sweep {
+  to { left: 130%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene img { animation: none; }
+  .scene::before { display: none; }
+}
