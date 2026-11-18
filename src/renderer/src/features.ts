@@ -21,5 +21,7 @@ export function applyFeatures(next: FeatureState[]): void {
 /** Built-in features are on unless the owner switched them off. */
 export function featureOn(id: string): boolean {
   const feature = features().find((candidate) => candidate.id === id);
-  return feature ? feature.enabled : !["live-dictation", "model-suggestions"].includes(id);
+  return feature
+    ? feature.enabled
+    : !["live-dictation", "model-suggestions", "simple-home"].includes(id);
 }

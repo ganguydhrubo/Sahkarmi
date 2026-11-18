@@ -98,7 +98,7 @@ export class ComposioSecurityGuard {
         asked
           ? `Why: it is working on what you asked for: "${clip(redactSecrets(asked), 160)}"`
           : "Why: this changes something outside Sahkarmi, so it needs your OK first.",
-        "If you approve: this happens for real, straight away, and only once.",
+        "What will happen: this happens for real, straight away, and only once.",
         shared.length ? `What is shared with ${toolkit}:\n${shared.join("\n")}` : null,
         `Nothing happens until you choose. If you reject, ${who} will not do this.`,
       ]

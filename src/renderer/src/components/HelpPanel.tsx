@@ -10,6 +10,7 @@ import {
 import type { CenterView } from "./Sidebar";
 
 const SCREEN_HELP: Record<CenterView, { title: MessageKey; body: MessageKey }> = {
+  home: { title: "navHome", body: "helpAHome" },
   coworker: { title: "team", body: "screenCoworker" },
   tasks: { title: "navTasks", body: "screenTasks" },
   orchestrator: { title: "navOrchestrator", body: "screenOrchestrator" },
@@ -33,6 +34,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
     items: [
       ["helpQFree", "helpAFree"],
       ["helpQFirstTask", "helpAFirstTask"],
+      ["helpQHome", "helpAHome"],
       ["helpQModels", "helpAModels"],
       ["helpQPickModel", "helpAPickModel"],
       ["helpQVoice", "helpAVoice"],
@@ -71,6 +73,9 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
     group: "helpGroupConnect",
     items: [
       ["helpQSwitchAccount", "helpASwitchAccount"],
+      ["helpQBackup", "helpABackup"],
+      ["helpQSwitchKeepsWork", "helpASwitchKeepsWork"],
+      ["helpQRepeat", "helpARepeat"],
       ["helpQTelegram", "helpAPhone"],
       ["helpQBrowser", "helpTipBrowser"],
       ["helpQMcp", "helpTipMcp"],

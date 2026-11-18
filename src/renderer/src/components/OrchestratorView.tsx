@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import {
   type AgentEvent,
   type AgentModelId,
@@ -84,10 +84,16 @@ export function OrchestratorView(props: {
   agentStatus?: AgentStatus;
   /** The model the team starts with when the owner has not chosen one. */
   defaultModel?: AgentModelId | null;
+  /** A goal typed on Home ("Give it to a team"): it is put in the box, never started by itself. */
+  initialObjective?: string;
 }) {
   const [runs, setRuns] = createSignal<OrchestratorRun[]>([]);
   const [selectedRunId, setSelectedRunId] = createSignal<string | null>(null);
   const [objective, setObjective] = createSignal("");
+  createEffect(() => {
+    const goal = props.initialObjective?.trim();
+    if (goal) setObjective(goal);
+  });
   // A team project means the whole team unless the owner picks otherwise.
   const [strategyMode, setStrategyMode] = createSignal<"auto" | TaskExecutionStrategy>(
     "multi-agent",

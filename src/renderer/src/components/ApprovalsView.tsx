@@ -252,22 +252,23 @@ export function ApprovalCard(props: {
         <div class="approval-actions">
           <button
             type="button"
-            class="button-danger-quiet"
+            class="approval-no"
             disabled={busy()}
             onClick={() => void decide("rejected")}
           >
-            {t("reject")}
+            {t("approveDont")}
           </button>
           <button
             ref={approveButton}
             type="button"
-            class="button-primary"
+            class="button-primary approval-yes"
             disabled={busy()}
             onClick={() => void decide("approved")}
           >
-            {t("approve")}
+            {t("approveOnce")}
           </button>
         </div>
+        <p class="approval-once-hint">{t("approvalOnceHint")}</p>
         <Show when={props.inline}>
           <p class="approval-keys">{t("approvalKeys")}</p>
         </Show>

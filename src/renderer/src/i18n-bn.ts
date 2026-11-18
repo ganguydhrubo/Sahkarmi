@@ -177,7 +177,7 @@ export const bn: Dictionary = {
   toolKindApprovalMany: "{count}টি অনুমোদন",
   toolKindToolOne: "১টি অ্যাপ কাজ",
   toolKindToolMany: "{count}টি অ্যাপ কাজ",
-  approvalKeys: "Enter চাপলে অনুমোদন · Esc চাপলে প্রত্যাখ্যান",
+  approvalKeys: "Enter চাপলে একবার অনুমতি · Esc চাপলে অনুমতি নয়",
   planTitle: "পরিকল্পনা",
   planProgress: "{total}টির মধ্যে {done}টি শেষ",
   planStatus_pending: "শুরু হয়নি",

@@ -177,7 +177,7 @@ const en = {
   toolKindApprovalMany: "{count} approvals",
   toolKindToolOne: "1 app action",
   toolKindToolMany: "{count} app actions",
-  approvalKeys: "Enter approves · Esc rejects",
+  approvalKeys: "Enter allows once · Esc does not allow",
   planTitle: "Plan",
   planProgress: "{done} of {total} done",
   planStatus_pending: "Not started",

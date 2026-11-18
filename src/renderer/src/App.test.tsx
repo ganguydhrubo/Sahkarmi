@@ -480,11 +480,13 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    expect(await screen.findByRole("dialog", { name: "Choose your provider" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Let us set up Sahkarmi for you" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Chief" })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 
-    const providers = screen.getByRole("radiogroup", { name: "Default provider" });
+    const providers = screen.getByRole("radiogroup", { name: "AI for your coworkers" });
     // OpenCode is listed first but not installed in this fixture, so Claude gets focus.
     const claude = within(providers).getByRole("radio", { name: /Claude.*Available/ });
     expect(claude).toHaveFocus();
@@ -525,7 +527,7 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    const providers = await screen.findByRole("radiogroup", { name: "Default provider" });
+    const providers = await screen.findByRole("radiogroup", { name: "AI for your coworkers" });
     const codex = within(providers).getByRole("radio", { name: /Codex.*Checking/ });
     const claude = within(providers).getByRole("radio", { name: /Claude.*Checking/ });
 
@@ -752,7 +754,7 @@ describe("Sahkarmi connected desktop shell", () => {
     render(() => <App />);
 
     expect(
-      within(await screen.findByRole("radiogroup", { name: "Default provider" })).getByRole(
+      within(await screen.findByRole("radiogroup", { name: "AI for your coworkers" })).getByRole(
         "radio",
         { name: /Claude.*Available/ },
       ),
@@ -807,7 +809,9 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
 
-    expect(await screen.findByRole("dialog", { name: "Choose your provider" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Let us set up Sahkarmi for you" }),
+    ).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Mac permissions")).not.toBeInTheDocument());
     expect(window.sahkarmi.getMacPermissions).not.toHaveBeenCalled();
   });
@@ -999,7 +1003,7 @@ describe("Sahkarmi connected desktop shell", () => {
     await fireEvent.input(screen.getByPlaceholderText("Add a note (optional)"), {
       target: { value: "Pay after GST invoice" },
     });
-    await fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
     await waitFor(() =>
       expect(window.sahkarmi.approvals.decide).toHaveBeenCalledWith({
         approvalId: "ap1",
@@ -1031,7 +1035,7 @@ describe("Sahkarmi connected desktop shell", () => {
     await screen.findByRole("heading", { name: "Chief" });
     const card = await screen.findByText("Allow: npm install");
     expect(card.closest(".inline-approvals")).not.toBeNull();
-    await fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
     await waitFor(() =>
       expect(window.sahkarmi.approvals.decide).toHaveBeenCalledWith({
         approvalId: "ap2",

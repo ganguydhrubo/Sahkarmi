@@ -63,7 +63,7 @@ import { UpdateControl } from "./components/UpdateControl";
 import { WelcomeCard } from "./components/WelcomeCard";
 import { WhatsNewDialog } from "./components/WhatsNewDialog";
 import { accentForAvatarColor, accentForBot, type BotMessage, type BotProfile } from "./data";
-import { featureOn, loadFeatures } from "./features";
+import { featureOn, features, loadFeatures } from "./features";
 import { t } from "./i18n";
 import {
   dismissWelcome,
@@ -95,6 +95,9 @@ const SettingsView = lazy(() =>
 );
 const TasksView = lazy(() =>
   import("./components/TasksView").then((module) => ({ default: module.TasksView })),
+);
+const HomeView = lazy(() =>
+  import("./components/HomeView").then((module) => ({ default: module.HomeView })),
 );
 const OrchestratorView = lazy(() =>
   import("./components/OrchestratorView").then((module) => ({ default: module.OrchestratorView })),
@@ -230,6 +233,16 @@ export function App() {
   const [setupLoaded, setSetupLoaded] = createSignal(false);
   const [permissionsOpen, setPermissionsOpen] = createSignal(false);
   const [view, setView] = createSignal<CenterView>("coworker");
+  // Home is the landing screen once the feature list is known and says so; an owner who has
+  // already opened another screen by then stays where they are.
+  let landed = false;
+  createEffect(() => {
+    if (landed || features().length === 0) return;
+    landed = true;
+    if (featureOn("simple-home") && untrack(view) === "coworker") setView("home");
+  });
+  /** A goal typed on Home and handed to Team projects. */
+  const [teamGoal, setTeamGoal] = createSignal("");
   const [searchOpen, setSearchOpen] = createSignal(false);
   const [botsLoaded, setBotsLoaded] = createSignal(false);
   const [helpOpen, setHelpOpen] = createSignal(false);
@@ -771,6 +784,11 @@ export function App() {
       );
       const newAgent = createMutable(toBotProfile(stored));
       setBotList((current) => [newAgent, ...current.filter((item) => item.id !== newAgent.id)]);
+      // The first coworker of a workspace becomes its CEO: show that at once.
+      void window.sahkarmi.team
+        ?.listWorkspaces?.()
+        .then(setWorkspaces)
+        .catch(() => undefined);
       setLiveMessages((current) => ({ ...current, [newAgent.id]: [] }));
       setConversationLoaded((current) => ({ ...current, [newAgent.id]: true }));
       setAgentPickerOpen(false);
@@ -1393,7 +1411,10 @@ export function App() {
         >
           <div
             class="app-frame"
-            classList={{ "app-frame-sidebar-collapsed": leftPanelCollapsed() }}
+            classList={{
+              "app-frame-sidebar-collapsed": leftPanelCollapsed(),
+              "app-frame-simple": featureOn("simple-home"),
+            }}
             style={`--left-panel-width: ${leftPanelCollapsed() ? 0 : leftPanelWidth()}px`}
           >
             <Show
@@ -1486,6 +1507,26 @@ export function App() {
             </Show>
             <Suspense fallback={<section class="center-view" aria-busy="true" />}>
               <Switch>
+                <Match when={view() === "home"}>
+                  <HomeView
+                    bots={workspaceBots()}
+                    ceoBotId={
+                      workspaces().workspaces.find(
+                        (workspace) => workspace.id === workspaces().activeWorkspaceId,
+                      )?.ceoBotId ?? null
+                    }
+                    pendingApprovals={pendingApprovals().length}
+                    onSend={async (botId, text) => {
+                      await sendMessageToBot(botId, text, []);
+                    }}
+                    onOpenBot={selectBot}
+                    onOpenTeamProject={(goal) => {
+                      setTeamGoal(goal);
+                      setView("orchestrator");
+                    }}
+                    onOpenApprovals={() => setView("approvals")}
+                  />
+                </Match>
                 <Match when={view() === "tasks"}>
                   <TasksView
                     bots={workspaceBots()}
@@ -1503,6 +1544,7 @@ export function App() {
                     modelOptions={modelOptions()}
                     agentStatus={agentStatus()}
                     defaultModel={activeBot()?.model ?? null}
+                    initialObjective={teamGoal()}
                   />
                 </Match>
                 <Match when={view() === "memory"}>

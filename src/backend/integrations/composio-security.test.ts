@@ -179,7 +179,7 @@ describe("ComposioSecurityGuard", () => {
       }),
     );
     expect(created[0].details).toContain("To: x@example.com");
-    expect(created[0].details).toContain("If you approve:");
+    expect(created[0].details).toContain("What will happen:");
     expect(created[0].details).not.toContain("composio-action");
     expect(created[0].technical).toContain("composio-action: GMAIL_SEND_EMAIL");
     expect(created[0].technical).toContain('"to": "x@example.com"');

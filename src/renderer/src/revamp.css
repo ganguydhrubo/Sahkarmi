@@ -20,6 +20,7 @@
   --attention: #7a5a00;
   --attention-soft: #fbf0cc;
   --control-h: 42px;
+  --owner-bubble: #f3ead9;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +34,7 @@
     --attention: #f2c94c;
     --attention-soft: rgb(242 183 5 / 0.16);
     --control-h: 42px;
+    --owner-bubble: var(--surface-3);
   }
 }
 
@@ -46,6 +48,7 @@
   --attention: #f2c94c;
   --attention-soft: rgb(242 183 5 / 0.16);
   --control-h: 42px;
+  --owner-bubble: var(--surface-3);
 }
 
 /* Links and text buttons: the readable orange, never the bright fill colour. */
@@ -289,9 +292,19 @@
 /* Home: "What do you want done today?"                                                      */
 /* ---------------------------------------------------------------------------------------- */
 
+/* Home is not a ".center-view": that class restyles every button inside it, and Home's
+   buttons (tiles, microphone, the voice box's click-away layer) have their own look. */
+.app-frame > .home-view {
+  grid-column: 4;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
 .home-view {
   overflow-y: auto;
   background: var(--bg-deep);
+  color: var(--text-primary);
 }
 
 .home-column {
@@ -674,4 +687,515 @@
   color: var(--link-ink);
   font-size: var(--fs-sm);
   font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* First open: language, line of work, AI                                                    */
+/* ---------------------------------------------------------------------------------------- */
+
+.initial-setup-screen {
+  background: var(--bg-deep);
+}
+
+.initial-setup {
+  width: min(100%, 640px);
+  border: 1px solid var(--card-line);
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 36px 40px 32px;
+}
+
+.initial-setup h1 {
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.initial-setup-intro {
+  font-size: var(--fs-lg);
+}
+
+.start-question {
+  min-width: 0;
+  margin: 24px 0 0;
+  border: 0;
+  padding: 0;
+}
+
+.start-question legend,
+.start-question h2 {
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.start-question-ai {
+  margin-bottom: 4px;
+}
+
+.start-hint {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.start-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.start-choices-trade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+
+.start-choice {
+  min-height: 48px;
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 10px 18px;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-choice:hover {
+  border-color: var(--indigo-accent);
+}
+
+/* The chosen answer is navy, so orange stays for the one button that moves on. */
+.start-choice-on {
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.initial-setup .initial-setup-save {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  padding: 12px 28px;
+  color: var(--on-primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.initial-setup .initial-setup-save:disabled {
+  background: rgb(var(--ink-rgb) / 0.12);
+  color: rgb(var(--ink-rgb) / 0.45);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* The simple menu: five places with their names                                             */
+/* ---------------------------------------------------------------------------------------- */
+
+.app-frame.app-frame-simple {
+  grid-template-columns: 92px var(--left-panel-width, 320px) 0 minmax(0, 1fr);
+}
+
+.app-frame.app-frame-simple.app-frame-sidebar-collapsed {
+  grid-template-columns: 92px 0 0 minmax(0, 1fr);
+}
+
+.simple-rail {
+  align-items: stretch;
+  padding: 12px 6px 10px;
+}
+
+.simple-rail .app-rail-brand {
+  align-self: center;
+}
+
+.simple-rail-places {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.simple-rail .app-rail-bottom {
+  display: grid;
+  justify-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.simple-rail .app-rail-bottom .usage-rings {
+  align-items: center;
+}
+
+.simple-rail-place {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 62px;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  padding: 8px 2px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.simple-rail-place .rail-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.simple-rail-place:hover {
+  background: var(--sahkarmi-hover);
+  color: var(--text-primary);
+}
+
+.simple-rail-place.rail-nav-active {
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+}
+
+.simple-rail-place .rail-badge {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+}
+
+.simple-rail-more {
+  position: relative;
+}
+
+.simple-more-menu {
+  position: absolute;
+  z-index: 120;
+  top: -8px;
+  left: calc(100% + 10px);
+  display: none;
+  width: 248px;
+  max-height: 70vh;
+  overflow-y: auto;
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-pop);
+  padding: 8px;
+}
+
+.simple-more-menu.simple-more-open {
+  display: grid;
+  gap: 2px;
+}
+
+.simple-more-item {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.simple-more-item:hover,
+.simple-more-current {
+  background: var(--sahkarmi-hover);
+}
+/* ---------------------------------------------------------------------------------------- */
+/* Chat: a calm reading column                                                               */
+/* ---------------------------------------------------------------------------------------- */
+
+/* Everything in the chat sits in one column about 760 px wide, like a page of a letter. */
+.conversation-scroll > *,
+.composer-wrap > * {
+  width: 100%;
+  max-width: 760px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.conversation-scroll .message-copy {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* The coworker's reply reads as text on the page, not as a box. */
+.conversation-scroll .message-entry-bot .bot-bubble {
+  max-width: 100%;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding: 2px 0;
+}
+
+/* Cards inside a reply (choices, questions) keep their own box. */
+.conversation-scroll .message-entry-bot .bot-bubble:has(.choice-card) {
+  padding: 0;
+}
+
+/* The owner's own message: a soft cream bubble with navy words, never a dark block. */
+.conversation-scroll .message-entry-user .user-bubble {
+  max-width: min(600px, 86%);
+  border: 1px solid var(--card-line);
+  border-radius: 18px 18px 6px 18px;
+  background: var(--owner-bubble);
+  padding: 10px 16px;
+  color: var(--text-primary);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-copy,
+.conversation-scroll .message-entry-user .user-bubble .message-status,
+.conversation-scroll .message-entry-user .user-bubble .md-list li::marker {
+  color: var(--text-primary);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-link {
+  color: var(--link-ink);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-status {
+  color: var(--text-muted);
+}
+
+.conversation-scroll .message-entry-user .user-bubble .message-resend {
+  border-color: var(--sahkarmi-line-strong);
+  background: var(--card-bg);
+  color: var(--link-ink);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Approvals: a clear, calm decision                                                         */
+/* ---------------------------------------------------------------------------------------- */
+
+.approval-card {
+  border-color: var(--card-line);
+  border-left-width: 4px;
+  border-left-color: var(--indigo-accent);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 20px 24px;
+}
+
+.approval-card-approved {
+  border-left-color: var(--success-fill);
+}
+
+.approval-card-rejected {
+  border-left-color: var(--sahkarmi-line-strong);
+}
+
+/* Red is kept for money, deleting and sending. */
+.approval-card-pending.approval-risk-high {
+  border-left-color: var(--danger);
+  background: var(--card-bg);
+}
+
+.approval-card .approval-details p {
+  margin: 6px 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+
+.approval-card .approval-details strong {
+  color: var(--text-primary);
+}
+
+.approval-card .approval-actions {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.approval-card .approval-no,
+.approval-card .approval-yes {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.approval-card .approval-no {
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.approval-card .approval-no:hover:not(:disabled) {
+  background: var(--sahkarmi-hover);
+}
+
+.approval-card-pending.approval-risk-high .approval-yes {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.approval-once-hint {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Who leads the team (CEO)                                                                  */
+/* ---------------------------------------------------------------------------------------- */
+
+.team-row-ceo {
+  flex: none;
+  border-radius: 6px;
+  background: var(--indigo-accent);
+  padding: 1px 7px;
+  color: var(--on-indigo);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 16px;
+}
+
+.ceo-nudge {
+  display: grid;
+  gap: 6px;
+  margin: 8px 12px 4px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px 14px;
+}
+
+.ceo-nudge strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+}
+
+.ceo-nudge p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.ceo-nudge-action {
+  justify-self: start;
+  min-height: 36px;
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  background: transparent;
+  padding: 6px 14px;
+  color: var(--indigo-accent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ceo-explain {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 16px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 14px 16px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.ceo-explain strong {
+  color: var(--text-primary);
+}
+
+.ceo-explain ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.ceo-explain p {
+  margin: 0;
+}
+
+.workspace-team-dialog .ceo-suggest {
+  justify-self: start;
+  min-height: var(--control-h);
+  margin: 4px 0 8px;
+  border-radius: 10px;
+  padding: 8px 18px;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Fixes found in the real app                                                               */
+/* ---------------------------------------------------------------------------------------- */
+
+/* On Home the microphone is near the top of the window, so its box opens BELOW the button
+   (in a chat it opens above the message box). It may never leave the window. */
+.home-mic .voice-recorder {
+  position: static;
+}
+
+.home-mic .voice-panel {
+  top: calc(100% + 12px);
+  bottom: auto;
+  left: 0;
+  z-index: 60;
+  width: min(380px, 86vw);
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  transform: none;
+  border-color: var(--card-line);
+  border-radius: 16px;
+  background: var(--card-bg);
+}
+
+/* Menu names always fit: two lines when a name is long, never cut off. */
+.app-frame.app-frame-simple {
+  grid-template-columns: 96px var(--left-panel-width, 320px) 0 minmax(0, 1fr);
+}
+
+.app-frame.app-frame-simple.app-frame-sidebar-collapsed {
+  grid-template-columns: 96px 0 0 minmax(0, 1fr);
+}
+
+.simple-rail-place {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.simple-rail-place > span:not(.rail-badge) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.simple-rail-place .rail-badge {
+  overflow: visible;
+}
+
+/* The click-away layer behind the voice box is a soft dim, never a solid sheet over the app. */
+.home-mic .voice-backdrop {
+  z-index: 59;
+  border: 0;
+  border-radius: 0;
+  background: rgb(var(--shade-rgb) / 0.18);
+  box-shadow: none;
+  cursor: default;
 }

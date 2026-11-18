@@ -5,6 +5,7 @@ import {
   commandCount,
   describePermissionRequest,
   isLookOnlyCommand,
+  undoLine,
 } from "./approval-wording";
 import { classifyAcpTool } from "./permission-policy";
 
@@ -40,7 +41,7 @@ describe("describePermissionRequest", () => {
     expect(card.title).toBe(
       "Asha wants to run a small Python script on your computer to read or write a file",
     );
-    expect(card.details).toContain("If you approve:");
+    expect(card.details).toContain("What will happen:");
     expect(card.details).toContain("Is this normal? Yes.");
     expect(card.details).not.toContain("open(r");
     expect(card.technical).toBe(action);
@@ -215,5 +216,27 @@ describe("classifyAcpTool", () => {
     expect(classifyAcpTool(null, "sahkarmi_save_memory", [], {})).toBe("research");
     expect(classifyAcpTool(null, "sahkarmi_request_approval", [], {})).toBe("research");
     expect(classifyAcpTool(null, "something_else", [], {})).toBe("shell");
+  });
+});
+
+describe("can it be undone?", () => {
+  const ask = (category: PermissionCategory, detail = "") =>
+    undoLine({ category, action: "", detail } as never);
+
+  it("says no for money, deleting and anything that leaves the computer", () => {
+    expect(ask("payments")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("file_delete")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("external_messages")).toMatch(/^Can it be undone\? No\./);
+    expect(ask("publication")).toMatch(/^Can it be undone\? No\./);
+  });
+
+  it("says yes where it is true, and nothing where it cannot know", () => {
+    expect(ask("file_create")).toBe("Can it be undone? Yes. A new file can simply be deleted.");
+    expect(ask("file_modify")).toContain("Only if you keep a copy");
+    expect(ask("shell", "dir")).toBe(
+      "Can it be undone? Nothing is changed, so there is nothing to undo.",
+    );
+    // An ordinary script: Sahkarmi cannot know, so it does not guess.
+    expect(ask("shell", "python make_report.py")).toBeNull();
   });
 });

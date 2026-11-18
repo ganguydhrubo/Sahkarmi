@@ -87,6 +87,15 @@ export const BUILT_IN_FEATURES: FeatureDefinition[] = [
     true,
   ),
   feature(
+    "simple-home",
+    "Simple Home and five-place menu",
+    "Sahkarmi opens on Home: one box for what you want done, a big microphone and ready jobs for your line of work. The side menu shows five places (Home, Coworkers, Team projects, Approvals, Settings) with their names, and the rest under More. Off: Sahkarmi opens on the coworker chat with the full icon menu, as before.",
+    "core",
+    [],
+    true,
+    true,
+  ),
+  feature(
     "lean-repeat-runs",
     "Repeated jobs use fewer tokens",
     "A scheduled task or routine that has run before starts in a clean chat with a short note of the route that worked, the files it made and its latest results, instead of reading all the earlier runs again. The earlier chat stays on your screen. Off: every run is added to the coworker's one long chat, as before.",

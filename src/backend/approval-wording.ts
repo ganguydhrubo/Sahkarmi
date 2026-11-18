@@ -310,13 +310,13 @@ export function normalLine(request: PermissionRequest, botName: string): string 
       return "Is this normal? Yes. It only looks at files so it knows what is there; nothing is changed.";
     }
     if (RISKY_COMMAND.test(command)) {
-      return `Is this normal? Only if you expected it: this can delete things or change how your computer works. If you are not sure, press Reject and ask ${botName} to explain in the chat.`;
+      return `Is this normal? Only if you expected it: this can delete things or change how your computer works. If you are not sure, choose Do not allow and ask ${botName} to explain in the chat.`;
     }
     return "Is this normal? Yes. Coworkers often run small commands and scripts like this to make files and check their work. It is safe to allow when it matches what you asked for.";
   }
   if (EVERYDAY.has(request.category)) return "Is this normal? Yes, this is an everyday step.";
   if (request.category === "file_modify") {
-    return "Is this normal? Yes, when you asked for this file to be updated. If not, press Reject.";
+    return "Is this normal? Yes, when you asked for this file to be updated. If not, choose Do not allow.";
   }
   if (
     request.category === "file_delete" ||
@@ -325,9 +325,44 @@ export function normalLine(request: PermissionRequest, botName: string): string 
     request.category === "publication" ||
     request.category === "official_forms"
   ) {
-    return `Is this normal? Only if you asked for it. This cannot easily be undone, so if you are not sure, press Reject and ask ${botName} first.`;
+    return `Is this normal? Only if you asked for it. This cannot easily be undone, so if you are not sure, choose Do not allow and ask ${botName} first.`;
   }
   return null;
+}
+
+/**
+ * "Can it be undone?": said only where the answer is known. Money, deleting and anything that
+ * leaves the computer cannot be called back; a new file can simply be deleted.
+ */
+export function undoLine(request: PermissionRequest): string | null {
+  const command = `${request.detail || ""} ${request.action || ""}`;
+  switch (request.category) {
+    case "shell":
+      if (isLookOnlyCommand(request.detail || request.action || "")) {
+        return "Can it be undone? Nothing is changed, so there is nothing to undo.";
+      }
+      return RISKY_COMMAND.test(command)
+        ? "Can it be undone? Maybe not. Things that are deleted may not come back."
+        : null;
+    case "file_create":
+      return "Can it be undone? Yes. A new file can simply be deleted.";
+    case "file_modify":
+      return "Can it be undone? Only if you keep a copy: the old version of the file is replaced.";
+    case "file_delete":
+      return "Can it be undone? No. A deleted file may not come back.";
+    case "payments":
+      return "Can it be undone? No. Money that has gone cannot be called back from here.";
+    case "external_messages":
+    case "publication":
+    case "official_forms":
+      return "Can it be undone? No. Once it is sent or posted, other people can see it.";
+    case "browser_navigation":
+      return "Can it be undone? Yes. Opening a page changes nothing.";
+    case "downloads":
+      return "Can it be undone? Yes. A downloaded file can be deleted.";
+    default:
+      return null;
+  }
 }
 
 function whyLine(request: PermissionRequest, ownerAsked: string | null): string {
@@ -352,12 +387,13 @@ export function describePermissionRequest(
     `${botName} is asking your permission to ${phrase}.`,
     whyLine(request, ownerAsked),
     request.browser?.type === "upload"
-      ? "If you approve: a copy of the file leaves your computer and goes to that website."
-      : `If you approve: ${IF_APPROVED[request.category] ?? "it will go ahead with this."}`,
+      ? "What will happen: a copy of the file leaves your computer and goes to that website."
+      : `What will happen: ${IF_APPROVED[request.category] ?? "it will go ahead with this."}`,
     sharedLine(request, files),
     chainedLine(request),
+    undoLine(request),
     normalLine(request, botName),
-    `Nothing happens until you choose. If you reject, ${botName} will not do this.`,
+    `What if I say no? Nothing happens. ${botName} will not do this.`,
   ];
   return {
     title: `${botName} wants to ${phrase}`,

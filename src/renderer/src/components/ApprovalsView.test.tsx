@@ -33,9 +33,9 @@ describe("ApprovalCard in the chat", () => {
         />
       </ul>
     ));
-    const approve = screen.getByRole("button", { name: "Approve" });
+    const approve = screen.getByRole("button", { name: "Allow once" });
     expect(document.activeElement).toBe(approve);
-    expect(screen.getByText("Enter approves · Esc rejects")).toBeInTheDocument();
+    expect(screen.getByText("Enter allows once · Esc does not allow")).toBeInTheDocument();
 
     fireEvent.keyDown(approve, { key: "Escape" });
     expect(onDecide).toHaveBeenLastCalledWith("approval-1", "rejected", "");

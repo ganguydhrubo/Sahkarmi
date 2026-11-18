@@ -178,7 +178,7 @@ export const hi: Dictionary = {
   toolKindApprovalMany: "{count} मंज़ूरियाँ",
   toolKindToolOne: "1 ऐप काम",
   toolKindToolMany: "{count} ऐप काम",
-  approvalKeys: "Enter से मंज़ूर · Esc से नामंज़ूर",
+  approvalKeys: "Enter से एक बार अनुमति · Esc से अनुमति नहीं",
   planTitle: "योजना",
   planProgress: "{total} में से {done} पूरे",
   planStatus_pending: "शुरू नहीं हुआ",

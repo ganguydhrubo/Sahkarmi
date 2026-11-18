@@ -28,6 +28,7 @@ import { UsageRings } from "./UsageRings";
 import { WorkspaceTeamDialog } from "./WorkspaceTeamDialog";
 
 export type CenterView =
+  | "home"
   | "coworker"
   | "tasks"
   | "orchestrator"
@@ -47,7 +48,7 @@ export type CenterView =
 type RailGroup = "work" | "knowledge" | "automate" | "business" | "app";
 
 const RAIL_ITEMS: Array<{
-  view: Exclude<CenterView, "coworker">;
+  view: Exclude<CenterView, "coworker" | "home">;
   label: MessageKey;
   feature: string | null;
   group: RailGroup;
@@ -445,6 +446,21 @@ export function Sidebar(props: SidebarProps) {
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = createSignal(false);
   const [teamDialogOpen, setTeamDialogOpen] = createSignal(false);
+  const isCeo = (botId: string) => activeWorkspace()?.ceoBotId === botId;
+  /**
+   * A team needs someone to share out the work. An empty workspace says its first coworker
+   * will lead; a team of two or more with no CEO offers to choose one.
+   */
+  const ceoNudge = (): "empty" | "none" | null => {
+    const workspace = activeWorkspace();
+    if (!workspace) return null;
+    const members = props.bots.filter((bot) => bot.workspaceId === workspace.id);
+    if (members.length === 0) return "empty";
+    if (members.length >= 2 && !members.some((bot) => bot.id === workspace.ceoBotId)) {
+      return "none";
+    }
+    return null;
+  };
   const [workspaceEditor, setWorkspaceEditor] = createSignal<
     { mode: "create" } | { mode: "rename"; workspaceId: string } | null
   >(null);
@@ -803,6 +819,11 @@ export function Sidebar(props: SidebarProps) {
           <span class="bot-row-heading">
             <span class="bot-row-title-wrap">
               <strong>{bot.name}</strong>
+              <Show when={isCeo(bot.id)}>
+                <span class="team-row-ceo" title={t("workspaceCeoHint")}>
+                  {t("ceoTag")}
+                </span>
+              </Show>
               <Show when={bot.role}>
                 <span class="team-row-role-pill">{bot.role}</span>
               </Show>
@@ -1065,6 +1086,23 @@ export function Sidebar(props: SidebarProps) {
         </div>
       </Show>
 
+      <Show when={ceoNudge()}>
+        {(nudge) => (
+          <div class="ceo-nudge" role="note">
+            <strong>{t(nudge() === "empty" ? "ceoEmptyTitle" : "ceoNoneTitle")}</strong>
+            <p>{t(nudge() === "empty" ? "ceoEmptyBody" : "ceoNoneBody")}</p>
+            <Show when={nudge() === "none"}>
+              <button
+                type="button"
+                class="ceo-nudge-action"
+                onClick={() => setTeamDialogOpen(true)}
+              >
+                {t("ceoChoose")}
+              </button>
+            </Show>
+          </div>
+        )}
+      </Show>
       <nav aria-label={t("team")} class="bot-list team-list">
         <Show
           when={workspaceGroups().length > 0}
@@ -1455,15 +1493,225 @@ export function Sidebar(props: SidebarProps) {
   );
 }
 
-/** Persistent app navigation, separate from the collapsible coworker list. */
-export function AppNavigation(props: {
+interface NavigationProps {
   view: CenterView;
   pendingApprovals: number;
   onSelectView: (view: CenterView) => void;
   onShowTeam: () => void;
   helpOpen?: boolean;
   onToggleHelp?: () => void;
-}) {
+}
+
+function HomeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" class="rail-nav-icon">
+      <path d="M3.5 9.2 10 3.6l6.5 5.6M5.2 8v8.2h3.4v-4.4h2.8v4.4h3.4V8" />
+    </svg>
+  );
+}
+
+function CoworkersIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" class="rail-nav-icon">
+      <circle cx="7.2" cy="7" r="2.6" />
+      <path d="M2.6 16c.4-2.6 2.2-4.2 4.6-4.2s4.2 1.6 4.6 4.2M13.4 4.6a2.5 2.5 0 0 1 0 4.8M14.6 11.9c1.6.5 2.6 1.9 2.9 4.1" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" class="rail-nav-icon">
+      <rect x="3.5" y="3.5" width="5" height="5" rx="1.2" />
+      <rect x="11.5" y="3.5" width="5" height="5" rx="1.2" />
+      <rect x="3.5" y="11.5" width="5" height="5" rx="1.2" />
+      <rect x="11.5" y="11.5" width="5" height="5" rx="1.2" />
+    </svg>
+  );
+}
+
+/** The places that stay on the simple menu; everything else is under More. */
+const SIMPLE_PLACES: CenterView[] = ["orchestrator", "approvals", "settings"];
+
+/**
+ * The simple menu: five places with their names (Home, Coworkers, Team projects, Approvals,
+ * Settings) and the rest under More. An owner should never have to guess what an icon means.
+ */
+function SimpleNavigation(props: NavigationProps) {
+  const [moreOpen, setMoreOpen] = createSignal(false);
+  let moreRoot: HTMLDivElement | undefined;
+  const moreItems = () =>
+    RAIL_ITEMS.filter(
+      (item) =>
+        !SIMPLE_PLACES.includes(item.view) &&
+        (item.feature === null ||
+          featureOn(item.feature) ||
+          (item.feature === "business-targets" && featureOn("integrations"))),
+    );
+  const inMore = () => moreItems().some((item) => item.view === props.view);
+
+  onMount(() => {
+    const close = (event: MouseEvent) => {
+      if (moreOpen() && moreRoot && !moreRoot.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", closeOnEscape);
+    onCleanup(() => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", closeOnEscape);
+    });
+  });
+
+  const go = (view: CenterView) => {
+    setMoreOpen(false);
+    props.onSelectView(view);
+  };
+
+  return (
+    <nav class="app-icon-rail simple-rail" aria-label="Sahkarmi">
+      <button
+        type="button"
+        class="app-rail-brand"
+        aria-label="Sahkarmi"
+        title={t("navHome")}
+        onClick={() => go("home")}
+      >
+        <LogoMark size={30} />
+      </button>
+      <div class="simple-rail-places">
+        <button
+          type="button"
+          class="simple-rail-place"
+          classList={{ "rail-nav-active": props.view === "home" }}
+          aria-current={props.view === "home" ? "page" : undefined}
+          onClick={() => go("home")}
+        >
+          <HomeIcon />
+          <span>{t("navHome")}</span>
+        </button>
+        <button
+          type="button"
+          class="simple-rail-place"
+          classList={{ "rail-nav-active": props.view === "coworker" }}
+          aria-current={props.view === "coworker" ? "page" : undefined}
+          onClick={() => {
+            setMoreOpen(false);
+            props.onShowTeam();
+          }}
+        >
+          <CoworkersIcon />
+          <span>{t("navCoworkers")}</span>
+        </button>
+        <button
+          type="button"
+          class="simple-rail-place"
+          classList={{ "rail-nav-active": props.view === "orchestrator" }}
+          data-tour="orchestrator"
+          aria-current={props.view === "orchestrator" ? "page" : undefined}
+          onClick={() => go("orchestrator")}
+        >
+          <OrchestratorIcon />
+          <span>{t("navOrchestrator")}</span>
+        </button>
+        <button
+          type="button"
+          class="simple-rail-place"
+          classList={{ "rail-nav-active": props.view === "approvals" }}
+          data-tour="approvals"
+          aria-current={props.view === "approvals" ? "page" : undefined}
+          onClick={() => go("approvals")}
+        >
+          <ApprovalsIcon />
+          <span>{t("approvals")}</span>
+          <Show when={props.pendingApprovals > 0}>
+            <span class="rail-badge">
+              {props.pendingApprovals}
+              <span class="sr-only"> {t("pending")}</span>
+            </span>
+          </Show>
+        </button>
+        <div class="simple-rail-more" ref={moreRoot}>
+          <button
+            type="button"
+            class="simple-rail-place"
+            classList={{ "rail-nav-active": moreOpen() || inMore() }}
+            aria-expanded={moreOpen()}
+            aria-haspopup="menu"
+            onClick={() => setMoreOpen((open) => !open)}
+          >
+            <MoreIcon />
+            <span>{t("navMore")}</span>
+          </button>
+          <div
+            class="simple-more-menu"
+            classList={{ "simple-more-open": moreOpen() }}
+            role="menu"
+            aria-label={t("navMore")}
+          >
+            <For each={moreItems()}>
+              {(item) => (
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="simple-more-item"
+                  classList={{ "simple-more-current": props.view === item.view }}
+                  data-tour={item.view}
+                  onClick={() => go(item.view)}
+                >
+                  {item.icon()}
+                  <span>{t(item.label)}</span>
+                </button>
+              )}
+            </For>
+            <Show when={props.onToggleHelp}>
+              <button
+                type="button"
+                role="menuitem"
+                class="simple-more-item"
+                data-help-button
+                onClick={() => {
+                  setMoreOpen(false);
+                  props.onToggleHelp?.();
+                }}
+              >
+                <HelpIcon />
+                <span>{t("helpButton")}</span>
+              </button>
+            </Show>
+          </div>
+        </div>
+      </div>
+      <div class="app-rail-bottom">
+        <UsageRings onOpenUsage={() => go("usage")} />
+        <button
+          type="button"
+          class="simple-rail-place"
+          classList={{ "rail-nav-active": props.view === "settings" }}
+          aria-current={props.view === "settings" ? "page" : undefined}
+          onClick={() => go("settings")}
+        >
+          <SettingsIcon />
+          <span>{t("settings")}</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+/** Persistent app navigation, separate from the collapsible coworker list. */
+export function AppNavigation(props: NavigationProps) {
+  return (
+    <Show when={featureOn("simple-home")} fallback={<ClassicNavigation {...props} />}>
+      <SimpleNavigation {...props} />
+    </Show>
+  );
+}
+
+/** The full icon menu, shown when "Simple Home and five-place menu" is switched off. */
+function ClassicNavigation(props: NavigationProps) {
   const railItems = () =>
     RAIL_ITEMS.filter(
       (item) =>

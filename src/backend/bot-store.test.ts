@@ -65,6 +65,33 @@ describe("BotStore", () => {
     await expect(restored.setActiveWorkspace("missing")).rejects.toThrow("Unknown workspace");
   });
 
+  it("makes the first coworker of an empty workspace its CEO, and no later one", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sahkarmi-store-"));
+    temporaryRoots.push(root);
+    const store = new BotStore(join(root, "user-data"), join(root, "home"));
+    await store.initialize();
+    const state = await store.createWorkspace("Clinic");
+    const clinic = state.activeWorkspaceId;
+    expect(state.workspaces.find((item) => item.id === clinic)?.ceoBotId ?? null).toBeNull();
+
+    const first = await store.createBot(clinic);
+    expect(store.workspaces().workspaces.find((item) => item.id === clinic)?.ceoBotId).toBe(
+      first.id,
+    );
+    await store.createBot(clinic);
+    expect(store.workspaces().workspaces.find((item) => item.id === clinic)?.ceoBotId).toBe(
+      first.id,
+    );
+
+    // A CEO the owner removed stays removed: a new coworker in a team that already has
+    // coworkers never takes the seat by itself.
+    await store.setWorkspaceCeo(clinic, null);
+    await store.createBot(clinic);
+    expect(
+      store.workspaces().workspaces.find((item) => item.id === clinic)?.ceoBotId ?? null,
+    ).toBeNull();
+  });
+
   it("upgrades version 1 state files into the first workspace", async () => {
     const root = await mkdtemp(join(tmpdir(), "sahkarmi-store-"));
     temporaryRoots.push(root);
