@@ -116,12 +116,12 @@ export const BUILT_IN_FEATURES: FeatureDefinition[] = [
   feature("schedules", "Schedules", "Run a task daily, weekly or once at a set time.", "core"),
   feature(
     "team-run-ai-planning",
-    "Team runs: the CEO plans",
-    "A multi-step team run asks the workspace CEO for the task list (checked, and sent back at most twice if unusable) instead of the standard three steps.",
-    "labs",
+    "Team projects: a lead plans the work",
+    "A team project goes to a lead first: the workspace CEO, or Sahkarmi's own Team Lead when there is none. The lead splits the goal into tasks and picks who does each one; roles with no coworker get a team member. Off: the standard three steps.",
+    "core",
     [],
     true,
-    false,
+    true,
   ),
   feature(
     "cross-model-review",

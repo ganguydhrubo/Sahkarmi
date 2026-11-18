@@ -99,11 +99,14 @@ export function planningPrompt(
     `Goal: ${objective}`,
     "",
     "Coworkers you can give tasks to:",
-    team,
+    team ||
+      "(none yet: leave coworkerId empty and pick the best role for each task; Sahkarmi adds a team member for each role)",
     "",
     `Reply with JSON only, in this shape (at most ${MAX_PLANNED_TASKS} tasks):`,
     '{"tasks":[{"title":"...","description":"what to do and what to hand back","role":"architect|frontend|backend|code|qa|security|research|finance|ops","coworkerId":"an id from the list","dependsOn":[1],"acceptanceCriteria":["..."]}]}',
     "dependsOn lists the numbers of earlier tasks this one needs (the first task is 1).",
+    "Give a task to a listed coworker only when its name or description fits the task. Otherwise leave coworkerId empty and pick the best role: Sahkarmi adds a team member for that role.",
+    "Tasks that do not depend on each other can run at the same time. Make the last task bring everything together and check it against the goal.",
     ...(problem ? ["", `Your last plan could not be used: ${problem} Send a corrected plan.`] : []),
   ].join("\n");
 }

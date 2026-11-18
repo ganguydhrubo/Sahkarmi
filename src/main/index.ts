@@ -91,6 +91,7 @@ import { SharedFiles } from "../backend/shared-files";
 import { LearnedSkills, SkillLibrary } from "../backend/skill-library";
 import { StartupTimings } from "../backend/startup-timings";
 import { shareWithTailscale, tailscaleStatus, unshareTailscale } from "../backend/tailscale";
+import { ensureTeamMember } from "../backend/team-members";
 import { TelegramBridge } from "../backend/telegram-bridge";
 import { type InstallChannel, UsagePing } from "../backend/usage-ping";
 import { UsageService } from "../backend/usage-service";
@@ -1488,6 +1489,13 @@ function registerIpcHandlers(
     if (check !== null && (typeof check !== "string" || check.length > 500)) {
       throw new Error("Invalid check command.");
     }
+    if (input.model != null && !isAgentModel(input.model)) throw new Error("Invalid team model.");
+    if (input.reasoningEffort != null && !isReasoningEffort(input.reasoningEffort)) {
+      throw new Error("Invalid team effort.");
+    }
+    if (input.workspaceId != null && typeof input.workspaceId !== "string") {
+      throw new Error("Invalid workspace.");
+    }
     const workspacePath = store.sharedRoot;
     const existingBots = store.list();
     return orchestrator.startRun(
@@ -2038,6 +2046,9 @@ function registerProviderSetupHandlers(setup: ProviderSetup): void {
     setup.connect(provider(value)),
   );
   handleTrusted(IPC_CHANNELS.providerSetupCheck, (value: unknown) => setup.check(provider(value)));
+  handleTrusted(IPC_CHANNELS.providerSetupDisconnect, (value: unknown) =>
+    setup.disconnect(provider(value)),
+  );
   handleTrusted(IPC_CHANNELS.providerSetupSubmitCode, (input: unknown) => {
     if (!isObject(input) || typeof input.code !== "string") throw new Error("Invalid code.");
     return setup.submitCode(provider(input.provider), input.code);
@@ -2749,8 +2760,17 @@ if (!hasSingleInstanceLock) {
             noteStoppedRetry: (input) => intelligence.noteStoppedRetry(input),
             signature: (text) => errorSignature(text),
           },
+          aiPlanning: () => features.isEnabled("team-run-ai-planning"),
+          teamMember: (request) =>
+            ensureTeamMember(
+              {
+                listBots: () => service.listBots(),
+                createBot: (workspaceId) => service.createBot(workspaceId),
+                updateBot: (input) => service.updateBot(input),
+              },
+              request,
+            ),
           planner: (workspaceId) => {
-            if (!features.isEnabled("team-run-ai-planning")) return null;
             const workspaces = service.listWorkspaces().workspaces;
             const workspace =
               workspaces.find((candidate) => candidate.id === workspaceId) ?? workspaces[0];

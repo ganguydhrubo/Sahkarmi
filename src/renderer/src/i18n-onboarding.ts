@@ -73,6 +73,21 @@ export const onboardingEn = {
   helpTopicsTitle: "Questions and answers",
   helpTipsLabel: "Tips next to features",
   helpTipsHint: "A short tip the first time you reach a feature. Each one shows once.",
+  helpQPickModel: "How do I choose the AI and how hard it thinks?",
+  helpAPickModel:
+    "Under the message box, pick the AI for this chat and its Effort. Low is quick for small jobs. High or Max thinks longer and does better work on big jobs, but takes more time and uses more of your limit. Your choice is kept for this chat.",
+  helpQVoice: "Can I speak in Bengali or Hindi?",
+  helpAVoice:
+    "Yes. Press the microphone and choose Speak in: Hinglish, English, Hindi or Bengali. The first time, Sahkarmi asks to download that language once (it then works without internet). Speak, check the words, then send.",
+  helpQTeamProject: "How do I get a whole team to do a big job?",
+  helpATeamProject:
+    "Open Team project, write the job in one or two lines (for example: make a Diwali offer post, a price list and a WhatsApp message for customers) and press Start the project. A team lead plans the steps, adds a team member for each kind of work, and they work side by side. You see each step, can pause or stop, and get one report at the end.",
+  helpQAddNow: "Can I add an instruction while a coworker is working?",
+  helpAAddNow:
+    "Yes. Type it and press Add to this task now. The coworker takes your new instruction and carries on with the same task; it does not start over. Press Send instead if it should wait until the current task is done.",
+  helpQSwitchAccount: "How do I use another ChatGPT or Claude account?",
+  helpASwitchAccount:
+    "Open Settings > AI & models, press Disconnect next to ChatGPT or Claude, then press Connect and sign in with the other account. Your coworkers, chats and files stay as they are. Note: ChatGPT's sign-in is shared with the Codex app on this computer.",
   helpGroupStart: "Getting going",
   helpGroupTeam: "Your team",
   helpGroupRoutines: "Routines (automatic work)",
@@ -266,6 +281,21 @@ export const onboardingHi: typeof onboardingEn = {
   helpTopicsTitle: "सवाल और जवाब",
   helpTipsLabel: "फ़ीचर के पास टिप्स",
   helpTipsHint: "किसी फ़ीचर पर पहली बार आने पर एक छोटी टिप। हर टिप एक बार ही दिखती है।",
+  helpQPickModel: "AI और वह कितना सोचे, यह कैसे चुनूँ?",
+  helpAPickModel:
+    "संदेश बॉक्स के नीचे इस चैट का AI और उसका “प्रयास” चुनें। Low छोटे काम के लिए जल्दी है। High या Max ज़्यादा सोचता है और बड़े काम में बेहतर करता है, पर समय और आपकी सीमा ज़्यादा लगती है। आपकी पसंद इस चैट के लिए याद रहती है।",
+  helpQVoice: "क्या मैं बांग्ला या हिंदी में बोल सकता हूँ?",
+  helpAVoice:
+    "हाँ। माइक दबाएँ और “इसमें बोलें” में Hinglish, English, हिन्दी या বাংলা चुनें। पहली बार सहकर्मी वह भाषा एक बार डाउनलोड करने को कहेगा (फिर बिना इंटरनेट चलता है)। बोलें, शब्द देखें, फिर भेजें।",
+  helpQTeamProject: "बड़ा काम पूरी टीम से कैसे करवाऊँ?",
+  helpATeamProject:
+    "टीम प्रोजेक्ट खोलें, काम एक-दो लाइन में लिखें (जैसे: दिवाली ऑफ़र पोस्ट, प्राइस लिस्ट और ग्राहकों के लिए WhatsApp संदेश बनाओ) और “प्रोजेक्ट शुरू करें” दबाएँ। टीम लीड कदम तय करता है, हर तरह के काम के लिए टीम सदस्य जोड़ता है, और सब साथ काम करते हैं। आप हर कदम देखते हैं, रोक सकते हैं, और अंत में एक रिपोर्ट मिलती है।",
+  helpQAddNow: "क्या काम चलते समय नई बात जोड़ सकता हूँ?",
+  helpAAddNow:
+    "हाँ। लिखें और “अभी इस काम में जोड़ें” दबाएँ। सहकर्मी आपकी नई बात लेकर वही काम आगे बढ़ाता है; फिर से शुरू नहीं करता। अगर यह मौजूदा काम के बाद होना चाहिए तो “भेजें” दबाएँ।",
+  helpQSwitchAccount: "दूसरा ChatGPT या Claude अकाउंट कैसे लगाऊँ?",
+  helpASwitchAccount:
+    "सेटिंग्स > AI और मॉडल खोलें, ChatGPT या Claude के पास “डिस्कनेक्ट करें” दबाएँ, फिर Connect दबाकर दूसरे अकाउंट से साइन इन करें। आपके सहकर्मी, चैट और फ़ाइलें वैसे ही रहती हैं। ध्यान दें: ChatGPT का साइन-इन इस कंप्यूटर के Codex ऐप के साथ साझा है।",
   helpGroupStart: "शुरुआत",
   helpGroupTeam: "आपकी टीम",
   helpGroupRoutines: "रूटीन (अपने आप होने वाला काम)",
@@ -455,6 +485,21 @@ export const onboardingBn: typeof onboardingEn = {
   helpTopicsTitle: "প্রশ্ন ও উত্তর",
   helpTipsLabel: "ফিচারের পাশে টিপস",
   helpTipsHint: "কোনো ফিচারে প্রথমবার এলে একটি ছোট টিপ। প্রতিটি একবারই দেখায়।",
+  helpQPickModel: "AI আর সে কতটা ভাববে, কীভাবে বাছব?",
+  helpAPickModel:
+    "বার্তার বাক্সের নিচে এই চ্যাটের AI আর তার “প্রচেষ্টা” বাছুন। Low ছোট কাজে তাড়াতাড়ি। High বা Max বেশি ভাবে আর বড় কাজে ভালো করে, তবে সময় আর আপনার লিমিট বেশি লাগে। আপনার পছন্দ এই চ্যাটের জন্য মনে থাকে।",
+  helpQVoice: "আমি কি বাংলা বা হিন্দিতে বলতে পারি?",
+  helpAVoice:
+    "হ্যাঁ। মাইক টিপুন আর “এতে বলুন”-এ Hinglish, English, हिन्दी বা বাংলা বাছুন। প্রথমবার সহকর্মী ভাষাটি একবার ডাউনলোড করতে বলবে (তারপর ইন্টারনেট ছাড়াই চলে)। বলুন, লেখাটা দেখে নিন, তারপর পাঠান।",
+  helpQTeamProject: "বড় কাজ পুরো টিমকে দিয়ে কীভাবে করাব?",
+  helpATeamProject:
+    "টিম প্রজেক্ট খুলুন, কাজটা এক-দু লাইনে লিখুন (যেমন: দিওয়ালি অফারের পোস্ট, দামের তালিকা আর গ্রাহকদের জন্য WhatsApp বার্তা বানাও) আর “প্রজেক্ট শুরু করুন” টিপুন। টিম লিড ধাপ ঠিক করে, প্রতিটি কাজের জন্য টিম সদস্য যোগ করে, আর সবাই পাশাপাশি কাজ করে। আপনি প্রতিটি ধাপ দেখেন, থামাতে পারেন, আর শেষে একটি রিপোর্ট পান।",
+  helpQAddNow: "কাজ চলার সময় নতুন নির্দেশ যোগ করা যায়?",
+  helpAAddNow:
+    "হ্যাঁ। লিখে “এখনই এই কাজে যোগ করুন” টিপুন। সহকর্মী আপনার নতুন নির্দেশ নিয়ে একই কাজ এগিয়ে নেয়; আবার শুরু করে না। এখনকার কাজ শেষ হওয়ার পরে করাতে চাইলে “পাঠান” টিপুন।",
+  helpQSwitchAccount: "অন্য ChatGPT বা Claude অ্যাকাউন্ট কীভাবে লাগাব?",
+  helpASwitchAccount:
+    "সেটিংস > AI ও মডেল খুলুন, ChatGPT বা Claude-এর পাশে “ডিসকানেক্ট করুন” টিপুন, তারপর Connect টিপে অন্য অ্যাকাউন্টে সাইন ইন করুন। আপনার সহকর্মী, চ্যাট আর ফাইল যেমন আছে থাকে। মনে রাখবেন: ChatGPT-র সাইন-ইন এই কম্পিউটারের Codex অ্যাপের সঙ্গে ভাগ করা।",
   helpGroupStart: "শুরু করা",
   helpGroupTeam: "আপনার টিম",
   helpGroupRoutines: "রুটিন (নিজে থেকে হওয়া কাজ)",

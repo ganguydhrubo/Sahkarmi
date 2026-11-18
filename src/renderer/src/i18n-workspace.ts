@@ -97,6 +97,9 @@ export const workspaceEn = {
   noteBrowserDeclined: "You chose not to take over the browser.",
   noteSecureEntered: "🔒 You entered the private detail on {site}. It was not shared in chat.",
   noteSecureDeclined: "You closed the request for a private detail on {site}.",
+  voiceSpeakIn: "I will speak in",
+  voiceSpeakHint:
+    "Pick the language you speak. Each language has its own free voice model on this PC; Hinglish writes Hindi in English letters.",
   voiceSetupTitle: "Free voice typing on this PC",
   voiceSetupBody:
     "Speak and your words appear in the message box, like ChatGPT. It runs on your computer: free, private and fast, and it uses no AI tokens.",
@@ -623,6 +626,10 @@ export const workspaceEn = {
   taskCancelled: "Cancelled",
   headerModel: "Model and reasoning",
   headerReasoning: "Reasoning",
+  composerEffort: "Effort",
+  composerEffortHint:
+    "How hard the AI thinks before it answers. Higher is slower and uses more of your plan. Applies to this coworker from its next message.",
+  composerEffortSingle: "This model has one effort level.",
   modelConnectHint: "Connect an AI provider to choose a model.",
   modelConnect: "Connect",
   updateBarReady: "Update ready",
@@ -645,6 +652,11 @@ export const workspaceEn = {
   connectError: "Could not start",
   connectSignIn: "Sign-in needed",
   connectButton: "Connect",
+  connectDisconnect: "Disconnect",
+  connectDisconnectClaude:
+    "Disconnect Claude from Sahkarmi? Your coworkers, chats and files stay. Coworkers on Claude wait until you connect Claude again (with this or another account) or pick another model.",
+  connectDisconnectCodex:
+    "Disconnect ChatGPT? Your coworkers, chats and files stay. Note: ChatGPT's sign-in is shared with the Codex app on this computer, so Codex outside Sahkarmi is signed out too. Connect again with this or another account at any time.",
   connectReconnect: "Reconnect",
   connectCheck: "Check again",
   connectOpenAgain: "Browser did not open? Open the sign-in page",

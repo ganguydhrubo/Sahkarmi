@@ -4,6 +4,7 @@ import {
   approvalRequestProblem,
   commandCount,
   describePermissionRequest,
+  isLookOnlyCommand,
 } from "./approval-wording";
 import { classifyAcpTool } from "./permission-policy";
 
@@ -36,10 +37,68 @@ describe("describePermissionRequest", () => {
       "Asha",
       ROOTS,
     );
-    expect(card.title).toBe("Asha wants to run a small Python script on your computer");
+    expect(card.title).toBe(
+      "Asha wants to run a small Python script on your computer to read or write a file",
+    );
     expect(card.details).toContain("If you approve:");
+    expect(card.details).toContain("Is this normal? Yes.");
     expect(card.details).not.toContain("open(r");
     expect(card.technical).toBe(action);
+  });
+
+  it("says plainly when a command only looks at files", () => {
+    expect(
+      isLookOnlyCommand("Get-ChildItem -Force; if (Test-Path AGENTS.md) { Get-Content AGENTS.md }"),
+    ).toBe(true);
+    expect(isLookOnlyCommand("dir && type notes.txt")).toBe(true);
+    expect(isLookOnlyCommand("Get-Content a.txt > b.txt")).toBe(false);
+    expect(isLookOnlyCommand("Get-ChildItem; Remove-Item old.txt")).toBe(false);
+    expect(isLookOnlyCommand("python make.py")).toBe(false);
+    const card = describePermissionRequest(
+      {
+        botId: "dev",
+        provider: "codex",
+        category: "shell",
+        action: "Get-ChildItem -Force",
+        paths: [],
+      },
+      "Dev",
+      ROOTS,
+    );
+    expect(card.title).toBe(
+      "Dev wants to look at the files in its work folder (nothing is changed)",
+    );
+    expect(card.details).toContain("It only looks at files");
+  });
+
+  it("says what a script is for and warns plainly when it can delete things", () => {
+    const excel = describePermissionRequest(
+      {
+        botId: "asha",
+        provider: "gemini",
+        category: "shell",
+        action: "python -c \"import openpyxl; wb = openpyxl.Workbook(); wb.save('sales.xlsx')\"",
+        paths: [],
+      },
+      "Asha",
+      ROOTS,
+    );
+    expect(excel.title).toContain("to make or read an Excel sheet");
+    expect(excel.details).toContain("It is safe to allow when it matches what you asked for.");
+
+    const wipe = describePermissionRequest(
+      {
+        botId: "asha",
+        provider: "gemini",
+        category: "shell",
+        action: "Remove-Item -Recurse C:Usersmeold",
+        paths: [],
+      },
+      "Asha",
+      ROOTS,
+    );
+    expect(wipe.details).toContain("Only if you expected it");
+    expect(wipe.details).toContain("ask Asha to explain");
   });
 
   it("names the site, the button, the reason and what is shared", () => {

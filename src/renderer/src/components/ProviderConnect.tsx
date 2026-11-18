@@ -90,7 +90,10 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
     } catch (cause) {
       setErrors((current) => ({
         ...current,
-        [id]: cause instanceof Error ? cause.message : String(cause),
+        [id]: (cause instanceof Error ? cause.message : String(cause)).replace(
+          /^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/,
+          "",
+        ),
       }));
     }
   }
@@ -166,6 +169,22 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
                 onClick={() => void act(id, () => window.sahkarmi.providerSetup.connect(id))}
               >
                 {t("connectReconnect")}
+              </button>
+            </Show>
+            <Show when={isOn() && (id === "codex" || id === "claude")}>
+              <button
+                type="button"
+                class="link-button provider-disconnect"
+                disabled={busy()}
+                onClick={() => {
+                  const warning = t(
+                    id === "codex" ? "connectDisconnectCodex" : "connectDisconnectClaude",
+                  );
+                  if (!window.confirm(warning)) return;
+                  void act(id, () => window.sahkarmi.providerSetup.disconnect(id));
+                }}
+              >
+                {t("connectDisconnect")}
               </button>
             </Show>
           </div>

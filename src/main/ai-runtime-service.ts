@@ -192,6 +192,47 @@ export async function latestNpmRelease(
   };
 }
 
+/**
+ * The OpenCode major version Sahkarmi is tested with. A new major (2.x) changes how coworkers
+ * talk to OpenCode (background subagents, new session calls), so updates stay on this major
+ * until a Sahkarmi release has been tested with the next one and raises this number.
+ */
+export const OPENCODE_TESTED_MAJOR = 1;
+
+function majorOf(version: string): number {
+  return versionParts(version)[0] ?? 0;
+}
+
+function isPrerelease(version: string): boolean {
+  return /-/.test(version.trim());
+}
+
+/**
+ * The newest OpenCode release Sahkarmi may install: npm's latest when it is on the tested major,
+ * otherwise the newest stable release of the tested major. `newerMajor` names the untested
+ * release, so the owner can be told it exists without it being installed.
+ */
+export async function latestTestedOpenCodeRelease(
+  packageName: string,
+  testedMajor = OPENCODE_TESTED_MAJOR,
+): Promise<{ release: NpmRelease; newerMajor: string | null }> {
+  const latest = await latestNpmRelease(packageName);
+  if (majorOf(latest.version) <= testedMajor) return { release: latest, newerMajor: null };
+  const packument = (await fetchJson(`${NPM_REGISTRY}/${encodeURIComponent(packageName)}`)) as {
+    versions?: Record<string, { dist?: { tarball?: string; integrity?: string } }>;
+  };
+  const tested = Object.keys(packument.versions ?? {})
+    .filter((version) => majorOf(version) === testedMajor && !isPrerelease(version))
+    .sort(compareVersions)
+    .at(-1);
+  if (!tested) throw new Error(`No OpenCode ${testedMajor}.x release was found.`);
+  const dist = packument.versions?.[tested]?.dist;
+  return {
+    release: { version: tested, tarball: dist?.tarball ?? "", integrity: dist?.integrity ?? null },
+    newerMajor: latest.version,
+  };
+}
+
 export interface AiRuntimeServiceOptions {
   /** Folder where Sahkarmi keeps a newer OpenCode runtime: <userData>/runtime. */
   runtimeDirectory: string;
@@ -264,9 +305,10 @@ export class AiRuntimeService {
       const tools: AiToolUpdate[] = [];
 
       const openCodePackage = openCodePlatformPackage(platform, arch);
-      const openCodeRelease = await latestNpmRelease(openCodePackage).catch(() => null);
+      const openCodeLookup = await latestTestedOpenCodeRelease(openCodePackage).catch(() => null);
       const currentVersion = await this.#options.currentOpenCodeVersion().catch(() => null);
-      const openCodeLatest = openCodeRelease?.version ?? null;
+      const openCodeLatest = openCodeLookup?.release.version ?? null;
+      const untested = openCodeLookup?.newerMajor ?? null;
       tools.push({
         id: "opencode",
         label: "OpenCode (bundled)",
@@ -277,7 +319,9 @@ export class AiRuntimeService {
         note:
           currentVersion && openCodeLatest && compareVersions(openCodeLatest, currentVersion) > 0
             ? "Sahkarmi downloads this itself. Restart Sahkarmi after it finishes."
-            : null,
+            : untested
+              ? `OpenCode ${untested} is out. Sahkarmi stays on ${OPENCODE_TESTED_MAJOR}.x until a Sahkarmi update has been tested with it, so your coworkers keep working.`
+              : null,
       });
 
       for (const tool of AI_TOOLS.filter((entry) => entry.id !== "opencode")) {
@@ -379,7 +423,7 @@ export class AiRuntimeService {
     const platform = this.#options.platform ?? process.platform;
     const arch = this.#options.arch ?? process.arch;
     const packageName = openCodePlatformPackage(platform, arch);
-    const release = await latestNpmRelease(packageName);
+    const { release } = await latestTestedOpenCodeRelease(packageName);
     const current = await this.#options.currentOpenCodeVersion().catch(() => null);
     if (current && compareVersions(release.version, current) <= 0) {
       this.#setStatus({

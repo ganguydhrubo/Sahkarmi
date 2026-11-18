@@ -99,6 +99,9 @@ export const workspaceHi: WorkspaceDictionary = {
   noteBrowserDeclined: "आपने ब्राउज़र अपने हाथ में नहीं लिया।",
   noteSecureEntered: "🔒 आपने {site} पर निजी जानकारी भरी। यह चैट में नहीं गई।",
   noteSecureDeclined: "आपने {site} की निजी जानकारी वाला अनुरोध बंद किया।",
+  voiceSpeakIn: "मैं बोलूँगा",
+  voiceSpeakHint:
+    "जिस भाषा में बोलेंगे वह चुनें। हर भाषा का अपना मुफ़्त वॉइस मॉडल इस PC पर चलता है; Hinglish हिन्दी को अंग्रेज़ी अक्षरों में लिखता है।",
   voiceSetupTitle: "इस PC पर मुफ़्त वॉइस टाइपिंग",
   voiceSetupBody:
     "बोलिए और आपके शब्द संदेश बॉक्स में आ जाएँगे, ChatGPT जैसा। यह आपके कंप्यूटर पर चलता है: मुफ़्त, निजी और तेज़, और कोई AI टोकन खर्च नहीं होता।",
@@ -599,6 +602,10 @@ export const workspaceHi: WorkspaceDictionary = {
   taskCancelled: "रद्द",
   headerModel: "मॉडल और सोचने का स्तर",
   headerReasoning: "सोचने का स्तर",
+  composerEffort: "प्रयास",
+  composerEffortHint:
+    "जवाब देने से पहले AI कितना सोचे। ज़्यादा स्तर धीमा है और आपके प्लान का ज़्यादा हिस्सा लेता है। इस सहकर्मी के अगले संदेश से लागू होता है।",
+  composerEffortSingle: "इस मॉडल में प्रयास का एक ही स्तर है।",
   modelConnectHint: "मॉडल चुनने के लिए कोई AI प्रोवाइडर जोड़ें.",
   modelConnect: "जोड़ें",
   updateBarReady: "अपडेट तैयार है",
@@ -621,6 +628,11 @@ export const workspaceHi: WorkspaceDictionary = {
   connectError: "शुरू नहीं हो पाया",
   connectSignIn: "साइन इन ज़रूरी",
   connectButton: "कनेक्ट करें",
+  connectDisconnect: "डिस्कनेक्ट करें",
+  connectDisconnectClaude:
+    "Claude को Sahkarmi से डिस्कनेक्ट करें? आपके सहकर्मी, चैट और फ़ाइलें वैसे ही रहेंगी। Claude वाले सहकर्मी तब तक रुकेंगे जब तक आप Claude को फिर से (इसी या दूसरे अकाउंट से) न जोड़ें या दूसरा मॉडल न चुनें।",
+  connectDisconnectCodex:
+    "ChatGPT डिस्कनेक्ट करें? आपके सहकर्मी, चैट और फ़ाइलें वैसे ही रहेंगी। ध्यान दें: ChatGPT का साइन-इन इस कंप्यूटर के Codex ऐप के साथ साझा है, इसलिए Sahkarmi के बाहर Codex से भी साइन-आउट होगा।",
   connectReconnect: "फिर से कनेक्ट करें",
   connectCheck: "फिर जाँचें",
   connectOpenAgain: "ब्राउज़र नहीं खुला? साइन-इन पेज खोलें",

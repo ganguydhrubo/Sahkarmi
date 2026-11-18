@@ -1,4 +1,13 @@
-import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import type { DraftAttachment } from "../../../shared/ipc";
 import { featureOn } from "../features";
 import { type MessageKey, t } from "../i18n";
@@ -20,6 +29,50 @@ import { recognitionConstructor, type SpeechRecognitionLike } from "./VoiceInput
 export function preferredDictationModels(code: string): string[] {
   if (code === "en" || code === "hi") return ["hinglish-swift", "english-fast"];
   return [`indic-${code}`, "hinglish-swift"];
+}
+
+/**
+ * The languages a person can say they will speak in, beside the mic. Each one lists the on-PC
+ * models that write it, best first. Hinglish writes Hindi in English letters; हिन्दी and বাংলা
+ * write their own script, which the Hinglish model can never do.
+ */
+export const SPOKEN_CHOICES: Array<{ code: string; label: string; models: string[] }> = [
+  { code: "hi-en", label: "Hinglish", models: ["hinglish-swift", "hinglish-apex"] },
+  { code: "en", label: "English", models: ["english-fast", "whisper-turbo"] },
+  { code: "hi", label: "हिन्दी", models: ["indic-hi"] },
+  { code: "bn", label: "বাংলা", models: ["indic-bn"] },
+];
+
+const SPOKEN_KEY = "sahkarmi.voice.spoken";
+
+function rememberedSpoken(): string | null {
+  try {
+    const value = window.localStorage.getItem(SPOKEN_KEY);
+    return SPOKEN_CHOICES.some((choice) => choice.code === value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The spoken language a model writes, or null when no choice above uses it. */
+export function spokenForModel(modelId: string | null | undefined): string | null {
+  if (!modelId) return null;
+  return SPOKEN_CHOICES.find((choice) => choice.models.includes(modelId))?.code ?? null;
+}
+
+/**
+ * The model to use for a spoken language: one already on this PC first, otherwise the first one
+ * to download. Null when the catalogue has none of them.
+ */
+export function modelForSpoken<T extends { id: string; installed: boolean }>(
+  code: string,
+  models: T[],
+): T | null {
+  const ids = SPOKEN_CHOICES.find((choice) => choice.code === code)?.models ?? [`indic-${code}`];
+  const known = ids
+    .map((id) => models.find((model) => model.id === id))
+    .filter((model): model is T => Boolean(model));
+  return known.find((model) => model.installed) ?? known[0] ?? null;
 }
 
 const PHASE_KEYS: Record<VoicePhase, MessageKey> = {
@@ -59,14 +112,60 @@ export function VoiceRecorder(props: {
    */
   const [mode, setMode] = createSignal<"dictate" | "note" | "setup">("note");
   onMount(loadVoiceState);
+  const [spokenChoice, setSpokenChoice] = createSignal<string | null>(rememberedSpoken());
+  /** What the owner said they speak; else what the chosen model writes; else the app language. */
+  const spoken = createMemo(() => {
+    const chosen = spokenChoice();
+    if (chosen) return chosen;
+    const fromModel = spokenForModel(voiceState()?.settings.dictationModel);
+    if (fromModel) return fromModel;
+    const app = language();
+    return app === "bn" ? "bn" : "hi-en";
+  });
   const offered = createMemo(() => {
     const models = voiceState()?.models.filter((model) => model.type === "dictation") ?? [];
+    const forSpoken = modelForSpoken(spoken(), models);
+    if (forSpoken) return forSpoken;
     for (const id of preferredDictationModels(language())) {
       const model = models.find((candidate) => candidate.id === id);
       if (model) return model;
     }
     return models[0] ?? null;
   });
+  /** The spoken language's model is on this PC and is the one in use. */
+  const spokenReady = () => {
+    const model = offered();
+    return Boolean(
+      model?.installed &&
+        localDictationReady() &&
+        voiceState()?.settings.dictationModel === model.id,
+    );
+  };
+
+  /** Speak in: switch to the language's model, or offer to download it (once). */
+  async function chooseSpoken(code: string) {
+    if (code === spoken()) return;
+    setSpokenChoice(code);
+    try {
+      window.localStorage.setItem(SPOKEN_KEY, code);
+    } catch {
+      // Storage blocked: the choice lasts until Sahkarmi closes.
+    }
+    const model = offered();
+    if (model?.installed) {
+      try {
+        // Each phrase is written by the model in settings, so the next words use the new one.
+        await window.sahkarmi.voice.setSettings({ dictationModel: model.id });
+      } catch (error) {
+        props.onError(cleanVoiceError(error));
+      }
+      return;
+    }
+    // Not downloaded yet: stop listening and offer it, instead of writing the wrong language.
+    cancel();
+    setOpen(true);
+    setMode("setup");
+  }
   const offerBytes = () => {
     const model = offered();
     const state = voiceState();
@@ -121,9 +220,17 @@ export function VoiceRecorder(props: {
     releaseAudio();
     setDictationMode(null);
     setOpen(true);
-    if (!asNote && !localDictationReady() && window.sahkarmi?.voice && offered()) {
+    const model = offered();
+    if (!asNote && window.sahkarmi?.voice && model && !model.installed) {
       setMode("setup");
       return;
+    }
+    if (!asNote && model?.installed && !spokenReady()) {
+      try {
+        await window.sahkarmi.voice.setSettings({ dictationModel: model.id });
+      } catch {
+        // The model already in use keeps working.
+      }
     }
     setMode(!asNote && localDictationReady() ? "dictate" : "note");
     dispatch({ type: "start" });
@@ -331,6 +438,25 @@ export function VoiceRecorder(props: {
           role="dialog"
           aria-label={t("voiceRecord")}
         >
+          <Show when={window.sahkarmi?.voice && voiceState()}>
+            <fieldset class="voice-spoken" aria-label={t("voiceSpeakIn")}>
+              <span class="voice-spoken-label">{t("voiceSpeakIn")}</span>
+              <For each={SPOKEN_CHOICES}>
+                {(choice) => (
+                  <button
+                    type="button"
+                    class="voice-spoken-choice"
+                    classList={{ "voice-spoken-active": spoken() === choice.code }}
+                    aria-pressed={spoken() === choice.code}
+                    title={t("voiceSpeakHint")}
+                    onClick={() => void chooseSpoken(choice.code)}
+                  >
+                    {choice.label}
+                  </button>
+                )}
+              </For>
+            </fieldset>
+          </Show>
           <Show when={mode() === "setup"}>
             {(() => {
               const busy = () =>

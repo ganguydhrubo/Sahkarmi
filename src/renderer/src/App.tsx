@@ -1496,7 +1496,14 @@ export function App() {
                   />
                 </Match>
                 <Match when={view() === "orchestrator"}>
-                  <OrchestratorView bots={workspaceBots()} onOpenCoworker={selectBot} />
+                  <OrchestratorView
+                    bots={workspaceBots()}
+                    onOpenCoworker={selectBot}
+                    workspaceId={workspaces().activeWorkspaceId}
+                    modelOptions={modelOptions()}
+                    agentStatus={agentStatus()}
+                    defaultModel={activeBot()?.model ?? null}
+                  />
                 </Match>
                 <Match when={view() === "memory"}>
                   <MemoryView workspaceId={workspaces().activeWorkspaceId} bots={botList()} />
@@ -1930,6 +1937,8 @@ function cleanPreview(preview: string): string {
     .replace(/\binbox\s+at\s+zero\b[:,]?\s*/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  // A team lead's plan is saved as JSON; the list shows what it means, not the code.
+  if (/^(?:```(?:json)?\s*)?\{\s*"tasks"\s*:/i.test(cleaned)) return "Planned the team's steps";
   return cleaned || NO_MESSAGES_PREVIEW;
 }
 

@@ -568,6 +568,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #compactingBots = new Set<string>();
   /** Deliveries #startDelivery is driving right now (their provider may still be connecting). */
   readonly #startingDeliveries = new Set<string>();
+  /**
+   * Messages the owner sent with "Send now" while a task ran, and that task's request. The
+   * coworker is paused only to read the message, then carries on with the same task.
+   */
+  readonly #steerInto = new Map<string, string>();
   readonly #compactionTimers = new Map<string, NodeJS.Timeout>();
   #status: AgentStatus = structuredClone(INITIAL_STATUS);
   readonly #clients = new Map<AgentProvider, AgentClient>();
@@ -2606,7 +2611,16 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   async sendQueuedNow(botId: string, deliveryId: string): Promise<void> {
     await this.#mailbox.moveToFront(botId, deliveryId);
     const turnId = this.#snapshots.get(botId)?.activeTurnId;
-    if (turnId) await this.interrupt(botId, turnId);
+    if (turnId) {
+      // Gemini, OpenCode and other agents cannot take a message mid-task, so the task pauses
+      // for it. The message then says what was being done, so the coworker carries on with the
+      // same task instead of dropping it and starting over.
+      const running = this.#mailbox
+        .listQueue(botId)
+        .deliveries.find((item) => item.status === "running" || item.status === "starting");
+      this.#steerInto.set(deliveryId, running?.text ?? "");
+      await this.interrupt(botId, turnId);
+    }
     await this.#mailbox.setPaused(botId, false);
     this.#emitQueue(botId);
     this.#scheduleDrain(botId);
@@ -5658,6 +5672,11 @@ ${carryOver}`
           delivery.text || "(The reply contains attachments only.)",
         ].join("\n");
       }
+      const steeredFrom = this.#steerInto.get(delivery.id);
+      if (steeredFrom !== undefined) {
+        this.#steerInto.delete(delivery.id);
+        if (delivery.sender.kind === "user") text = steerPrompt(steeredFrom, text);
+      }
       if (delivery.sender.kind === "bot") {
         const senderBotId = delivery.sender.botId;
         const sender = this.#store.list().find((candidate) => candidate.id === senderBotId);
@@ -8285,6 +8304,23 @@ export function previewText(markdown: string): string {
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * The owner's "Send now" message for an agent that was paused to read it: carry on with the same
+ * task, using the new instruction, without starting over.
+ */
+export function steerPrompt(earlierRequest: string, added: string): string {
+  const earlier = earlierRequest.trim();
+  return [
+    "[The owner added this while you were still working. You were paused only so you could read it.]",
+    earlier ? `You were in the middle of: "${earlier.slice(0, 600)}"` : null,
+    "Keep everything you already did. Take the owner's new instruction into account and carry on with that task from where you stopped. Do not start over and do not repeat finished steps. If the new instruction replaces the task, do the new one instead.",
+    "--- owner's new instruction ---",
+    added,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
 }
 
 const QUOTA_NOTICE_INTERVAL_MS = 30_000;

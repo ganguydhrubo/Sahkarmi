@@ -183,8 +183,9 @@ export const hi: Dictionary = {
   planStatus_pending: "शुरू नहीं हुआ",
   planStatus_in_progress: "चल रहा है",
   planStatus_completed: "पूरा",
-  sendNow: "अभी भेजें",
-  sendNowHint: "अभी का काम रोकें और यह संदेश अगला चलाएँ",
+  sendNow: "अभी इस काम में जोड़ें",
+  sendNowHint:
+    "यह संदेश सहकर्मी को अभी देता है। वह पल भर रुककर इसे पढ़ता है और आपकी बात ध्यान में रखकर वही काम आगे बढ़ाता है।",
   stopHint: "रोकें (Esc)",
   queueHint: "भेजें: यह अभी के काम के बाद चलेगा",
   steerHint: "भेजें: सहकर्मी काम रोके बिना इसे पढ़कर काम बदल लेगा",

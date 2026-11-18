@@ -192,7 +192,18 @@ export function ApprovalCard(props: {
         </Show>
       </h3>
       <Show when={props.approval.details}>
-        <p class="approval-details">{props.approval.details}</p>
+        <div class="approval-details">
+          <For each={detailLines(props.approval.details)}>
+            {(line) => (
+              <p>
+                <Show when={line.label}>
+                  <strong>{line.label}</strong>{" "}
+                </Show>
+                {line.text}
+              </p>
+            )}
+          </For>
+        </div>
       </Show>
       <Show when={provenanceText(props.approval.provenance)}>
         {(text) => (
@@ -294,4 +305,21 @@ function isHighRisk(approval: ApprovalRequest): boolean {
     return HIGH_RISK_PERMISSIONS.has(approval.permissionCategory ?? "");
   }
   return ["payment", "message", "submission"].includes(approval.category);
+}
+
+/**
+ * The plain card text, one line each, with its short label ("Why:", "Is this normal?") in bold
+ * so an owner can scan it instead of reading a block.
+ */
+export function detailLines(details: string): Array<{ label: string | null; text: string }> {
+  return details
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = /^([^:?.]{2,28}[:?])\s+(.+)$/u.exec(line);
+      return match
+        ? { label: match[1] ?? null, text: match[2] ?? "" }
+        : { label: null, text: line };
+    });
 }

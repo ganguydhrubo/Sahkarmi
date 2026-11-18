@@ -182,8 +182,9 @@ const en = {
   planStatus_pending: "Not started",
   planStatus_in_progress: "In progress",
   planStatus_completed: "Done",
-  sendNow: "Send now",
-  sendNowHint: "Stop the current task and run this message next",
+  sendNow: "Add to this task now",
+  sendNowHint:
+    "Gives this message to the coworker now. It pauses for a moment, reads it, and carries on with the same task using your instruction.",
   stopHint: "Stop (Esc)",
   queueHint: "Send: it waits until the current task is done",
   steerHint: "Send: the coworker reads it while it works and adjusts, without stopping",

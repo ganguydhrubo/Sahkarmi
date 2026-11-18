@@ -17097,3 +17097,167 @@ button.button-primary[disabled] {
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
 }
+
+/* Effort beside the model in the chat box: same pill as the model picker. */
+.composer-effort {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.1);
+  border-radius: 999px;
+  background: rgb(var(--bg-rgb) / 0.88);
+  padding: 0 4px 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  box-shadow: inset 0 1px rgb(var(--ink-rgb) / 0.035);
+}
+
+.composer-effort:hover:has(select:not(:disabled)) {
+  border-color: rgb(var(--ink-rgb) / 0.15);
+  background: var(--surface-3);
+}
+
+.composer-effort select {
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-strong);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.composer-effort select:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.composer-effort select:focus-visible {
+  outline: 1px solid rgb(var(--primary-rgb) / 0.9);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* Team project: the team's model, errors on screen, the lead's planning note and the report. */
+.orch-team-model {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.orch-team-model .settings-meta {
+  flex-basis: 100%;
+  color: var(--text-muted);
+}
+
+.orch-start-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgb(var(--danger-rgb) / 0.45);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  white-space: pre-wrap;
+}
+
+.orch-planning {
+  border-color: var(--sahkarmi-line);
+  background: var(--bg-deep);
+}
+
+button.orch-instance {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.orch-instance:hover {
+  border-color: var(--accent);
+}
+
+.orch-report {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--sahkarmi-line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-deep);
+}
+
+.orch-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orch-report-body {
+  max-height: 420px;
+  overflow: auto;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Voice typing: say which language you will speak, so the right on-PC model writes it. */
+.voice-spoken {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.voice-spoken-label {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  margin-right: 2px;
+}
+
+.voice-spoken-choice {
+  padding: 3px 10px;
+  border: 1px solid var(--sahkarmi-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.voice-spoken-choice:hover {
+  border-color: var(--accent);
+}
+
+.voice-spoken-active {
+  border-color: var(--accent);
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.orch-wait-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Approval text: one short line each, labels in bold, easy to scan. */
+.approval-details p {
+  margin: 0 0 6px;
+  line-height: 1.55;
+}
+
+.approval-details strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

@@ -74,6 +74,9 @@ export interface ProviderSetupOptions {
   secrets?: SecretStore;
 }
 
+/** AIs whose own tool has a sign-out command Sahkarmi can run. */
+export const DISCONNECTABLE: ReadonlySet<AgentProviderId> = new Set(["codex", "claude"]);
+
 interface ProviderSetupEvents {
   state: [state: ProviderSetupState];
 }
@@ -134,7 +137,11 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
   submitCode(provider: AgentProviderId, code: string): ProviderSetupState {
     const login = this.#logins.get(provider);
     const trimmed = code.trim();
-    if (!login?.stdin || !trimmed) throw new Error("No sign-in is waiting for a code.");
+    if (!login?.stdin || !trimmed) {
+      throw new Error(
+        "This sign-in already finished or timed out. Press Reconnect to start a new one.",
+      );
+    }
     if (trimmed.length > 4_096 || /[\r\n]/.test(trimmed)) throw new Error("That code looks wrong.");
     login.stdin.write(`${trimmed}\n`);
     this.#set(provider, { phase: "waiting", message: "Checking the code…" });
@@ -223,6 +230,83 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
       this.#set(provider, { phase: "failed", message: messageOf(error) });
     }
     return this.#get(provider);
+  }
+
+  /**
+   * Signs Sahkarmi out of ChatGPT or Claude, so another account can be connected. Coworkers,
+   * chats and files are not touched: a coworker on this AI waits until it is connected again or
+   * the owner picks another model. Claude's sign-in is Sahkarmi's own; Codex's is shared with the
+   * Codex app on this computer, which the Disconnect button says before it runs.
+   */
+  async disconnect(provider: AgentProviderId): Promise<ProviderSetupState> {
+    if (!DISCONNECTABLE.has(provider)) {
+      throw new Error("Disconnect is not available for this AI yet. Sign out in its own app.");
+    }
+    this.cancel(provider);
+    this.#set(provider, { phase: "checking", message: "Disconnecting…", url: null });
+    try {
+      if (provider === "codex") {
+        await this.#runToEnd(provider, await this.#codexExecutable(), ["logout"]);
+      } else {
+        const claude = await resolveClaudeCli();
+        await this.#runToEnd(provider, claude.executable, ["auth", "logout"]);
+      }
+      await this.#options.recheck(provider).catch(() => undefined);
+      this.#set(provider, {
+        phase: "idle",
+        message: "Disconnected. Press Connect to sign in with the same or another account.",
+        url: null,
+      });
+    } catch (error) {
+      this.#set(provider, { phase: "failed", message: messageOf(error) });
+    }
+    return this.#get(provider);
+  }
+
+  /** Runs a provider's own command (fixed arguments, never user text) and waits for it. */
+  #runToEnd(provider: AgentProviderId, executable: string, args: string[]): Promise<void> {
+    const spawnImpl = this.#options.spawnImpl ?? spawn;
+    const windowsShim = process.platform === "win32" && /\.(?:cmd|bat)$/i.test(executable);
+    const child = spawnImpl(
+      windowsShim ? process.env.ComSpec || "cmd.exe" : executable,
+      windowsShim
+        ? [
+            "/d",
+            "/s",
+            "/c",
+            `""${executable.replaceAll("%", "%%")}" ${args.map((arg) => `"${arg}"`).join(" ")}"`,
+          ]
+        : args,
+      {
+        windowsVerbatimArguments: windowsShim,
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        env: envForProvider(provider, process.env),
+      },
+    );
+    return new Promise((resolvePromise, reject) => {
+      let output = "";
+      const keep = (chunk: Buffer) => {
+        output = `${output}${chunk.toString("utf8")}`.slice(-2_000);
+      };
+      child.stdout?.on("data", keep);
+      child.stderr?.on("data", keep);
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error("Signing out took too long. Try again."));
+      }, 30_000);
+      timer.unref?.();
+      child.on("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.on("exit", (code) => {
+        clearTimeout(timer);
+        // "Not logged in" is a fine end state for a sign-out.
+        if (code === 0 || /not (?:logged|signed) in/i.test(output)) resolvePromise();
+        else reject(new Error(output.trim().split(/\r?\n/).pop() || `Sign-out failed (${code}).`));
+      });
+    });
   }
 
   cancel(provider: AgentProviderId): void {

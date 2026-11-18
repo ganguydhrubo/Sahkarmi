@@ -10,7 +10,6 @@ import {
   Show,
   untrack,
 } from "solid-js";
-import { Portal } from "solid-js/web";
 import type {
   AgentEvent,
   AgentModelId,
@@ -47,7 +46,6 @@ import {
 import { deriveActivity, isActivePhase } from "../activity";
 import { format } from "../activity-hinglish";
 import { vocab } from "../activity-vocab";
-import { anchorBelow } from "../anchored-popover";
 import { copySelectionAsPlainText, copyText } from "../clipboard";
 import { CREW } from "../crew";
 import type { BotMessage, BotProfile } from "../data";
@@ -1301,9 +1299,6 @@ export function Conversation(props: ConversationProps) {
   const [settingsNotifications, setSettingsNotifications] = createSignal(true);
   const [settingsModel, setSettingsModel] = createSignal<AgentModelId>("gpt-5.6-luna");
   const [settingsReasoning, setSettingsReasoning] = createSignal<AgentReasoningEffort>("medium");
-  const [headerModelOpen, setHeaderModelOpen] = createSignal(false);
-  const [headerModelPlacement, setHeaderModelPlacement] = createSignal<Record<string, string>>({});
-  let headerModelRoot: HTMLDivElement | undefined;
   const [onboardingBots, setOnboardingBots] = createSignal<Record<string, true>>({});
   const [modelConfirmedBots, setModelConfirmedBots] = createSignal<Record<string, true>>({});
   const [completedOnboardingBots, setCompletedOnboardingBots] = createSignal<Record<string, true>>(
@@ -1353,9 +1348,6 @@ export function Conversation(props: ConversationProps) {
   const reasoningOptions = createMemo(
     () => selectedModel()?.supportedReasoningEfforts ?? ["medium" as const],
   );
-  /** "Luna · Medium": the model and reasoning this coworker runs on. */
-  const headerModelLabel = () =>
-    `${selectedModel()?.name ?? settingsModel()} · ${reasoningLabel(settingsReasoning())}`;
   const runtimeLabel = (model: AgentModelId, effort: AgentReasoningEffort) =>
     `${props.modelOptions.find((option) => option.id === model)?.name ?? model} · ${reasoningLabel(effort)}`;
   /** A model or effort chosen during a turn: explains which runs now and which comes next. */
@@ -1854,10 +1846,6 @@ export function Conversation(props: ConversationProps) {
     // Escape closes only the top-most layer, and never the browser while the owner is typing.
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (headerModelOpen()) {
-        setHeaderModelOpen(false);
-        return;
-      }
       if (mediaPreview()) {
         setMediaPreview(null);
         return;
@@ -1879,9 +1867,6 @@ export function Conversation(props: ConversationProps) {
     };
     const closeMessageMenus = (event: MouseEvent) => {
       const target = event.target as Element | null;
-      if (!target?.closest(".header-model-root, .header-model-popover, .provider-model-popover")) {
-        setHeaderModelOpen(false);
-      }
       if (target?.closest(".message-actions")) return;
       setOpenReactionMessageId(null);
       setOpenMoreMessageId(null);
@@ -1889,11 +1874,6 @@ export function Conversation(props: ConversationProps) {
     };
     window.addEventListener("keydown", closeOnEscape);
     window.addEventListener("pointerdown", closeMessageMenus);
-    // The model menu is drawn outside the header, so it follows its button when the window resizes.
-    const placeHeaderModel = () => {
-      if (headerModelOpen()) setHeaderModelPlacement(anchorBelow(headerModelRoot));
-    };
-    window.addEventListener("resize", placeHeaderModel);
     const scrollResizeObserver = new ResizeObserver(() => updateScrollFade());
     if (scrollElement) scrollResizeObserver.observe(scrollElement);
     requestAnimationFrame(() => updateScrollFade());
@@ -1902,7 +1882,6 @@ export function Conversation(props: ConversationProps) {
       unsubscribeImport();
       window.removeEventListener("keydown", closeOnEscape);
       window.removeEventListener("pointerdown", closeMessageMenus);
-      window.removeEventListener("resize", placeHeaderModel);
     });
   });
 
@@ -2670,96 +2649,6 @@ export function Conversation(props: ConversationProps) {
               </Show>
               <div class="conversation-header-actions no-drag">
                 <Show when={props.bot}>
-                  <div class="header-model-root" ref={headerModelRoot}>
-                    <button
-                      type="button"
-                      class="header-model-button"
-                      aria-label={`${t("headerModel")}: ${headerModelLabel()}`}
-                      aria-expanded={headerModelOpen()}
-                      title={agentReady() ? t("headerModel") : t("modelConnectHint")}
-                      onClick={() => {
-                        setHeaderModelPlacement(anchorBelow(headerModelRoot));
-                        setHeaderModelOpen((open) => !open);
-                      }}
-                    >
-                      <span>{headerModelLabel()}</span>
-                      <Show when={pendingRuntimeDetail()}>
-                        {(detail) => (
-                          <span class="header-model-pending" title={detail()}>
-                            {t("afterThisTurn")}
-                          </span>
-                        )}
-                      </Show>
-                      <svg aria-hidden="true" viewBox="0 0 20 20" class="header-model-chevron">
-                        <path d="m6 8 4 4 4-4" />
-                      </svg>
-                    </button>
-                    <Show when={headerModelOpen()}>
-                      <Portal>
-                        <div
-                          class="header-model-popover no-drag"
-                          style={headerModelPlacement()}
-                          role="dialog"
-                          aria-label={t("headerModel")}
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape") setHeaderModelOpen(false);
-                          }}
-                        >
-                          <Show
-                            when={agentReady()}
-                            fallback={
-                              <p class="header-model-connect">
-                                {t("modelConnectHint")}{" "}
-                                <button
-                                  type="button"
-                                  class="link-button"
-                                  onClick={() => {
-                                    setHeaderModelOpen(false);
-                                    props.onOpenAiSettings?.();
-                                  }}
-                                >
-                                  {t("modelConnect")}
-                                </button>
-                              </p>
-                            }
-                          >
-                            <ProviderModelPicker
-                              variant="field"
-                              ariaLabel="Header model"
-                              value={settingsModel()}
-                              agentStatus={props.agentStatus}
-                              modelOptions={props.modelOptions}
-                              onChange={(model) => void selectAndConfirmModel(model)}
-                            />
-                            <Show when={pendingRuntimeDetail()}>
-                              <p class="header-model-pending-detail">{pendingRuntimeDetail()}</p>
-                            </Show>
-                            <label class="header-model-reasoning">
-                              <span>{t("headerReasoning")}</span>
-                              <select
-                                value={settingsReasoning()}
-                                aria-label={t("headerReasoning")}
-                                onChange={(event) => {
-                                  const reasoningEffort = event.currentTarget
-                                    .value as AgentReasoningEffort;
-                                  setSettingsReasoning(reasoningEffort);
-                                  void saveBotPatch({ reasoningEffort });
-                                }}
-                              >
-                                <For each={reasoningOptions()}>
-                                  {(effort) => (
-                                    <option value={effort}>{reasoningLabel(effort)}</option>
-                                  )}
-                                </For>
-                              </select>
-                            </label>
-                          </Show>
-                        </div>
-                      </Portal>
-                    </Show>
-                  </div>
-                </Show>
-                <Show when={props.bot}>
                   {(bot) => (
                     <WorkflowExportMenu
                       class="header-model-button workflow-export-header"
@@ -3455,6 +3344,37 @@ export function Conversation(props: ConversationProps) {
                 disabledReason={t("modelConnectHint")}
                 onChange={(model) => void selectAndConfirmModel(model)}
               />
+              <label
+                class="composer-effort"
+                title={
+                  reasoningOptions().length < 2
+                    ? t("composerEffortSingle")
+                    : t("composerEffortHint")
+                }
+              >
+                <span class="composer-effort-label">{t("composerEffort")}</span>
+                <select
+                  value={settingsReasoning()}
+                  aria-label={t("composerEffort")}
+                  disabled={!agentReady() || reasoningOptions().length < 2}
+                  onChange={(event) => {
+                    const reasoningEffort = event.currentTarget.value as AgentReasoningEffort;
+                    setSettingsReasoning(reasoningEffort);
+                    void saveBotPatch({ reasoningEffort });
+                  }}
+                >
+                  <For each={reasoningOptions()}>
+                    {(effort) => <option value={effort}>{reasoningLabel(effort)}</option>}
+                  </For>
+                </select>
+              </label>
+              <Show when={pendingRuntimeDetail()}>
+                {(detail) => (
+                  <span class="header-model-pending" title={detail()}>
+                    {t("afterThisTurn")}
+                  </span>
+                )}
+              </Show>
               <Show when={!agentReady() && props.onOpenAiSettings}>
                 <button
                   type="button"

@@ -34,11 +34,15 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
       ["helpQFree", "helpAFree"],
       ["helpQFirstTask", "helpAFirstTask"],
       ["helpQModels", "helpAModels"],
+      ["helpQPickModel", "helpAPickModel"],
+      ["helpQVoice", "helpAVoice"],
     ],
   },
   {
     group: "helpGroupTeam",
     items: [
+      ["helpQTeamProject", "helpATeamProject"],
+      ["helpQAddNow", "helpAAddNow"],
       ["helpQCeo", "helpTipCeo"],
       ["helpQAssign", "helpTipAssign"],
       ["helpQCrew", "helpTipCrew"],
@@ -66,6 +70,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
   {
     group: "helpGroupConnect",
     items: [
+      ["helpQSwitchAccount", "helpASwitchAccount"],
       ["helpQTelegram", "helpAPhone"],
       ["helpQBrowser", "helpTipBrowser"],
       ["helpQMcp", "helpTipMcp"],

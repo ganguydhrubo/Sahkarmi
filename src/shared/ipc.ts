@@ -130,6 +130,7 @@ export const IPC_CHANNELS = {
   providerSetupSubmitCode: "provider-setup:submit-code",
   providerSetupSetApiKey: "provider-setup:set-api-key",
   providerSetupCheck: "provider-setup:check",
+  providerSetupDisconnect: "provider-setup:disconnect",
   providerSetupEvent: "provider-setup:event",
   geminiAccountsList: "gemini-accounts:list",
   geminiAccountsAdd: "gemini-accounts:add",
@@ -1139,6 +1140,8 @@ export interface ProviderSetupDesktopApi {
   submitCode: (provider: AgentProviderId, code: string) => Promise<ProviderSetupState>;
   setApiKey: (provider: AgentProviderId, apiKey: string) => Promise<ProviderSetupState>;
   check: (provider: AgentProviderId) => Promise<ProviderSetupState>;
+  /** Signs Sahkarmi out of the provider; coworkers, chats and files stay as they are. */
+  disconnect: (provider: AgentProviderId) => Promise<ProviderSetupState>;
   onEvent: (listener: (state: ProviderSetupState) => void) => () => void;
 }
 
@@ -1758,6 +1761,14 @@ export interface OrchestratorRun {
   plannedBy?: "ceo" | "template";
   /** Revised plans made after a failure (at most 2). */
   replans?: number;
+  /** The model and effort the owner chose for the team (new team members and the lead). */
+  model?: AgentModelId | null;
+  reasoningEffort?: AgentReasoningEffort | null;
+  /** The coworker that planned the run: the workspace CEO or the team's own lead. */
+  leadBotId?: string | null;
+  leadName?: string | null;
+  /** Every task's result in order, put together when the run ends. */
+  report?: string | null;
 }
 
 export interface OrchestratorWait {
@@ -1773,6 +1784,9 @@ export interface StartOrchestratorRunInput {
   forcedStrategy?: TaskExecutionStrategy;
   /** The owner's own check (e.g. "npm test"), run after each task through the permission rules. */
   checkCommand?: string | null;
+  /** The model and effort for the team's own members and lead; coworkers you have keep theirs. */
+  model?: AgentModelId | null;
+  reasoningEffort?: AgentReasoningEffort | null;
 }
 
 export interface RespondToPromptInput {

@@ -6,7 +6,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { basename, dirname, extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { type AgentModelId, modelWireId } from "../shared/ipc";
+import { type AgentModelId, isReasoningEffort, modelWireId } from "../shared/ipc";
 import type { AgentProvider } from "./agent-client";
 import { inlineImage } from "./attachment-text";
 import { refreshFreshPathSoon, withFreshPath } from "./mcp/windows-env";
@@ -130,6 +130,10 @@ interface AcpSession {
   /** The agent-side value the current model resolved to (a free model may rotate). */
   modelValue: string | null;
   modelOptions: AcpModelOption[];
+  /** The model's effort setting ("thought_level"), when the current model has levels. */
+  effortConfigId?: string | null;
+  effortOptions?: string[];
+  effortValue?: string | null;
   activeTurn: ActiveTurn | null;
   mcpToken: string;
   /**
@@ -210,6 +214,8 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
   #nextId = 1;
   #running = false;
   #catalogOptions: AcpModelOption[] = [];
+  /** Effort levels each model reported when it was selected (model value -> levels). */
+  readonly #modelEfforts = new Map<string, string[]>();
   #agentCapabilities: Record<string, unknown> = {};
   #acceptsImages = false;
   #mcpServer: Server | null = null;
@@ -350,10 +356,21 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
               model: model.model,
               displayName: model.displayName,
             })),
-            ...this.#catalogOptions.map((model) => ({
-              model: model.value,
-              displayName: model.name,
-            })),
+            ...this.#catalogOptions.map((model) => {
+              const levels = this.#effortLevelsFor(model.value);
+              return {
+                model: model.value,
+                displayName: model.name,
+                ...(levels.length
+                  ? {
+                      defaultReasoningEffort: levels.includes("medium") ? "medium" : levels[0],
+                      supportedReasoningEfforts: levels.map((reasoningEffort) => ({
+                        reasoningEffort,
+                      })),
+                    }
+                  : {}),
+              };
+            }),
           ],
         } as T;
       }
@@ -669,8 +686,61 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     const replaced = this.#sessions.get(threadId);
     if (replaced && replaced.mcpToken !== mcpToken) this.#mcpRoutes.delete(replaced.mcpToken);
     this.#sessions.set(threadId, session);
+    this.#noteEffort(session, result);
     await this.#applyModel(session, getString(params, "model"));
+    await this.#applyEffort(session, getString(params, "effort"));
     return session;
+  }
+
+  /**
+   * Effort levels to offer for a model: the ones it reported once selected; before that, the
+   * usual levels when this runtime has effort settings (OpenCode does; others once seen).
+   */
+  #effortLevelsFor(modelValue: string): string[] {
+    const known = this.#modelEfforts.get(modelValue);
+    if (known) return known;
+    const hasEffort =
+      this.#config.provider === "opencode" ||
+      [...this.#modelEfforts.values()].some((levels) => levels.length > 0);
+    if (!hasEffort || /free|big-pickle/i.test(modelValue)) return [];
+    return ["low", "medium", "high", "xhigh", "max"];
+  }
+
+  /** Remembers the effort setting a session/new, load or model change reported. */
+  #noteEffort(session: AcpSession, result: unknown): void {
+    if (!isRecord(result) || !Array.isArray(result.configOptions)) return;
+    const option = readEffortOption(result);
+    session.effortConfigId = option?.id ?? null;
+    session.effortOptions = option?.options ?? [];
+    session.effortValue = option?.current ?? null;
+    const modelValue = readCurrentModel(result) ?? session.modelValue;
+    if (modelValue) {
+      const levels = (option?.options ?? []).filter((level) => isReasoningEffort(level));
+      this.#modelEfforts.set(modelValue, levels);
+    }
+  }
+
+  /** Sets the coworker's effort when the current model has levels; otherwise it is skipped. */
+  async #applyEffort(session: AcpSession, effort: string | null): Promise<void> {
+    if (!effort || !session.effortConfigId || !session.effortOptions?.length) return;
+    const value = closestEffort(effort, session.effortOptions);
+    if (!value || value === session.effortValue) return;
+    try {
+      const result = await this.#call("session/set_config_option", {
+        sessionId: session.acpSessionId,
+        configId: session.effortConfigId,
+        value,
+      });
+      if (isRecord(result) && Array.isArray(result.configOptions))
+        this.#noteEffort(session, result);
+      session.effortValue = value;
+    } catch (error) {
+      // The turn still runs at the model's normal level.
+      this.emit(
+        "diagnostic",
+        `${this.#config.label}: could not set effort ${value} (${String(error)})`,
+      );
+    }
   }
 
   async #applyModel(session: AcpSession, model: string | null): Promise<void> {
@@ -694,11 +764,13 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
       return;
     }
     try {
-      await this.#call("session/set_config_option", {
+      const changed = await this.#call("session/set_config_option", {
         sessionId: session.acpSessionId,
         configId: "model",
         value,
       });
+      session.modelValue = value;
+      this.#noteEffort(session, changed);
     } catch {
       try {
         await this.#call("session/set_model", { sessionId: session.acpSessionId, modelId: value });
@@ -759,6 +831,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     await this.#awaitStaleStream(session);
     if (session.reloadWithoutBroken) await this.#reloadWithoutBroken(session);
     await this.#applyModel(session, getString(params, "model"));
+    await this.#applyEffort(session, getString(params, "effort"));
     if (
       this.#freeLimitUntil > Date.now() &&
       session.modelValue &&
@@ -1539,6 +1612,54 @@ function readNamespaces(params: unknown): Map<string, DynamicNamespace> {
     namespaces.set(entry.name, { name: entry.name, tools });
   }
   return namespaces;
+}
+
+/** The effort ("thought_level") setting a session reports, without its "default" entry. */
+export function readEffortOption(
+  result: unknown,
+): { id: string; options: string[]; current: string | null } | null {
+  if (!isRecord(result) || !Array.isArray(result.configOptions)) return null;
+  const option = result.configOptions
+    .filter(isRecord)
+    .find((item) => item.category === "thought_level" || item.id === "effort");
+  if (!option || typeof option.id !== "string" || !Array.isArray(option.options)) return null;
+  const options = option.options
+    .filter(isRecord)
+    .map((item) => item.value)
+    .filter((value): value is string => typeof value === "string" && value !== "default");
+  if (!options.length) return null;
+  return {
+    id: option.id,
+    options,
+    current: typeof option.currentValue === "string" ? option.currentValue : null,
+  };
+}
+
+function readCurrentModel(result: unknown): string | null {
+  if (!isRecord(result) || !Array.isArray(result.configOptions)) return null;
+  const model = result.configOptions
+    .filter(isRecord)
+    .find((item) => item.id === "model" || item.category === "model");
+  return model && typeof model.currentValue === "string" ? model.currentValue : null;
+}
+
+const EFFORT_ORDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"];
+
+/**
+ * The level to send for the coworker's effort: the same one when the model has it, otherwise
+ * the nearest lower one (the nearest at all when nothing is lower). "ultra" becomes "max".
+ */
+export function closestEffort(wanted: string, available: string[]): string | null {
+  if (!available.length) return null;
+  if (available.includes(wanted)) return wanted;
+  const target = EFFORT_ORDER.indexOf(wanted === "ultra" ? "max" : wanted);
+  if (available.includes(EFFORT_ORDER[target] ?? "")) return EFFORT_ORDER[target] ?? null;
+  const ranked = available
+    .map((value) => ({ value, rank: EFFORT_ORDER.indexOf(value) }))
+    .filter((item) => item.rank >= 0);
+  if (!ranked.length) return null;
+  const lower = ranked.filter((item) => item.rank <= target).sort((a, b) => b.rank - a.rank)[0];
+  return (lower ?? ranked.sort((a, b) => a.rank - b.rank)[0])?.value ?? null;
 }
 
 export function readModelOptions(result: unknown): AcpModelOption[] {

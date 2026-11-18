@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   AiRuntimeService,
   compareVersions,
+  latestTestedOpenCodeRelease,
   openCodeBinaryName,
   openCodePlatformPackage,
   parseIntegrity,
@@ -172,6 +173,50 @@ describe("AI runtime service", () => {
       expect(codex?.managed).toBe(true);
       expect(codex?.command).toBeNull();
       expect(codex?.note).toContain("own copy");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("stays on the tested OpenCode major when a new major is out, and says so", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("opencode-windows-x64/latest")) {
+        return jsonResponse({ version: "2.3.2", dist: { tarball: "https://x.invalid/2.tgz" } });
+      }
+      if (url.endsWith("opencode-windows-x64")) {
+        return jsonResponse({
+          versions: {
+            "1.19.6": { dist: { tarball: "https://x.invalid/1.19.6.tgz", integrity: "sha512-a=" } },
+            "1.20.1": { dist: { tarball: "https://x.invalid/1.20.1.tgz", integrity: "sha512-b=" } },
+            "1.21.0-beta.1": { dist: { tarball: "https://x.invalid/beta.tgz" } },
+            "2.3.2": { dist: { tarball: "https://x.invalid/2.tgz" } },
+          },
+        });
+      }
+      return jsonResponse({ version: "0.0.1", dist: { tarball: "", integrity: null } });
+    }) as typeof globalThis.fetch;
+    try {
+      const lookup = await latestTestedOpenCodeRelease("opencode-windows-x64");
+      expect(lookup.release.version).toBe("1.20.1");
+      expect(lookup.release.tarball).toContain("1.20.1");
+      expect(lookup.newerMajor).toBe("2.3.2");
+
+      const service = new AiRuntimeService({
+        runtimeDirectory: join(tmpdir(), "sahkarmi-runtime-major"),
+        currentOpenCodeVersion: async () => "1.20.1",
+        installedToolVersions: () => ({}),
+        autoDownload: () => false,
+        log: () => undefined,
+        platform: "win32",
+        arch: "x64",
+      });
+      const status = await service.check();
+      const opencode = status.tools.find((tool) => tool.id === "opencode");
+      expect(opencode?.latest).toBe("1.20.1");
+      expect(opencode?.note).toContain("OpenCode 2.3.2 is out");
+      expect(status.availableVersion).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;
     }
