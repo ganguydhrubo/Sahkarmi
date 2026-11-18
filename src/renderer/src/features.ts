@@ -23,5 +23,5 @@ export function featureOn(id: string): boolean {
   const feature = features().find((candidate) => candidate.id === id);
   return feature
     ? feature.enabled
-    : !["live-dictation", "model-suggestions", "simple-home"].includes(id);
+    : !["live-dictation", "model-suggestions", "simple-home", "auto-team"].includes(id);
 }

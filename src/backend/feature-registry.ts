@@ -96,6 +96,15 @@ export const BUILT_IN_FEATURES: FeatureDefinition[] = [
     true,
   ),
   feature(
+    "auto-team",
+    "Big jobs go to a team by themselves",
+    'A long job, or one with four or more steps, typed on Home or sent to the workspace\'s CEO starts a team project by itself: the lead plans the steps and the coworkers work side by side. A team uses much more of your AI limit than one coworker. On Home you can press "Use one coworker instead"; in the CEO\'s chat start the message with "Only you". Off: a big job is only offered to a team, as before.',
+    "core",
+    [],
+    true,
+    true,
+  ),
+  feature(
     "lean-repeat-runs",
     "Repeated jobs use fewer tokens",
     "A scheduled task or routine that has run before starts in a clean chat with a short note of the route that worked, the files it made and its latest results, instead of reading all the earlier runs again. The earlier chat stays on your screen. Off: every run is added to the coworker's one long chat, as before.",

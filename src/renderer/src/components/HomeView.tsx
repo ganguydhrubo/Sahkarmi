@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from "solid-js";
 import type { DraftAttachment } from "../../../shared/ipc";
+import { looksBig } from "../big-job";
 import type { BotProfile } from "../data";
 import { featureOn } from "../features";
 import { t } from "../i18n";
@@ -39,16 +40,6 @@ const ROLE_NAMES: Record<JobRole, RegExp> = {
 /** The coworker that shares out work: a CEO, a team lead, an orchestrator. */
 const LEAD_ROLE = /\blead\b|ceo|chief|orchestrat|manager/i;
 
-/** A long ask, or one with several steps, is better given to a team. */
-function looksBig(text: string): boolean {
-  const flat = text.trim();
-  if (flat.length > 320) return true;
-  const steps = flat
-    .split(/\n|(?:^|\s)\d+[.)]\s|;| and then | then /i)
-    .filter((part) => part.trim());
-  return steps.length >= 4;
-}
-
 function roleFor(text: string): JobRole | null {
   let best: JobRole | null = null;
   let bestAt = Number.POSITIVE_INFINITY;
@@ -75,6 +66,8 @@ export function HomeView(props: {
   onSend: (botId: string, text: string, attachmentDraftIds: string[]) => void | Promise<void>;
   onOpenBot: (botId: string) => void;
   onOpenTeamProject: (goal: string) => void;
+  /** Starts a team project with this goal at once (feature "auto-team"). */
+  onStartTeam?: (goal: string) => void | Promise<void>;
   onOpenApprovals: () => void;
 }) {
   const [text, setText] = createSignal("");
@@ -86,6 +79,19 @@ export function HomeView(props: {
   const [advice, setAdvice] = createSignal<{ botId: string; why: string } | null>(null);
   const [choosingTrade, setChoosingTrade] = createSignal(false);
   const [sending, setSending] = createSignal(false);
+  /** The owner said "use one coworker" for the big job in the box. */
+  const [oneOnly, setOneOnly] = createSignal(false);
+  /**
+   * A big job goes to a team by itself, unless the owner chose a coworker, asked for one
+   * coworker, or attached a voice note (a team project takes words only).
+   */
+  const autoTeam = () =>
+    featureOn("auto-team") &&
+    Boolean(props.onStartTeam) &&
+    looksBig(text()) &&
+    files().length === 0 &&
+    !oneOnly() &&
+    !chosen();
   const [error, setError] = createSignal("");
   const [micRequest, setMicRequest] = createSignal(0);
   const [useCounts, setUseCounts] = createSignal(starterUseCounts());
@@ -164,6 +170,22 @@ export function HomeView(props: {
   async function start() {
     const ask = text().trim();
     const bot = target();
+    if (autoTeam()) {
+      if (sending()) return;
+      setSending(true);
+      setError("");
+      try {
+        await props.onStartTeam?.(ask);
+        setText("");
+        setJobRole(null);
+        setJobId(null);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     if ((!ask && files().length === 0) || !bot || sending()) return;
     setSending(true);
     setError("");
@@ -222,6 +244,7 @@ export function HomeView(props: {
             value={text()}
             placeholder={t("homePlaceholder")}
             onInput={(event) => {
+              if (!event.currentTarget.value.trim()) setOneOnly(false);
               setText(event.currentTarget.value);
               setJobRole(null);
               setJobId(null);
@@ -298,7 +321,7 @@ export function HomeView(props: {
               class="button-primary home-start"
               disabled={(!text().trim() && files().length === 0) || !target() || sending()}
             >
-              {sending() ? t("homeStarting") : t("homeStart")}
+              {sending() ? t("homeStarting") : autoTeam() ? t("homeStartTeam") : t("homeStart")}
             </button>
           </div>
         </form>
@@ -310,8 +333,12 @@ export function HomeView(props: {
         </Show>
 
         <Show
-          when={target()}
-          fallback={<p class="home-who home-who-none">{t("homeNoCoworker")}</p>}
+          when={autoTeam() ? null : target()}
+          fallback={
+            <Show when={!autoTeam()}>
+              <p class="home-who home-who-none">{t("homeNoCoworker")}</p>
+            </Show>
+          }
         >
           {(bot) => (
             <div class="home-who" role="status">
@@ -350,12 +377,36 @@ export function HomeView(props: {
 
         <Show when={looksBig(text())}>
           <div class="home-big" role="status">
-            <p>
-              <strong>{t("homeBigJob")}</strong> {t("homeBigJobWhy")}
-            </p>
-            <button type="button" onClick={() => props.onOpenTeamProject(text().trim())}>
-              {t("homeBigJobAction")}
-            </button>
+            <Show
+              when={autoTeam()}
+              fallback={
+                <>
+                  <p>
+                    <strong>{t("homeBigJob")}</strong> {t("homeBigJobWhy")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (featureOn("auto-team") && props.onStartTeam && files().length === 0) {
+                        setOneOnly(false);
+                        setChosen(null);
+                      } else {
+                        props.onOpenTeamProject(text().trim());
+                      }
+                    }}
+                  >
+                    {t("homeBigJobAction")}
+                  </button>
+                </>
+              }
+            >
+              <p>
+                <strong>{t("homeBigAuto")}</strong> {t("homeBigJobWhy")}
+              </p>
+              <button type="button" onClick={() => setOneOnly(true)}>
+                {t("homeBigOne")}
+              </button>
+            </Show>
           </div>
         </Show>
 

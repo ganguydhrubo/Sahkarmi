@@ -49,6 +49,7 @@ import { providerForModel } from "../../shared/ipc";
 import type { MarketplaceAgent } from "../../shared/marketplace";
 import { vocab } from "./activity-vocab";
 import { stableApprovals } from "./approval-list";
+import { looksBig, wantsOneCoworker } from "./big-job";
 import { ApprovalsView } from "./components/ApprovalsView";
 import { Conversation, REVEAL_MESSAGE_EVENT } from "./components/Conversation";
 import { GlobalSearch } from "./components/GlobalSearch";
@@ -1011,6 +1012,27 @@ export function App() {
     }
   }
 
+  /** Starts a team project with this goal and shows it (Home and the CEO's chat use this). */
+  async function startTeamRun(goal: string): Promise<void> {
+    const stored = (key: string) => {
+      try {
+        return window.localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+    const model = stored("sahkarmi.team.model") as AgentModelId | null;
+    const reasoningEffort = stored("sahkarmi.team.effort") as AgentReasoningEffort | null;
+    await window.sahkarmi.orchestrator.startRun({
+      objective: goal,
+      workspaceId: workspaces().activeWorkspaceId || undefined,
+      ...(model && modelOptions().some((option) => option.id === model) ? { model } : {}),
+      ...(reasoningEffort ? { reasoningEffort } : {}),
+    });
+    setAgentPickerOpen(false);
+    setView("orchestrator");
+  }
+
   async function sendMessage(
     body: string,
     attachmentDraftIds: string[],
@@ -1018,6 +1040,32 @@ export function App() {
   ): Promise<boolean> {
     const bot = activeBot();
     if (!bot || (!body.trim() && attachmentDraftIds.length === 0)) return false;
+    // A big job typed to the workspace's CEO goes to the whole team by itself. "Only you: ..."
+    // at the start keeps it with the CEO alone.
+    const ceoBotId = workspaces().workspaces.find(
+      (workspace) => workspace.id === workspaces().activeWorkspaceId,
+    )?.ceoBotId;
+    if (
+      featureOn("auto-team") &&
+      bot.id === ceoBotId &&
+      attachmentDraftIds.length === 0 &&
+      !replyToMessageId &&
+      (coworkerStatuses()[bot.id] ?? "idle") === "idle" &&
+      looksBig(body) &&
+      !wantsOneCoworker(body)
+    ) {
+      try {
+        await startTeamRun(body.trim());
+        appendUiError(
+          bot.id,
+          t("teamAutoNote", { name: bot.name }),
+          vocab().ERROR_TITLES.notice ?? "Note",
+        );
+        return true;
+      } catch {
+        // The team could not start: the CEO gets the message as usual.
+      }
+    }
     return sendMessageToBot(bot.id, body, attachmentDraftIds, replyToMessageId, true);
   }
 
@@ -1520,6 +1568,7 @@ export function App() {
                       await sendMessageToBot(botId, text, attachmentDraftIds);
                     }}
                     onOpenBot={selectBot}
+                    onStartTeam={startTeamRun}
                     onOpenTeamProject={(goal) => {
                       setTeamGoal(goal);
                       setView("orchestrator");

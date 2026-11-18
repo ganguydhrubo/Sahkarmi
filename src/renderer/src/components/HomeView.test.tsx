@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { looksBig, wantsOneCoworker } from "../big-job";
 import type { BotProfile } from "../data";
+import { applyFeatures } from "../features";
 import { setTrade } from "../preferences";
 import { TRADES } from "../trade-names";
 import { noteStarterUsed, starterJobs, starterUseCounts } from "../trades";
@@ -163,6 +165,38 @@ describe("Home", () => {
     await fireEvent.click(start);
     await waitFor(() => expect(onSend).toHaveBeenCalled());
     expect(onSend.mock.calls[0]).toEqual(["lead", "", ["draft-1"]]);
+  });
+
+  it("sends a big job to a team by itself when that is switched on, unless the owner says no", async () => {
+    applyFeatures([{ id: "auto-team", enabled: true }] as never);
+    const onStartTeam = vi.fn();
+    const { onSend } = show({ onStartTeam });
+    const big =
+      "1. Check the stock list\n2. Make the Diwali price list\n3. Write three WhatsApp posts\n4. Plan the delivery days";
+    await fireEvent.input(screen.getByRole("textbox"), { target: { value: big } });
+    expect(
+      screen.getByText("This looks like a big job, so a team will do it."),
+    ).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole("button", { name: "Start with a team" }));
+    await waitFor(() => expect(onStartTeam).toHaveBeenCalledWith(big));
+    expect(onSend).not.toHaveBeenCalled();
+
+    // "Use one coworker instead": the same big job goes to one coworker.
+    await fireEvent.input(screen.getByRole("textbox"), { target: { value: big } });
+    await fireEvent.click(screen.getByRole("button", { name: "Use one coworker instead" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(onSend).toHaveBeenCalled());
+    expect(onStartTeam).toHaveBeenCalledTimes(1);
+    applyFeatures([]);
+  });
+
+  it("knows a big job from a small one, and the words that keep it with one coworker", () => {
+    expect(looksBig("Write a Diwali post")).toBe(false);
+    expect(looksBig("Check stock; make the list; write the post; plan delivery")).toBe(true);
+    expect(looksBig("word ".repeat(80))).toBe(true);
+    expect(wantsOneCoworker("Only you: check stock; make the list")).toBe(true);
+    expect(wantsOneCoworker("শুধু তুমি এই কাজটি করো")).toBe(true);
+    expect(wantsOneCoworker("Please check stock")).toBe(false);
   });
 
   it("says when approvals are waiting", () => {

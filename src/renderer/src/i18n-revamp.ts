@@ -138,6 +138,14 @@ export const revampEn = {
     "To give work: open Home or the CEO's chat and say what you want. The other coworkers take work from the CEO or from you.",
   ceoSuggest: "Make {name} the CEO",
   homeWhyCeo: "It is this team's CEO, so it shares the job with the team.",
+  homeBigAuto: "This looks like a big job, so a team will do it.",
+  homeBigOne: "Use one coworker instead",
+  homeStartTeam: "Start with a team",
+  teamAutoNote:
+    'This was a big job, so the whole team is doing it together. Watch it in Team project. To have only {name} do such a job, start your message with the words "Only you".',
+  helpQAutoTeam: "Why did my job go to a whole team?",
+  helpAAutoTeam:
+    'A long job, or one with four or more steps, goes to a team by itself when you type it on Home or send it to the workspace\'s CEO. The lead plans the steps, the coworkers work side by side and you get one report. A team uses much more of your AI limit than one coworker. To keep a job with one coworker, press "Use one coworker instead" on Home, or start your message to the CEO with "Only you". You can switch this off in Settings > Features ("Big jobs go to a team by themselves").',
 };
 
 export type RevampDictionary = typeof revampEn;
@@ -278,6 +286,14 @@ export const revampHi: RevampDictionary = {
     "काम देने के लिए: होम या CEO की चैट खोलें और बताएँ क्या चाहिए। बाक़ी सहकर्मी CEO से या आपसे काम लेते हैं।",
   ceoSuggest: "{name} को CEO बनाएँ",
   homeWhyCeo: "यह इस टीम का CEO है, इसलिए यह काम टीम में बाँटेगा।",
+  homeBigAuto: "यह बड़ा काम लगता है, इसलिए इसे टीम करेगी।",
+  homeBigOne: "एक ही सहकर्मी से करवाएँ",
+  homeStartTeam: "टीम के साथ शुरू करें",
+  teamAutoNote:
+    "यह बड़ा काम था, इसलिए पूरी टीम इसे मिलकर कर रही है। इसे टीम प्रोजेक्ट में देखें। ऐसा काम सिर्फ़ {name} से करवाना हो तो संदेश की शुरुआत “सिर्फ़ तुम” से करें।",
+  helpQAutoTeam: "मेरा काम पूरी टीम के पास क्यों गया?",
+  helpAAutoTeam:
+    "लंबा काम, या चार या ज़्यादा क़दमों वाला काम, होम पर लिखने या वर्कस्पेस के CEO को भेजने पर अपने आप टीम के पास जाता है। लीड क़दम तय करता है, सहकर्मी साथ-साथ काम करते हैं और आपको एक रिपोर्ट मिलती है। टीम एक सहकर्मी से कहीं ज़्यादा AI सीमा इस्तेमाल करती है। काम एक ही सहकर्मी के पास रखना हो तो होम पर “एक ही सहकर्मी से करवाएँ” दबाएँ, या CEO को संदेश “सिर्फ़ तुम” से शुरू करें। इसे सेटिंग्स > फ़ीचर्स में बंद कर सकते हैं।",
 };
 
 export const revampBn: RevampDictionary = {
@@ -415,4 +431,12 @@ export const revampBn: RevampDictionary = {
   ceoHow: "কাজ দিতে: হোম বা CEO-র চ্যাট খুলে বলুন কী চান। বাকি সহকর্মীরা CEO বা আপনার কাছ থেকে কাজ নেয়।",
   ceoSuggest: "{name}-কে CEO করুন",
   homeWhyCeo: "এ এই টিমের CEO, তাই সে কাজটি টিমের মধ্যে ভাগ করবে।",
+  homeBigAuto: "এটি বড় কাজ বলে মনে হচ্ছে, তাই একটি টিম এটি করবে।",
+  homeBigOne: "একজন সহকর্মীকে দিয়েই করান",
+  homeStartTeam: "টিম নিয়ে শুরু করুন",
+  teamAutoNote:
+    "এটি বড় কাজ ছিল, তাই পুরো টিম একসাথে এটি করছে। টিম প্রজেক্টে দেখুন। এমন কাজ শুধু {name}-কে দিয়ে করাতে চাইলে বার্তার শুরুতে “শুধু তুমি” লিখুন।",
+  helpQAutoTeam: "আমার কাজ পুরো টিমের কাছে গেল কেন?",
+  helpAAutoTeam:
+    "লম্বা কাজ, বা চার বা তার বেশি ধাপের কাজ, হোমে লিখলে বা ওয়ার্কস্পেসের CEO-কে পাঠালে নিজে থেকেই টিমের কাছে যায়। লিড ধাপ ঠিক করে, সহকর্মীরা পাশাপাশি কাজ করে এবং আপনি একটি রিপোর্ট পান। একটি টিম একজন সহকর্মীর চেয়ে অনেক বেশি AI সীমা ব্যবহার করে। কাজ একজন সহকর্মীর কাছেই রাখতে হোমে “একজন সহকর্মীকে দিয়েই করান” চাপুন, অথবা CEO-কে বার্তা “শুধু তুমি” দিয়ে শুরু করুন। সেটিংস > ফিচার্স থেকে এটি বন্ধ করা যায়।",
 };

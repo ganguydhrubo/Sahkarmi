@@ -46,6 +46,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
     group: "helpGroupTeam",
     items: [
       ["helpQTeamProject", "helpATeamProject"],
+      ["helpQAutoTeam", "helpAAutoTeam"],
       ["helpQAddNow", "helpAAddNow"],
       ["helpQCeo", "helpTipCeo"],
       ["helpQAssign", "helpTipAssign"],
