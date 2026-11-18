@@ -133,6 +133,12 @@ export const IPC_CHANNELS = {
   providerSetupDisconnect: "provider-setup:disconnect",
   providerSetupEvent: "provider-setup:event",
   geminiAccountsList: "gemini-accounts:list",
+  aiAccountsList: "ai-accounts:list",
+  pinsList: "pins:list",
+  pinsToggle: "pins:toggle",
+  aiAccountsAdd: "ai-accounts:add",
+  aiAccountsUse: "ai-accounts:use",
+  aiAccountsRemove: "ai-accounts:remove",
   geminiAccountsAdd: "gemini-accounts:add",
   geminiAccountsSignIn: "gemini-accounts:sign-in",
   geminiAccountsUse: "gemini-accounts:use",
@@ -1144,6 +1150,45 @@ export interface GeminiAccountsState {
   accounts: GeminiAccount[];
 }
 
+/** A message the owner pinned in a chat; keeps its text so the pin bar can show it. */
+export interface PinnedMessage {
+  botId: string;
+  messageId: string;
+  text: string;
+  pinnedAt: string;
+}
+
+export interface PinsDesktopApi {
+  list: (botId: string) => Promise<PinnedMessage[]>;
+  /** Pins the message, or unpins it when it is pinned. Returns the chat's pins, newest first. */
+  toggle: (input: { botId: string; messageId: string; text: string }) => Promise<PinnedMessage[]>;
+}
+
+/** AIs that can keep more than one signed-in account in Sahkarmi. */
+export type AiAccountProvider = "codex" | "claude";
+
+export interface AiAccount {
+  id: string;
+  email: string | null;
+  /** The account coworkers on this AI use now. */
+  active: boolean;
+  /** Set while this account rests after reaching its usage limit. */
+  restingUntil: string | null;
+}
+
+export interface AiAccountsState {
+  providers: Record<AiAccountProvider, { accounts: AiAccount[]; adding: boolean }>;
+}
+
+export interface AiAccountsDesktopApi {
+  list: () => Promise<AiAccountsState>;
+  /** Keeps the account in use and starts a fresh sign-in for another one. */
+  add: (provider: AiAccountProvider) => Promise<AiAccountsState>;
+  /** Coworkers on this AI use this account from now on (the AI restarts on it). */
+  use: (provider: AiAccountProvider, id: string) => Promise<AiAccountsState>;
+  remove: (provider: AiAccountProvider, id: string) => Promise<AiAccountsState>;
+}
+
 export interface GeminiAccountsDesktopApi {
   list: () => Promise<GeminiAccountsState>;
   /** Adds a Google account and starts its sign-in; progress arrives as provider-setup events. */
@@ -1219,6 +1264,18 @@ export type ScheduleCadence =
   | { kind: "weekdays"; time: string }
   | { kind: "weekly"; day: Weekday; time: string };
 
+/**
+ * Why a scheduled task or routine did not run on time, kept until its next on-time run:
+ * late (Sahkarmi was closed or the computer slept), paused (all coworkers paused), busy (the
+ * previous run was still going) or failed (it could not be started).
+ */
+export interface RunNote {
+  kind: "late" | "paused" | "busy" | "failed";
+  at: string;
+  dueAt?: string;
+  detail?: string;
+}
+
 export interface ScheduledTask {
   id: string;
   botId: string;
@@ -1228,6 +1285,8 @@ export interface ScheduledTask {
   createdAt: string;
   lastRunAt: string | null;
   nextRunAt: string | null;
+  /** Why the last run was late or waited; null after an on-time run. */
+  lastNote?: RunNote | null;
 }
 
 /** Routines also accept "every N minutes" (N >= 1; under 5 needs explicit confirmation). */
@@ -1282,6 +1341,8 @@ export interface Routine {
   createdAt: string;
   lastRunAt: string | null;
   nextRunAt: string | null;
+  /** Why the last run was late or waited; null after an on-time run. */
+  lastNote?: RunNote | null;
 }
 
 export type RoutineStepStatus = "queued" | "running" | "waiting" | "done" | "failed" | "skipped";
@@ -2404,6 +2465,8 @@ export interface SahkarmiDesktopApi {
   permissions: PermissionsDesktopApi;
   providerSetup: ProviderSetupDesktopApi;
   geminiAccounts: GeminiAccountsDesktopApi;
+  aiAccounts: AiAccountsDesktopApi;
+  pins: PinsDesktopApi;
   usage: UsageDesktopApi;
   features: FeaturesDesktopApi;
   business: BusinessDesktopApi;

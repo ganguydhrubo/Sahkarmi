@@ -10,6 +10,7 @@ import {
 } from "../../../shared/ipc";
 import { PROVIDER_CATALOG, type ProviderCatalogEntry } from "../../../shared/provider-catalog";
 import { t } from "../i18n";
+import { AiAccounts } from "./AiAccounts";
 import { GeminiAccounts } from "./GeminiAccounts";
 import { ProviderLogo } from "./ProviderLogo";
 
@@ -202,6 +203,10 @@ export function ProviderConnect(props: { agentStatus: AgentStatus }) {
           <p class="settings-meta provider-signout-hint">
             {t("connectSignOutHint", { name: rowProps.entry.name })}
           </p>
+        </Show>
+
+        <Show when={id === "codex" || id === "claude"}>
+          <AiAccounts provider={id as "codex" | "claude"} busy={busy()} />
         </Show>
 
         <Show

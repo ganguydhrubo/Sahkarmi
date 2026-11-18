@@ -2,6 +2,7 @@ import { For, Show } from "solid-js";
 import type { ScheduleCadence, ScheduledTask, Weekday } from "../../../shared/ipc";
 import { t } from "../i18n";
 import { language } from "../preferences";
+import { RunNoteLine } from "./RunNoteLine";
 
 type CadenceKind = ScheduleCadence["kind"];
 
@@ -176,6 +177,7 @@ export function ScheduleList(props: {
                     {describeCadence(task.cadence)} · {t("nextRun")}:{" "}
                     {task.enabled ? formatNext(task.nextRunAt) : "—"}
                   </span>
+                  <RunNoteLine note={task.lastNote} />
                 </div>
                 <div class="schedule-actions">
                   <button type="button" onClick={() => props.onRunNow(task)}>

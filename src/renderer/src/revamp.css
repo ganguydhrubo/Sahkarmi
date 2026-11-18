@@ -294,17 +294,17 @@
 
 /* Home is not a ".center-view": that class restyles every button inside it, and Home's
    buttons (tiles, microphone, the voice box's click-away layer) have their own look. */
+.home-view {
+  overflow-y: auto;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
 .app-frame > .home-view {
   grid-column: 4;
   grid-row: 1;
   min-width: 0;
   min-height: 0;
-}
-
-.home-view {
-  overflow-y: auto;
-  background: var(--bg-deep);
-  color: var(--text-primary);
 }
 
 .home-column {
@@ -1309,4 +1309,171 @@
 .composer-toolbar {
   flex-wrap: wrap;
   row-gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Several accounts of one AI, pinned messages and run notes, in the trust theme             */
+/* ---------------------------------------------------------------------------------------- */
+
+/* Saved ChatGPT / Claude accounts: a calm panel under the AI's row. */
+.ai-accounts {
+  justify-items: stretch;
+  gap: 10px;
+  margin: 4px 0 4px 56px;
+  border-radius: 12px;
+  background: var(--calm-bg);
+  padding: 12px 14px;
+}
+
+.ai-accounts .settings-meta {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.ai-account-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.ai-account-row {
+  min-height: 46px;
+  padding: 6px 14px;
+  font-size: var(--fs-md);
+}
+
+.ai-account-row + .ai-account-row {
+  border-top: 1px solid var(--card-line);
+}
+
+.ai-account-name {
+  font-weight: 600;
+}
+
+.ai-account-name small {
+  font-weight: 400;
+}
+
+/* Green only says "this one is in use and working". */
+.ai-account-badge {
+  background: var(--success-soft);
+  padding: 2px 10px;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.ai-accounts .ai-account-row .link-button,
+.ai-accounts > .link-button {
+  min-height: 36px;
+  color: var(--link-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Removing a saved sign-in deletes it: the one place red is right here. */
+.ai-accounts .ai-account-row .ai-account-remove {
+  color: var(--danger);
+}
+
+.ai-accounts > .ai-account-add {
+  justify-self: start;
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 10px;
+  padding: 6px 16px;
+  color: var(--indigo-accent);
+}
+
+/* Why a scheduled task or routine ran late, waited or did not start: a quiet, readable line. */
+.run-note {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+/* A missed run needs a look, not an alarm. */
+.run-note-failed {
+  color: var(--attention);
+  font-weight: 600;
+}
+
+/* Pinned messages: a white card that stays at the very top of the chat. The chat has 8 px of
+   space above its first message; the card sticks over that space, so no message shows in a
+   gap above it. */
+.conversation-scroll > .pinned-bar {
+  top: -8px;
+  z-index: 5;
+  gap: 10px;
+  margin-bottom: 14px;
+  border-color: var(--card-line);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 10px 14px;
+}
+
+.pinned-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.pinned-chip {
+  min-height: 36px;
+  border-color: var(--card-line);
+  background: var(--calm-bg);
+  padding: 6px 14px;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.pinned-chip:hover {
+  border-color: var(--indigo-accent);
+}
+
+.pinned-chip[aria-expanded="true"] {
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.pinned-open {
+  gap: 8px;
+  border-top: 1px solid var(--card-line);
+  padding-top: 10px;
+}
+
+.pinned-open p {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.pinned-open-actions .link-button {
+  min-height: 36px;
+  color: var(--link-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Orange words are always the darker, readable shade, wherever a text button sits. */
+.settings-card .link-button,
+.provider-row .provider-row-actions .link-button,
+.provider-row .provider-key-toggle,
+.center-view .link-button {
+  color: var(--link-ink);
+}
+
+.ai-accounts .ai-account-row .ai-account-remove,
+.provider-row .provider-row-actions .provider-disconnect {
+  color: var(--danger);
+}
+
+/* When the message box's tools take two lines, Send stays at the right-hand end. */
+.composer-toolbar > .send-button {
+  margin-left: auto;
 }

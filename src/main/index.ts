@@ -29,6 +29,7 @@ import QRCode from "qrcode";
 import { AdaptiveOrchestrator } from "../backend/adaptive-orchestrator";
 import { memoryCategory } from "../backend/agent-memory-store";
 import { AgentService } from "../backend/agent-service";
+import { AiAccountStore, isAiAccountProvider } from "../backend/ai-accounts";
 import { ApiIntegrationService } from "../backend/api-integrations/api-service";
 import { AppMemoryMonitor } from "../backend/app-memory";
 import { ApprovalStore } from "../backend/approval-store";
@@ -78,6 +79,7 @@ import { readMemory, setMemoryBudget } from "../backend/memory-pressure";
 import { OrchestratorStore } from "../backend/orchestrator-store";
 import { classifyCommand } from "../backend/permission-policy";
 import { PermissionService } from "../backend/permission-service";
+import { PinStore } from "../backend/pin-store";
 import { ProviderSetup } from "../backend/provider-setup";
 import { ResourceAssignmentStore } from "../backend/resource-assignments";
 import { designRoutine } from "../backend/routine-designer";
@@ -853,6 +855,7 @@ function registerIpcHandlers(
     await routines.deleteBotData(id);
     await business.clearBot(id);
     await permissions.deleteBotData(id);
+    await pinStore?.deleteBotData(id);
   }
 
   handleTrusted(IPC_CHANNELS.agentUpdateBot, (input: unknown) =>
@@ -1958,6 +1961,9 @@ function cannotSelfUpdate(): Promise<boolean> {
 let providerSetup: ProviderSetup | null = null;
 let secretStore: SecretStore | null = null;
 let secretCodec: SecretCodec | null = null;
+/** Saved ChatGPT and Claude accounts (Sahkarmi has no login of its own; these are AI sign-ins). */
+let pinStore: PinStore | null = null;
+let aiAccounts: AiAccountStore | null = null;
 const SECRET_STORE_FILE = "secrets.enc.json";
 let voiceService: VoiceService | null = null;
 let desktopHost: DesktopHost | null = null;
@@ -1990,6 +1996,77 @@ function registerVoiceHandlers(voice: VoiceService, ready: Promise<unknown>): vo
   handleTrusted(IPC_CHANNELS.voiceSpeak, (value: unknown) => {
     if (typeof value !== "string") throw new Error("Nothing to read aloud.");
     return voice.speak(value);
+  });
+}
+
+function registerPinHandlers(pins: PinStore): void {
+  const text = (value: unknown, name: string, max: number) => {
+    if (typeof value !== "string" || !value || value.length > max)
+      throw new Error(`Invalid ${name}.`);
+    return value;
+  };
+  handleTrusted(IPC_CHANNELS.pinsList, (botId: unknown) => pins.list(text(botId, "chat", 200)));
+  handleTrusted(IPC_CHANNELS.pinsToggle, (input: unknown) => {
+    if (!isObject(input)) throw new Error("Invalid pin.");
+    return pins.toggle({
+      botId: text(input.botId, "chat", 200),
+      messageId: text(input.messageId, "message", 400),
+      text: typeof input.text === "string" ? input.text : "",
+    });
+  });
+}
+
+/** Saves the sign-in in place under its account (found by the email inside the sign-in). */
+async function captureAiAccount(provider: "codex" | "claude"): Promise<void> {
+  await aiAccounts?.capture(provider).catch((error) => {
+    appLog.write(
+      "warn",
+      `could not save the ${provider} sign-in for account switching`,
+      String(error),
+    );
+  });
+}
+
+function registerAiAccountHandlers(setup: ProviderSetup, service: AgentService): void {
+  const which = (value: unknown) => {
+    if (!isAiAccountProvider(value)) throw new Error("This AI cannot keep more than one account.");
+    return value;
+  };
+  const accountId = (value: unknown) => {
+    if (typeof value !== "string" || !/^[\w-]{1,64}$/.test(value))
+      throw new Error("Unknown account.");
+    return value;
+  };
+  const store = () => {
+    if (!aiAccounts) throw new Error("Sahkarmi is still starting. Try again in a moment.");
+    return aiAccounts;
+  };
+  handleTrusted(IPC_CHANNELS.aiAccountsList, async () => {
+    for (const provider of ["codex", "claude"] as const) {
+      if (store().list().providers[provider].adding) continue;
+      await captureAiAccount(provider);
+    }
+    return store().list();
+  });
+  handleTrusted(IPC_CHANNELS.aiAccountsAdd, async (value: unknown) => {
+    const provider = which(value);
+    await captureAiAccount(provider);
+    // The AI stops while its sign-in is taken away, then Connect signs in the new account.
+    await service.switchProviderAccount(provider, () => store().beginAdd(provider));
+    void setup.connect(provider);
+    return store().list();
+  });
+  handleTrusted(IPC_CHANNELS.aiAccountsUse, async (value: unknown, id: unknown) => {
+    const provider = which(value);
+    const account = accountId(id);
+    setup.cancel(provider);
+    await service.switchProviderAccount(provider, () => store().activate(provider, account));
+    void setup.check(provider).catch(() => undefined);
+    return store().list();
+  });
+  handleTrusted(IPC_CHANNELS.aiAccountsRemove, async (value: unknown, id: unknown) => {
+    await store().remove(which(value), accountId(id));
+    return store().list();
   });
 }
 
@@ -2046,9 +2123,14 @@ function registerProviderSetupHandlers(setup: ProviderSetup): void {
     setup.connect(provider(value)),
   );
   handleTrusted(IPC_CHANNELS.providerSetupCheck, (value: unknown) => setup.check(provider(value)));
-  handleTrusted(IPC_CHANNELS.providerSetupDisconnect, (value: unknown) =>
-    setup.disconnect(provider(value)),
-  );
+  handleTrusted(IPC_CHANNELS.providerSetupDisconnect, async (value: unknown) => {
+    const id = provider(value);
+    const state = await setup.disconnect(id);
+    if (state.phase === "idle" && isAiAccountProvider(id)) {
+      await aiAccounts?.forgetActive(id).catch(() => undefined);
+    }
+    return state;
+  });
   handleTrusted(IPC_CHANNELS.providerSetupSubmitCode, (input: unknown) => {
     if (!isObject(input) || typeof input.code !== "string") throw new Error("Invalid code.");
     return setup.submitCode(provider(input.provider), input.code);
@@ -2281,6 +2363,16 @@ if (!hasSingleInstanceLock) {
         );
       });
       service.setGeminiAccounts(geminiAccounts);
+      const codec = secretCodec;
+      aiAccounts = new AiAccountStore(app.getPath("userData"), {
+        seal: codec
+          ? { seal: (value) => codec.seal(value), open: (value) => codec.open(value) }
+          : undefined,
+      });
+      await aiAccounts.initialize().catch((error) => {
+        appLog.write("error", "AI account list unreadable; starting with none", String(error));
+      });
+      service.setAiAccounts(aiAccounts);
       // Sign-in folders of Google accounts removed while Google's server still held them.
       void windowShown
         .then(() => removeOrphanGeminiHomes(app.getPath("userData")))
@@ -2489,6 +2581,12 @@ if (!hasSingleInstanceLock) {
       }
       const business = new BusinessStore(app.getPath("userData"));
       await business.initialize();
+      const pins = new PinStore(app.getPath("userData"));
+      await pins.initialize().catch((error) => {
+        appLog.write("error", "pinned messages unreadable; starting with none", String(error));
+      });
+      registerPinHandlers(pins);
+      pinStore = pins;
       const schedules = new ScheduleStore(app.getPath("userData"));
       await schedules.initialize();
       scheduleStore = schedules;
@@ -2690,6 +2788,9 @@ if (!hasSingleInstanceLock) {
         secrets: secretStore ?? undefined,
       });
       providerSetup.on("state", (state) => {
+        if (state.phase === "connected" && isAiAccountProvider(state.provider)) {
+          void captureAiAccount(state.provider);
+        }
         if (state.phase === "failed") {
           appLog.write("warn", `provider connect failed: ${state.provider}`, state.message);
         }
@@ -2699,6 +2800,7 @@ if (!hasSingleInstanceLock) {
       });
       registerProviderSetupHandlers(providerSetup);
       registerGeminiAccountHandlers(geminiAccounts, providerSetup, service);
+      registerAiAccountHandlers(providerSetup, service);
       voiceService = new VoiceService({ userDataPath: app.getPath("userData") });
       const voice = voiceService;
       const voiceReady = windowShown.then(() =>

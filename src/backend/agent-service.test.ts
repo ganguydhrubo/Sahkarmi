@@ -21,6 +21,7 @@ import {
   isNoisyDiagnostic,
   isQuotaError,
   isTransientError,
+  LIMIT_RECOVERY_ORDER,
   previewText,
   quotaNotice,
   SHORT_TOOL_WAIT_MS,
@@ -2025,6 +2026,50 @@ describe.sequential("AgentService", () => {
     );
   });
 
+  it("moves ChatGPT to the owner's other saved account at a usage limit and carries on", async () => {
+    process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
+    process.env.SAHKARMI_FAKE_FAIL_MESSAGE =
+      "You've hit your usage limit. Upgrade to Pro or try again later.";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    let active = "first";
+    const activated: string[] = [];
+    const rested: string[] = [];
+    service.setAiAccounts({
+      activeId: () => active,
+      nextAccount: (_provider, exclude) => (exclude.has("second") ? null : "second"),
+      label: (_provider, id) => (id === "first" ? "shop@owner.in" : "home@owner.in"),
+      markLimited: async () => {
+        rested.push(active);
+      },
+      activate: async (_provider, id) => {
+        activated.push(id);
+        active = id;
+      },
+    });
+    const events: AgentEvent[] = [];
+    service.on("event", (event) => events.push(event));
+    await service.initialize();
+
+    await service.sendMessage({ botId: "chief", text: "Make the Diwali price list" });
+    await waitFor(
+      async () =>
+        (await protocolMessages()).filter((message) => message.method === "turn/start").length ===
+        2,
+    );
+    expect(activated).toEqual(["second"]);
+    expect(rested).toEqual(["first"]);
+    const note = events.find(
+      (event): event is Extract<AgentEvent, { type: "error" }> =>
+        event.type === "error" && event.code === "fallback_model",
+    );
+    expect(note?.message).toContain("shop@owner.in");
+    expect(note?.message).toContain("other ChatGPT account (home@owner.in)");
+    // Still on ChatGPT: no move to the free model.
+    const after = service.listBots().find((bot) => bot.id === "chief");
+    expect(after?.model.startsWith("gpt-")).toBe(true);
+  });
+
   it("does not take billing.ts in an error for a used-up plan", async () => {
     process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
     process.env.SAHKARMI_FAKE_FAIL_MESSAGE = "Failed to edit src/billing.ts: old_string not found";
@@ -2220,6 +2265,62 @@ describe.sequential("AgentService", () => {
     );
     expect(params[1].threadId).toBe(params[0].threadId);
     expect(params[1].input[0].text).toBe(job);
+  });
+
+  it("at a usage limit tries the same AI's other account first, then the backup order, the free model last", async () => {
+    // The order itself, in one place.
+    expect([...LIMIT_RECOVERY_ORDER]).toEqual([
+      "gemini-account",
+      "same-ai-account",
+      "backup-order",
+      "free-model",
+    ]);
+
+    // ChatGPT fails with a used-up limit on every account (each restart of the fake fails its
+    // first turn again). The owner has a second ChatGPT account AND a backup order.
+    process.env.SAHKARMI_CLAUDE_PATH = await createFakeClaude(root);
+    process.env.SAHKARMI_FAKE_FAIL_TURNS = "1";
+    process.env.SAHKARMI_FAKE_FAIL_MESSAGE = "Your plan cannot take more work right now.";
+    process.env.SAHKARMI_FAKE_FAIL_INFO = "usageLimitExceeded";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    service.configureEngineSettings(() => ({
+      ...DEFAULT_ENGINE_SETTINGS,
+      backupOrder: ["codex", "claude"],
+    }));
+    let active = "first";
+    const activated: string[] = [];
+    service.setAiAccounts({
+      activeId: () => active,
+      nextAccount: (_provider, exclude) => (exclude.has("second") ? null : "second"),
+      label: (_provider, id) => (id === "first" ? "shop@owner.in" : "home@owner.in"),
+      markLimited: async () => undefined,
+      activate: async (_provider, id) => {
+        activated.push(id);
+        active = id;
+      },
+    });
+    const steps: string[] = [];
+    service.on("event", (event: AgentEvent) => {
+      if (event.type === "error" && event.code === "fallback_model") steps.push("same-ai-account");
+      if (event.type === "notice" && event.code === "ai_switched") steps.push("backup-order");
+    });
+    await service.initialize();
+    await service.ensureProvider("claude");
+
+    await service.sendMessage({ botId: "chief", text: "Write the fee reminder letter" });
+    // First the other ChatGPT account is put in place (the same chat carries on).
+    await waitFor(() => activated.length === 1);
+    expect(activated).toEqual(["second"]);
+    expect(steps[0]).toBe("same-ai-account");
+
+    // That account is used up too: only now the backup order moves the job to Claude.
+    await waitFor(() => steps.includes("backup-order"));
+    expect(steps).toEqual(["same-ai-account", "backup-order"]);
+    expect(activated).toEqual(["second"]);
+    await waitFor(
+      () => service?.listBots().find((bot) => bot.id === "chief")?.model === "claude-opus-5",
+    );
   });
 
   it("caps how many coworkers work at once; the next starts when one finishes", async () => {

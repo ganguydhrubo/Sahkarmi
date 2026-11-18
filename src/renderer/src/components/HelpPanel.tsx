@@ -38,6 +38,8 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
       ["helpQModels", "helpAModels"],
       ["helpQPickModel", "helpAPickModel"],
       ["helpQVoice", "helpAVoice"],
+      ["helpQThumbs", "helpAThumbs"],
+      ["helpQPin", "helpAPin"],
     ],
   },
   {
@@ -59,6 +61,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
       ["helpQReadyMade", "helpAReadyMade"],
       ["helpQSteps", "helpASteps"],
       ["helpQRerun", "helpARerun"],
+      ["helpQRunLate", "helpARunLate"],
     ],
   },
   {
@@ -76,6 +79,7 @@ const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: Message
       ["helpQBackup", "helpABackup"],
       ["helpQSwitchKeepsWork", "helpASwitchKeepsWork"],
       ["helpQRepeat", "helpARepeat"],
+      ["helpQAiAccounts", "helpAAiAccounts"],
       ["helpQTelegram", "helpAPhone"],
       ["helpQBrowser", "helpTipBrowser"],
       ["helpQMcp", "helpTipMcp"],

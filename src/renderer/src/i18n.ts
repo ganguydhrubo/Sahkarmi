@@ -5,6 +5,7 @@ import { backgroundEn } from "./i18n-background";
 import { connectorsEn } from "./i18n-connectors";
 import { engineEn } from "./i18n-engine";
 import { extensionsEn } from "./i18n-extensions";
+import { extrasEn } from "./i18n-extras";
 import { hostEn } from "./i18n-host";
 import { intelligenceEn } from "./i18n-intelligence";
 import { marketplaceEn } from "./i18n-marketplace";
@@ -317,6 +318,7 @@ const en = {
   ...safetyEn,
   ...assignEn,
   ...intelligenceEn,
+  ...extrasEn,
   ...mcpEn,
   ...connectorsEn,
   ...skillPacksEn,
