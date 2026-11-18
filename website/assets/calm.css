@@ -1,0 +1,213 @@
+/* Sahkarmi inner pages: the calm light look of the home page, and its quiet motion.
+   CSS only, no script. Pages that use guide.css get this file through it; pages with their own
+   styles link it directly. Motion never takes over scrolling, and all of it switches off for
+   people who ask their device for less motion. */
+
+/* The light look is the default on every page, whatever the device theme is. */
+:root:not([data-theme="dark"]) {
+  --bg: #fbf7f0;
+  --bg-2: #ffffff;
+  --bg-3: #f3ede2;
+  --text: #141829;
+  --text-2: #3a3f55;
+  --muted: #646a85;
+  --line: rgba(20, 24, 41, 0.1);
+  --line-2: rgba(20, 24, 41, 0.2);
+  --saffron-ink: #a84e14;
+  --leaf: #22703f;
+  --danger: #b3261e;
+  --bar-manual: #b6b9c9;
+  color-scheme: light;
+}
+
+:root:not([data-theme="dark"]) .pill.review,
+:root:not([data-theme="dark"]) .witty b {
+  color: #8a6500;
+}
+
+/* ------------------------------------------------------------------ morning light */
+/* A soft glow of early sun behind the page, drifting very slowly. */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: -12%;
+  background:
+    radial-gradient(60vw 46vh at 86% 6%, rgba(242, 183, 5, 0.17), transparent 68%),
+    radial-gradient(48vw 40vh at 4% 20%, rgba(232, 119, 46, 0.1), transparent 66%);
+  pointer-events: none;
+  animation: calm-glow 18s ease-in-out infinite alternate;
+}
+
+@keyframes calm-glow {
+  from { translate: 0 0; opacity: 0.75; }
+  to { translate: -3% 2.5%; opacity: 1; }
+}
+
+/* ------------------------------------------------------------------ the page arrives */
+body > header {
+  animation: calm-drop 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+main .crumbs,
+main .eyebrow,
+main h1,
+main .lead {
+  animation: calm-rise 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+main .eyebrow { animation-delay: 80ms; }
+main h1 { animation-delay: 160ms; }
+main .lead { animation-delay: 300ms; }
+
+@keyframes calm-drop {
+  from { opacity: 0; translate: 0 -14px; }
+  to { opacity: 1; translate: none; }
+}
+
+@keyframes calm-rise {
+  from { opacity: 0; translate: 0 22px; }
+  to { opacity: 1; translate: none; }
+}
+
+/* Headings draw a saffron line under themselves. */
+main h2::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #e8772e, #f2b705);
+}
+
+/* ------------------------------------------------------------------ the page follows the scroll */
+/* Where the browser can tie motion to scrolling: a film-strip progress bar on top, and each
+   part of the page fades up as it comes on screen. Elsewhere the page is simply still. */
+@supports (animation-timeline: view()) {
+  body::after {
+    content: "";
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #e8772e, #f2b705 60%, #2e8b57);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    pointer-events: none;
+    animation: calm-progress linear both;
+    animation-timeline: scroll(root);
+  }
+
+  main h2,
+  main .cards > li,
+  main .box,
+  main details,
+  main figure,
+  main .cta,
+  main ol.flow > li,
+  main .vgrid > li,
+  main table,
+  main ul.toc {
+    animation: calm-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 90%;
+  }
+
+  main h2::after {
+    transform-origin: 0 50%;
+    animation: calm-draw linear both;
+    animation-timeline: view();
+    animation-range: entry 40% cover 28%;
+  }
+}
+
+@keyframes calm-progress {
+  to { transform: scaleX(1); }
+}
+
+@keyframes calm-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ------------------------------------------------------------------ cards and buttons */
+:root:not([data-theme="dark"]) .cards > li,
+:root:not([data-theme="dark"]) .card,
+:root:not([data-theme="dark"]) .box,
+:root:not([data-theme="dark"]) .cta {
+  box-shadow: 0 1px 2px rgba(30, 42, 90, 0.04), 0 8px 24px rgba(30, 42, 90, 0.06);
+}
+
+.cards > li,
+.card,
+.vgrid > li {
+  transition: transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cards > li:hover,
+  .card:hover,
+  .vgrid > li:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(30, 42, 90, 0.14);
+  }
+}
+
+/* The main button has a slow sheen, like light crossing brass. */
+.btn:not(.btn-ghost) {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:not(.btn-ghost)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-20deg);
+  animation: calm-sheen 5.5s ease-in-out infinite;
+}
+
+@keyframes calm-sheen {
+  0%, 70% { left: -60%; }
+  100% { left: 130%; }
+}
+
+/* ------------------------------------------------------------------ less motion, when asked */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body > header,
+  main .crumbs,
+  main .eyebrow,
+  main h1,
+  main .lead,
+  main h2,
+  main h2::after,
+  main .cards > li,
+  main .box,
+  main details,
+  main figure,
+  main .cta,
+  main ol.flow > li,
+  main .vgrid > li,
+  main table,
+  main ul.toc,
+  .btn:not(.btn-ghost)::after {
+    animation: none;
+  }
+
+  .cards > li,
+  .card,
+  .vgrid > li { transition: none; }
+}
+
+@media print {
+  body::before,
+  body::after { display: none; }
+}
