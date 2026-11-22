@@ -77,19 +77,33 @@
   // The opening video plays only where it is welcome: not on data-saver, not when less motion
   // is asked for. The still picture is always there underneath.
   const saving = navigator.connection?.saveData === true;
+  // Films wait until the page has finished loading (plus a short pause), so the first view,
+  // the words and the download button, is never slowed by a video download.
+  const settled = new Promise((resolve) => {
+    const later = () => setTimeout(resolve, 1500);
+    if (document.readyState === "complete") later();
+    else window.addEventListener("load", later, { once: true });
+  });
   for (const video of document.querySelectorAll(".scene-video, .go-film")) {
     if (calm || saving) {
       video.remove();
     } else {
       video.muted = true;
-      const play = () => video.play().catch(() => undefined);
+      let inView = false;
+      const play = () => {
+        inView = true;
+        settled.then(() => inView && video.play().catch(() => undefined));
+      };
       // A film plays (and downloads) only while its scene is on screen.
       if ("IntersectionObserver" in window) {
         new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
               if (entry.isIntersecting) play();
-              else video.pause();
+              else {
+                inView = false;
+                video.pause();
+              }
             }
           },
           { rootMargin: "200px 0px" },

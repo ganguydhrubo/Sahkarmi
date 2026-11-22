@@ -80,7 +80,7 @@
           "name": "Is the AI Accounts Payable free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. Sahkarmi and all its ready-made coworkers are free and open source (Apache 2.0), with no account or subscription. Coworkers run on the free built-in AI models, or on a Claude, ChatGPT or Gemini account you connect; paid plans are billed by those providers, not by Sahkarmi."
+            "text": "Yes. The AI Accounts Payable comes free with Sahkarmi, which is open source (Apache 2.0) and needs no account. It runs on the free built-in AI or on your own Claude, ChatGPT or Gemini plan."
           }
         },
         {
@@ -130,11 +130,12 @@
     <h1>AI Accounts Payable</h1>
     <p class="lead">Processes supplier invoices, matches them to POs and receipts, and proposes what to pay and when.</p>
     <p><strong>Role:</strong> Supplier bills and payments due · Ready to use with Sahkarmi's built-in tools.</p>
-    <p class="box">AI Accounts Payable is one of 175 ready-made coworkers in Sahkarmi, a free desktop app that gives you a team of AI coworkers on your own Windows PC. How well a task goes depends on the AI model and the sites or files involved; start with a small task and check the result.</p>
-    <h2 id="covers">What it covers</h2>
+    <h2 id="example">Example: a first task</h2>
+    <p>Put supplier invoices (PDF, email attachments or photos), and the supplier ledger or outstanding-payables export in <code>Shared/Accounts/Payables</code>, then ask in plain words for an invoice register with match status; an exceptions list for the owner and a proposed payment schedule. Start with one small, real piece of work and check what comes back.</p>
+    <h2 id="covers">What the AI Accounts Payable covers</h2>
     <p>accounts payable · AP clerk · invoice processing · vendor bills · three-way match · payment run · supplier ledger · creditors · MSME 45-day payments · TDS on payments</p>
 
-    <h2 id="needs">What you give it</h2>
+    <h2 id="needs">What the AI Accounts Payable needs from you</h2>
     <h3>Needs</h3>
     <ul>
         <li>Supplier invoices (PDF, email attachments or photos).</li>
@@ -147,17 +148,15 @@
         <li>Cash available for the week.</li>
       </ul>
 
-    <h2 id="how">How it works</h2>
-    <p>It restates the goal in one line, looks in the chat and the Shared folder for what it needs before asking you, and lists its plan. Then:</p>
+    <h2 id="how">How the AI Accounts Payable works</h2>
     <ol class="flow">
       <li>Capture each invoice: supplier, GSTIN, invoice number and date, line items, tax and due date.</li>
       <li>Match invoice to PO and GRN (quantity, rate, tax); flag short supply, rate differences and duplicates.</li>
       <li>Note TDS that applies (for example 194C, 194J, 194Q) and MSME suppliers whose 45-day limit is near.</li>
       <li>Propose a payment schedule by due date, MSME status and cash available, with the amount net of TDS.</li>
     </ol>
-    <p>Finally it runs its checks and reports what was done, the evidence and what is still open.</p>
 
-    <h2 id="delivers">What you get</h2>
+    <h2 id="delivers">What you get from the AI Accounts Payable</h2>
     <ul>
         <li>An invoice register with match status.</li>
         <li>An exceptions list for the owner.</li>
@@ -198,27 +197,15 @@
     <h2 id="limits">Limits</h2>
     <p>Prepares payables working only; the owner releases payments and their CA confirms TDS treatment.</p>
 
-    <h2 id="start">Add it in four steps</h2>
-    <ol class="flow">
-      <li>Download and install Sahkarmi for Windows (free, no account). The <a href="/install.html">install guide</a> covers every step.</li>
-      <li>Pick an AI: the free built-in models, or connect Claude, ChatGPT or Gemini in Settings, AI and models.</li>
-      <li>Open <strong>Marketplace</strong>, search for “Accounts Payable” and click <strong>Add</strong>.</li>
-      <li>Give it one small task in plain words, in English, Hindi or Bengali, and approve or reject each card.</li>
-    </ol>
+    <h2 id="start">Add the AI Accounts Payable</h2>
+    <p>In Sahkarmi, open <strong>Marketplace</strong>, search for “Accounts Payable” and click <strong>Add</strong>. New to Sahkarmi? The <a href="/install.html">install guide</a> takes a few minutes.</p>
 
     <h2 id="related">More coworkers for finance &amp; accounts</h2>
-    <ul class="cards">
-      <li><a class="card-link" href="/coworkers/gst-accountant.html"><h3>AI GST Accountant</h3></a><p>Prepares GSTR-1/3B figures, checks invoices and reconciles purchases with 2B.</p></li>
-      <li><a class="card-link" href="/coworkers/payment-reminders.html"><h3>AI Payment Reminders</h3></a><p>Tracks unpaid invoices by age and drafts friendly reminders.</p></li>
-      <li><a class="card-link" href="/coworkers/bookkeeper.html"><h3>AI Bookkeeper</h3></a><p>Turns bills, receipts and bank statements into clean, categorised entries ready for Tally or Zoho Books.</p></li>
-      <li><a class="card-link" href="/coworkers/sales-invoicing.html"><h3>AI Sales Invoicing</h3></a><p>Prepares GST-compliant sales invoices, credit notes and e-invoice / e-way bill data from orders.</p></li>
-      <li><a class="card-link" href="/coworkers/bank-reconciliation.html"><h3>AI Bank Reconciliation</h3></a><p>Matches bank, UPI and payment-gateway statements with the books and explains every difference.</p></li>
-      <li><a class="card-link" href="/coworkers/mis-reporting.html"><h3>AI MIS &amp; P&amp;L Reporter</h3></a><p>Builds the monthly MIS: P&amp;L, balance sheet view, cash position and key ratios with plain-language notes.</p></li>
-    </ul>
+    <p><a href="/coworkers/gst-accountant.html">AI GST Accountant</a> · <a href="/coworkers/payment-reminders.html">AI Payment Reminders</a> · <a href="/coworkers/bookkeeper.html">AI Bookkeeper</a> · <a href="/coworkers/sales-invoicing.html">AI Sales Invoicing</a> · <a href="/coworkers/bank-reconciliation.html">AI Bank Reconciliation</a> · <a href="/coworkers/mis-reporting.html">AI MIS &amp; P&amp;L Reporter</a></p>
     <p><a href="/coworkers/finance.html">All 12 coworkers for finance &amp; accounts</a> · <a href="/coworkers/">all 175 coworkers</a></p>
 
     <h2 id="faq">Questions</h2>
-    <details><summary>Is the AI Accounts Payable free?</summary><p>Yes. Sahkarmi and all its ready-made coworkers are free and open source (Apache 2.0), with no account or subscription. Coworkers run on the free built-in AI models, or on a Claude, ChatGPT or Gemini account you connect; paid plans are billed by those providers, not by Sahkarmi.</p></details>
+    <details><summary>Is the AI Accounts Payable free?</summary><p>Yes. The AI Accounts Payable comes free with Sahkarmi, which is open source (Apache 2.0) and needs no account. It runs on the free built-in AI or on your own Claude, ChatGPT or Gemini plan.</p></details>
     <details><summary>What does the AI Accounts Payable need from me?</summary><p>Supplier invoices (PDF, email attachments or photos) and the supplier ledger or outstanding-payables export. It also helps to have purchase orders and goods receipt notes; supplier credit terms and MSME (Udyam) status and cash available for the week.</p></details>
     <details><summary>Does the AI Accounts Payable act without asking me?</summary><p>It is set up to ask for your approval before making or releasing any payment; contacting a supplier about a dispute and marking an invoice as approved for payment. Each request shows as an approval card you accept or reject.</p></details>
     <details><summary>Where does the AI Accounts Payable keep my files?</summary><p>On your own computer, in Shared/Accounts/Payables. Sahkarmi has no cloud account; your files go only to the AI provider you choose, as part of the task.</p></details>

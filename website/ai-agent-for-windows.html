@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Free AI Agent for Windows 11 and 10 — Sahkarmi Download</title>
-  <meta name="description" content="Download Sahkarmi, a free, open-source AI agent for Windows 11 and 10: Microsoft Store, installer or Scoop. Coworkers use your browser, files and desktop apps." />
+  <title>AI Agent for Windows 11 and 10: How It Works on Your PC</title>
+  <meta name="description" content="What a free AI agent can do on a Windows PC: use desktop apps, browse in its own browser, work in your files and run on a schedule, asking before it sends or pays." />
   <link rel="canonical" href="https://sahkarmi.site/ai-agent-for-windows.html" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="theme-color" content="#FBF7F0" />
@@ -17,14 +17,18 @@
   <meta property="og:site_name" content="Sahkarmi" />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://sahkarmi.site/ai-agent-for-windows.html" />
-  <meta property="og:title" content="Free AI Agent for Windows 11 and 10 — Sahkarmi Download" />
-  <meta property="og:description" content="Download Sahkarmi, a free, open-source AI agent for Windows 11 and 10: Microsoft Store, installer or Scoop. Coworkers use your browser, files and desktop apps." />
+  <meta property="og:title" content="AI Agent for Windows 11 and 10: How It Works on Your PC" />
+  <meta property="og:description" content="What a free AI agent can do on a Windows PC: use desktop apps, browse in its own browser, work in your files and run on a schedule, asking before it sends or pays." />
   <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
+  <style>
+    .win-get { margin: 20px 0; }
+    .win-get .btn { min-height: 56px; padding: 14px 30px; font-size: 1.1rem; box-shadow: 0 10px 28px rgba(232, 119, 46, 0.35); }
+  </style>
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -33,8 +37,8 @@
       "@type": "WebPage",
       "@id": "https://sahkarmi.site/ai-agent-for-windows.html#page",
       "url": "https://sahkarmi.site/ai-agent-for-windows.html",
-      "name": "Free AI Agent for Windows 11 and 10 — Sahkarmi Download",
-      "description": "Download Sahkarmi, a free, open-source AI agent for Windows 11 and 10: Microsoft Store, installer or Scoop. Coworkers use your browser, files and desktop apps.",
+      "name": "AI Agent for Windows 11 and 10: How It Works on Your PC",
+      "description": "What a free AI agent can do on a Windows PC: use desktop apps, browse in its own browser, work in your files and run on a schedule, asking before it sends or pays.",
       "isPartOf": {
         "@id": "https://sahkarmi.site/#website"
       },
@@ -61,32 +65,6 @@
       ]
     },
     {
-      "@type": "HowTo",
-      "name": "Install Sahkarmi on Windows",
-      "step": [
-        {
-          "@type": "HowToStep",
-          "name": "Download",
-          "text": "Get Sahkarmi from the Microsoft Store or download the Windows installer from sahkarmi.site."
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Install",
-          "text": "Run the installer. It installs for the current user; if SmartScreen warns, choose More info, then Run anyway."
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Choose an AI",
-          "text": "Keep the free built-in OpenCode models or connect Claude, ChatGPT or Gemini in Settings, AI and models."
-        },
-        {
-          "@type": "HowToStep",
-          "name": "Give a task",
-          "text": "Open a coworker and type a task in plain words."
-        }
-      ]
-    },
-    {
       "@type": "FAQPage",
       "mainEntity": [
         {
@@ -99,10 +77,10 @@
         },
         {
           "@type": "Question",
-          "name": "Does it need administrator rights?",
+          "name": "How is an AI agent different from an AI chatbot?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. The installer installs for the current user only. The Microsoft Store version installs the usual Store way."
+            "text": "A chatbot answers in a chat window and you do the work. An AI agent does the steps itself: it opens sites in its own browser, reads and writes files, and, if you allow it, uses your Windows apps, then reports what it did and what is still open."
           }
         },
         {
@@ -115,10 +93,10 @@
         },
         {
           "@type": "Question",
-          "name": "Why does Windows SmartScreen warn about the installer?",
+          "name": "Do my files leave my PC?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The .exe is not code-signed yet, so SmartScreen does not recognise it. Choose More info, then Run anyway, or install the Microsoft Store version, which is signed by Microsoft."
+            "text": "Your files stay in folders on your computer. Sahkarmi has no cloud account of its own; the parts of a file a task needs go only to the AI provider you choose, as part of that task."
           }
         }
       ]
@@ -144,33 +122,18 @@
     <h1>A free AI agent for Windows 11 and Windows 10</h1>
     <p class="lead">Sahkarmi is a desktop AI agent app built for Windows. Install it like any other program, pick a free or paid AI, and give its coworkers tasks that run on your PC: in their own browsers, in your files and, if you allow it, in your Windows apps.</p>
     <ul class="toc">
-      <li><a href="#install">Ways to install</a></li>
-      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#agent">Chatbot or agent</a></li>
       <li><a href="#windows">What it does in Windows</a></li>
+      <li><a href="#how">How it works on your PC</a></li>
+      <li><a href="#fits">Where it fits</a></li>
+      <li><a href="#control">You stay in control</a></li>
       <li><a href="#first">First ten minutes</a></li>
-      <li><a href="#remove">Update and uninstall</a></li>
+      <li><a href="#get">Get it</a></li>
       <li><a href="#faq">Questions</a></li>
     </ul>
 
-    <h2 id="install">Ways to install</h2>
-    <table>
-      <thead><tr><th scope="col">Option</th><th scope="col">How</th><th scope="col">Notes</th></tr></thead>
-      <tbody>
-        <tr><td>Microsoft Store</td><td><a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer">Get Sahkarmi from the Microsoft Store</a>, or <code>winget install --id 9PD6BP3NGVST --source msstore</code></td><td>Signed by Microsoft, no SmartScreen warning, Store updates</td></tr>
-        <tr><td>Installer (.exe)</td><td><a data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">Sahkarmi-<span data-release-version>0.22.0</span>-x64.exe</a>, <span data-release-size="win">240 MB</span></td><td>Per-user install, no admin rights. Not code-signed yet: SmartScreen asks once (More info, Run anyway). Updates itself.</td></tr>
-        <tr><td>Scoop</td><td><code>scoop bucket add sahkarmi https://github.com/ganguydhrubo/scoop-sahkarmi</code><br /><code>scoop install sahkarmi</code></td><td>The project's own bucket, updated automatically after releases</td></tr>
-        <tr><td>winget (community)</td><td><code>winget install Sahkarmi.Sahkarmi</code></td><td><span data-winget="live" hidden>Live in the Windows Package Manager community repository; every new release is submitted automatically. Update with <code>winget upgrade Sahkarmi.Sahkarmi</code></span><span data-winget="pending">Submitted to the Windows Package Manager community repository and waiting for Microsoft's moderators; until it is accepted, use the Store ID above</span></td></tr>
-      </tbody>
-    </table>
-    <p>Check any download against its SHA-256 (<code data-release-sha256="win">f26bcb4502308f2803b6c83e00f23e1b77dcfb7e449b87b0064b6fe8faa9999b</code>) as shown in the <a href="/install.html#verify">install guide</a>.</p>
-
-    <h2 id="requirements">Requirements</h2>
-    <ul>
-      <li>Windows 10 or Windows 11, 64-bit (x64). Windows on ARM and 32-bit Windows are not supported.</li>
-      <li>About 1 GB of disk for the app and its AI runtime; on the project's test PC (16 GB RAM) it used about 1 GB of memory while working.</li>
-      <li>An internet connection: the AI models run at the provider you choose, including the free built-in ones.</li>
-      <li>No account with Sahkarmi. No admin rights for the installer.</li>
-    </ul>
+    <h2 id="agent">Chatbot or agent: what changes</h2>
+    <p>A chatbot answers questions; you still copy the answer, open the app and do the work. An AI agent takes the steps itself. Ask a Sahkarmi coworker to compare three suppliers' prices and it opens their sites in its own browser, collects the prices into a sheet in your folder, and tells you what it found and what it could not check. Because it runs on your Windows PC, it can work with the files, folders and programs you already use every day.</p>
 
     <h2 id="windows">What it does in Windows</h2>
     <ul class="cards">
@@ -183,6 +146,33 @@
     </ul>
 <figure class="shot"><img src="/assets/shots/setup-1440.webp" srcset="/assets/shots/setup-480.webp 480w, /assets/shots/setup-720.webp 720w, /assets/shots/setup-1440.webp 1440w" sizes="(max-width: 900px) 92vw, 860px" width="1440" height="920" alt="First launch: choose the default AI provider, with OpenCode (free, built in) available" loading="lazy" decoding="async" /><figcaption>First launch: pick an AI. The free built-in models need no account.</figcaption></figure>
 
+    <h2 id="how">How it works on your PC</h2>
+    <ul>
+      <li><strong>The app runs on Windows; the AI model runs at the provider.</strong> Sahkarmi sends each step to the AI you pick (the free built-in models, or your own Claude, ChatGPT or Gemini plan) and carries out the answer on your PC.</li>
+      <li><strong>Windows apps through UI Automation.</strong> Most Windows programs describe their buttons, menus and fields to Windows. A coworker reads that list, so it can press “Save” by name instead of guessing a screen position; for apps that do not describe themselves it can fall back to a screenshot and a position.</li>
+      <li><strong>A separate browser per coworker.</strong> Sign-ins stay inside that coworker's browser profile. Press <strong>Take over</strong> to type a password or an OTP yourself.</li>
+      <li><strong>Plain files as results.</strong> Sheets, documents and reports are saved in the coworker's folder or the Shared folder, so you can open, check and keep them with the tools you already have.</li>
+      <li><strong>One team.</strong> Coworkers hand work to each other, and one goal can be split between several of them.</li>
+    </ul>
+
+    <h2 id="fits">Where it fits</h2>
+    <p>Work that has clear steps and ends in a file is the best start:</p>
+    <ul>
+      <li>GST working papers and 2B matching, with the <a href="/coworkers/gst-accountant.html">AI GST Accountant</a>.</li>
+      <li>Voucher sheets for Tally or Zoho Books from bills and bank statements, with the <a href="/coworkers/bookkeeper.html">AI Bookkeeper</a>.</li>
+      <li>Lead and quotation follow-ups, drafted for your approval, with <a href="/coworkers/sales-follow-up.html">AI Sales Follow-up</a>.</li>
+      <li>Market and supplier research with sources, with the <a href="/coworkers/research-analyst.html">AI Research Analyst</a>.</li>
+    </ul>
+    <p>See all <a href="/coworkers/">ready-made coworkers</a> or <a href="/use-cases.html">use cases by profession</a>.</p>
+
+    <h2 id="control">You stay in control</h2>
+    <ul>
+      <li><em>Control this PC</em> is set to ask by default, so the first desktop step waits for you.</li>
+      <li>Sending, posting, submitting and paying always wait for an approval card.</li>
+      <li>Your coworkers, chats and files stay on this computer. Sahkarmi has no cloud account of its own.</li>
+      <li>How well a task goes depends on the app, the site and the AI model, so start with a small task and check the result.</li>
+    </ul>
+
     <h2 id="first">The first ten minutes</h2>
     <ol class="flow">
       <li>Install and open Sahkarmi. Keep <strong>OpenCode (free, built in)</strong> selected, or connect Claude, ChatGPT (Codex) or Google Gemini (Antigravity) in Settings, AI and models.</li>
@@ -192,16 +182,18 @@
       <li>Answer approval cards as they come. Then try a routine: “Every weekday at 9, …”.</li>
     </ol>
 
-    <h2 id="remove">Update and uninstall</h2>
-    <p>The installer version checks GitHub Releases and updates in place, keeping your coworkers, chats and sign-ins; the Store version updates through the Store. Uninstall from Settings, Apps; the uninstaller asks whether to delete your Sahkarmi data too, and keeps it unless you say yes.</p>
+    <h2 id="get">Get it</h2>
+    <p>Sahkarmi needs Windows 10 or 11, 64-bit, and an internet connection. One download, free, no account:</p>
+    <p class="win-get"><a class="btn" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">Download Sahkarmi for Windows</a></p>
+    <p>Need help after downloading? The <a href="/install.html">install guide</a> walks through setup step by step.</p>
 
     <h2 id="faq">Questions</h2>
     <details><summary>Is there a free AI agent for Windows 11?</summary><p>Yes. Sahkarmi is free and open source (Apache 2.0) and runs on Windows 11 and Windows 10, 64-bit. It includes free AI models, so you can use it without a paid AI subscription.</p></details>
-    <details><summary>Does it need administrator rights?</summary><p>No. The installer installs for the current user only. The Microsoft Store version installs the usual Store way.</p></details>
+    <details><summary>How is an AI agent different from an AI chatbot?</summary><p>A chatbot answers in a chat window and you do the work. An AI agent does the steps itself: it opens sites in its own browser, reads and writes files, and, if you allow it, uses your Windows apps, then reports what it did and what is still open.</p></details>
     <details><summary>Can it use apps like Excel or a desktop accounting program?</summary><p>With the Control this PC permission a coworker can operate Windows apps through their buttons, menus and fields, or by screenshot and position. How reliably it completes a task depends on the app and on the AI model you connect, so start small and check the result.</p></details>
-    <details><summary>Why does Windows SmartScreen warn about the installer?</summary><p>The .exe is not code-signed yet, so SmartScreen does not recognise it. Choose More info, then Run anyway, or install the Microsoft Store version, which is signed by Microsoft.</p></details>
+    <details><summary>Do my files leave my PC?</summary><p>Your files stay in folders on your computer. Sahkarmi has no cloud account of its own; the parts of a file a task needs go only to the AI provider you choose, as part of that task.</p></details>
 
-<div class="cta"><p>Sahkarmi is free and open source (Apache 2.0). No account, no card. Windows 10 and 11, 64-bit.</p><a class="btn" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">Download free for Windows</a><a class="btn btn-ghost" href="https://github.com/ganguydhrubo/sahakarmi" target="_blank" rel="noopener noreferrer">Source on GitHub</a></div>
+<div class="cta"><p>Sahkarmi is free and open source (Apache 2.0). No account, no card. Windows 10 and 11, 64-bit.</p><a class="btn" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">Download Sahkarmi for Windows</a></div>
   </main>
 
   <footer>
