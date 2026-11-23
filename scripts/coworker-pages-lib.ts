@@ -332,12 +332,22 @@ ${items(extra.notes)}
     <p>Put ${escapeHtml(given)} in <code>Shared/${escapeHtml(agent.folder)}</code>, then ask in plain words for ${escapeHtml(asked)}. Start with one small, real piece of work and check what comes back.</p>`;
 }
 
+/**
+ * Six coworkers of the same team: its two lead coworkers, then the next ones in catalogue order,
+ * going round. Always taking the first six left 48 pages with almost no links to them.
+ */
+export function relatedCoworkers(agent: AgentTemplate) {
+  const team = byCategory(agent.category);
+  const at = team.findIndex((other) => other.id === agent.id);
+  const following = [...team.slice(at + 1), ...team.slice(0, at)];
+  const leads = team.slice(0, 2).filter((other) => other.id !== agent.id);
+  return [...new Set([...leads, ...following])].slice(0, 6);
+}
+
 export function renderAgentPage(agent: AgentTemplate) {
   const name = aiName(agent);
   const label = CATEGORY_LABELS[agent.category];
-  const related = byCategory(agent.category)
-    .filter((other) => other.id !== agent.id)
-    .slice(0, 6);
+  const related = relatedCoworkers(agent);
   const covers = agent.jobFunctions.map((job) => escapeHtml(job)).join(" · ");
   const sections: string[] = [];
   sections.push(`    <h2 id="covers">What the ${escapeHtml(name)} covers</h2>
