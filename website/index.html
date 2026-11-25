@@ -449,6 +449,11 @@
     .faq p { color: var(--text-2); padding: 0 0 16px; max-width: 78ch; }
 
     /* Community */
+    .install-help { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; margin-top: 28px; padding: 18px 22px; border-radius: 18px; border: 1px solid var(--line-2); }
+    .install-help > div { flex: 1 1 320px; min-width: 0; }
+    .install-help h3 { margin: 0 0 6px; }
+    .install-help p { margin: 0; }
+    .install-help .btn { border: 2px solid var(--saffron); }
     .community { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: center; }
     @media (max-width: 860px) { .community { grid-template-columns: 1fr; } }
     .social { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
@@ -1610,6 +1615,10 @@
           <a href="/install.html#terminal" data-i18n="terminalLink">Terminal and source install</a>
           <a href="/install.html#troubleshooting" data-i18n="troubleLink">Troubleshooting</a>
         </div>
+        <div class="install-help reveal" id="install-help">
+          <div><h3 data-i18n="ihH">Need help installing Sahkarmi?</h3><p data-i18n="ihP">Message us on WhatsApp. Tell us your Windows version and what you see on the screen.</p></div>
+          <a class="btn btn-ghost" href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer" data-i18n="ihBtn">Get help on WhatsApp</a>
+        </div>
         <p class="platforms sr-only">
           <a data-platform="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">Windows installer</a>
         </p>
@@ -2197,6 +2206,9 @@
         followLi: "Follow Sahkarmi on LinkedIn",
         followFb: "Follow Sahkarmi on Facebook",
         followYt: "Watch Sahkarmi on YouTube (@sahkarmiai)",
+        ihH: "Need help installing Sahkarmi?",
+        ihP: "Message us on WhatsApp. Tell us your Windows version and what you see on the screen.",
+        ihBtn: "Get help on WhatsApp",
         talk: "Talk to a human:",
         footInstall: "Install guide",
         footDocs: "Get started",
@@ -2704,6 +2716,9 @@
         followLi: "LinkedIn पर सहकर्मी को फ़ॉलो करें",
         followFb: "Facebook पर सहकर्मी को फ़ॉलो करें",
         followYt: "YouTube पर सहकर्मी देखें (@sahkarmiai)",
+        ihH: "सहकर्मी इंस्टॉल करने में मदद चाहिए?",
+        ihP: "हमें WhatsApp पर लिखें. अपना Windows वर्ज़न और स्क्रीन पर क्या दिख रहा है, यह बताएँ.",
+        ihBtn: "WhatsApp पर मदद लें",
         talk: "किसी इंसान से बात करें:",
         footInstall: "इंस्टॉल गाइड",
         footDocs: "शुरुआत करें",
