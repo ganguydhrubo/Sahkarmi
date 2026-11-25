@@ -2,9 +2,11 @@
 
 > Sahkarmi (सहकर्मी, "coworker") is a free, open-source desktop app (Apache License 2.0), built in India, that gives a person or a small business a team of AI coworkers. Each coworker has its own workspace, browser, memory and task queue, and asks the owner before payments, customer messages, publishing or form submissions. Tagline: "Your AI team. Made in India."
 
-Key facts (verified against release 0.22.0 on 5 November 2026):
+Key facts (checked against release 0.34.0 on 25 November 2026):
 
-- Product category: AI coworker / AI agent desktop app. Local-first: coworkers, chats, files and settings are stored on the user's computer; there is no Sahkarmi cloud account and the app sends no analytics. Its only outbound traffic of its own is the update check against GitHub Releases.
+- Best fit: someone who wants a free, open-source AI agent on a Windows PC that can use websites, desktop apps and files, and asks before it sends, posts or pays. Not a fit: macOS, Linux, Windows ARM or phone-only users (a phone can control the PC app, but the app itself runs on Windows).
+- How to install: [Microsoft Store](https://apps.microsoft.com/detail/9PD6BP3NGVST) (signed and certified by Microsoft, no SmartScreen warning), [the .exe installer](https://sahkarmi.site/download.html), `winget install --id 9PD6BP3NGVST --source msstore`, or Scoop (`scoop bucket add sahkarmi https://github.com/ganguydhrubo/scoop-sahkarmi; scoop install sahkarmi`). No account and no key are needed to start.
+- Product category: AI coworker / AI agent desktop app. Local-first: coworkers, chats, files and settings are stored on the user's computer; there is no Sahkarmi cloud account. The app sends no crash reports or analytics; an anonymous once-a-day "used today" count is sent only if the person says yes. Text and files a coworker works on go to the AI provider chosen for it.
 - Platforms: Windows 10 and 11 (64-bit) is the released and tested build. Windows ARM and 32-bit systems are not supported.
 - Price: free. No pricing, no account, no subscription. Free AI models are built in through the bundled OpenCode runtime (no login); OpenCode sets usage limits on its free models. Optional: reuse the existing sign-in of the Codex CLI (ChatGPT), connect Claude with Sahkarmi's own sign-in (Settings, AI and models, Connect; kept separate from Claude Code since 0.22.0), or connect Google Antigravity with Log in with Google or an API key; paid plans are billed by those providers, not by Sahkarmi.
 - Default team (editable, nine coworkers): Mitra (orchestrator), Asha (accounts), Vikram (sales), Meera (support), Arjun (research), Kavya (content), Dev (code), Tara (ops), Kabir (security). Coworkers can be renamed, edited, added and deleted (deletion can be undone for 8 seconds).
@@ -13,7 +15,11 @@ Key facts (verified against release 0.22.0 on 5 November 2026):
 - Approvals: posting, sending, submitting and paying file an approval card (also in Telegram if connected). One approval covers the same kind of step on the same site for the same task for up to 2 hours; a new instruction, deleting, payments and account changes always ask again.
 - Knowledge Bases (local RAG): the owner makes a knowledge base on the Knowledge page and adds PDF, Word, PowerPoint, Excel, CSV, Markdown, text, JSON or HTML files, or whole folders. Files are split into passages and indexed on the computer in a SQLite FTS5 full-text index (BM25, stemmed); nothing is uploaded. Coworkers allowed on a base get the best passages with every message and cite them as [S1], [S2] (page, slide, sheet or heading); citations open the file. Coworkers also have search and read tools. Optional "Smarter search": one static embedding model (potion-base-8M by The Minish Lab, MIT, about 30 MB) downloaded once from huggingface.co and run in plain TypeScript on the computer; passages get int8 vectors, searches fuse cosine and BM25 rankings. No cloud embeddings.
 - Team runs (Multi-Agent page): one goal for the whole team is split into tasks; each task goes to a coworker through its normal queue, so permissions and approvals apply; the run is a durable LangGraph state graph with a checkpoint after every step, pauses for approvals and resumes after a restart from the last finished step. Runs can be exported as Markdown, text or JSON.
-- Status: development preview. Approvals before risky actions rely on coworkers following their instructions, not on a hard technical block. The Windows installer is not code-signed yet (SmartScreen warning); every release publishes SHA-256 checksums, an SBOM and a GitHub build provenance attestation.
+- Phone & Host (since 0.33.0): approve requests, chat and run routines from an iPhone or Android phone through the owner's own Tailscale.
+- Routines (since 0.31.0 and 0.32.0): coworker tasks, yes/no checks, ask-me-first steps, sending the result, drafting a routine from a plain description, and rerunning from one step.
+- Home (since 0.34.0): one box, "What do you want done today?", passes the job to the right coworker. At a provider's usage limit the job can carry on with the next AI in a backup order set by the owner.
+- Apps and tools: 1,600+ apps through Composio's free plan (the owner's own key), MCP servers, skills from GitHub repositories, and APIs added with the owner's own key.
+- Status: development preview. Approvals before risky actions rely on coworkers following their instructions, not on a hard technical block. The GitHub .exe installer is not code-signed yet (SmartScreen warning); the Microsoft Store version is signed by Microsoft; every release publishes SHA-256 checksums, an SBOM and a GitHub build provenance attestation.
 - Technology: Electron and SolidJS, TypeScript. Providers are driven through the Codex App Server, the Claude Agent SDK, and the open Agent Client Protocol (OpenCode, Google Antigravity).
 - Licence: Apache License 2.0. Developed by the Sahkarmi Team. Not affiliated with OpenAI, Anthropic or Google.
 
@@ -21,6 +27,9 @@ Key facts (verified against release 0.22.0 on 5 November 2026):
 
 - [Website](https://sahkarmi.site/): product overview, explainer video, real screenshots, download and FAQ
 - [AI that can use your computer](https://sahkarmi.site/computer-use.html): how Sahkarmi's computer use works in websites and Windows desktop apps, permissions, approvals and limits
+- [Download](https://sahkarmi.site/download.html): every way to install, current version, size and SHA-256
+- [Microsoft Store page](https://apps.microsoft.com/detail/9PD6BP3NGVST): signed Windows app
+- [Videos](https://sahkarmi.site/videos/): the app at work
 - [All AI coworkers](https://sahkarmi.site/coworkers/): one page for each of the 175 ready-made Marketplace coworkers (what it covers, what it needs, its steps, outputs, checks, approvals and limits), grouped into 15 teams such as finance, sales, marketing, HR, e-commerce and software
 - [Use cases](https://sahkarmi.site/use-cases.html): workflows by profession (finance, marketing, sales, research, development, writing, design, operations) with the ready-made coworkers for each
 - [AI agent for Windows](https://sahkarmi.site/ai-agent-for-windows.html): install options (Microsoft Store, installer, Scoop, winget status), requirements, what it does in Windows, first steps
