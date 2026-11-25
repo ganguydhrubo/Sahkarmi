@@ -67,6 +67,20 @@
     .dl-ways .ms img { display: block; height: 58px; width: auto; }
     .dl-ways .btn { min-height: 58px; font-size: 17px; gap: 10px; }
     .dl-ways .btn svg { width: 20px; height: 20px; }
+    .support-card { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: center; padding: clamp(24px, 4vw, 48px); border-radius: 26px; border: 1px solid var(--saffron); background: linear-gradient(135deg, rgba(232, 119, 46, 0.2), rgba(242, 183, 5, 0.06) 60%), var(--bg-3); }
+    .support-card h2 { margin: 0 0 12px; }
+    .support-card p { margin: 0; }
+    .support-card ul { list-style: none; margin: 18px 0 24px; padding: 0; display: grid; gap: 8px; font-weight: 600; }
+    .support-card li { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+    .support-card li svg { flex: none; margin-top: 4px; color: var(--saffron-ink); }
+    .support-card .btn svg { flex: none; margin-right: 6px; vertical-align: -4px; }
+    #support { scroll-margin-top: 84px; }
+    .support-card .sup-note { margin-top: 12px; font-size: 15px; color: var(--text-2); }
+    .support-free { display: grid; gap: 10px; }
+    .support-free h3 { margin: 0 0 4px; }
+    .support-free a { display: block; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); font-weight: 700; text-decoration: none; }
+    .support-free a:hover, .support-free a:focus-visible { border-color: var(--saffron); }
+    @media (max-width: 860px) { .support-card { grid-template-columns: 1fr; } }
     .hero-help { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 0; font-weight: 700; }
     .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
     .facts li { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 14px; font-weight: 700; color: var(--text-2); }
@@ -127,7 +141,7 @@
         <div class="row"><button type="button" class="btn" id="to-pc-share">Send the link to my PC</button><a class="btn btn-ghost" href="mailto:?subject=Sahkarmi%20for%20my%20PC&amp;body=Download%20Sahkarmi%20(free)%3A%20https%3A%2F%2Fsahkarmi.site%2Fdownload.html">Email it to myself</a></div>
         <p>Once it is installed, your phone can use it too (Settings, Phone &amp; Host). Meanwhile, <a href="/videos/">watch it at work</a>.</p>
       </div>
-      <p class="hero-help"><a href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer">Need help installing? WhatsApp us</a><a href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer">Support Sahkarmi</a></p>
+      <p class="hero-help"><a href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer">Need help installing? WhatsApp us</a><a href="#support">Support Sahkarmi</a></p>
     </section>
 
     <h2 id="steps">Install in three steps</h2>
@@ -182,9 +196,27 @@
     <p>Message us on WhatsApp. Tell us your Windows version and what you see on the screen.</p>
     <p><a class="btn btn-ghost" href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer">Get help on WhatsApp</a></p>
 
-    <h2 id="support">Like Sahkarmi?</h2>
-    <p>Sahkarmi is free, and it stays free whether you support it or not. If it helps you, you can support the work on GitHub Sponsors.</p>
-    <p><a class="btn btn-ghost" href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer">Support Sahkarmi</a></p>
+    <section id="support" aria-labelledby="support-h">
+        <div class="support-card">
+          <div>
+            <h2 id="support-h">Sahkarmi is free. Help it stay strong.</h2>
+            <p>Everything in the app is open to everyone, whether you support it or not. If it saved you some work, you can help us build the next part.</p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span>More Indian languages</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span>Stronger approval checks before anything is sent or posted</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span>Regular fixes and updates</span></li>
+            </ul>
+            <a class="btn btn-primary" href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span>Support Sahkarmi</span></a>
+            <p class="sup-note">On GitHub Sponsors. Any way you like, once or every month.</p>
+          </div>
+          <div class="support-free">
+            <h3>Other ways to help</h3>
+            <a href="https://github.com/ganguydhrubo/sahakarmi" target="_blank" rel="noopener noreferrer">Give a star on GitHub</a>
+            <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer">Write a review on Microsoft Store</a>
+            <a href="https://wa.me/?text=Sahkarmi%20is%20a%20free%20AI%20team%20for%20Windows.%20https%3A%2F%2Fsahkarmi.site" target="_blank" rel="noopener noreferrer">Tell a friend on WhatsApp</a>
+          </div>
+        </div>
+    </section>
 
     <h2 id="faq">Questions</h2>
     <details><summary>Is Sahkarmi really free?</summary><p>Yes. Sahkarmi is free and open source under the Apache 2.0 license. It comes with free built-in AI, needs no account and no card, and has no in-app purchases.</p></details>

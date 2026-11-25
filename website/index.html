@@ -314,6 +314,14 @@
       .header-download { display: none; }
     }
 
+    .header-support { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border: 2px solid var(--saffron); border-radius: 999px; color: var(--text); font-weight: 700; font-size: 15px; text-decoration: none; white-space: nowrap; }
+    .header-support svg { color: var(--saffron-ink); }
+    .header-support:hover { background: rgba(232, 119, 46, 0.18); }
+    @media (max-width: 1340px) and (min-width: 901px), (max-width: 480px) {
+      .header-support { width: 42px; padding: 0; justify-content: center; }
+      .header-support span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    }
+
     /* Hero */
     .hero { padding: clamp(48px, 7vw, 96px) 0 clamp(32px, 4vw, 56px); border: 0; }
     .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 56px); align-items: center; }
@@ -450,6 +458,20 @@
 
     /* Community */
     .hero-help { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 14px 0 0; font-weight: 700; }
+    .support-card { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: center; padding: clamp(24px, 4vw, 48px); border-radius: 26px; border: 1px solid var(--saffron); background: linear-gradient(135deg, rgba(232, 119, 46, 0.2), rgba(242, 183, 5, 0.06) 60%), var(--bg-3); }
+    .support-card h2 { margin: 0 0 12px; }
+    .support-card p { margin: 0; }
+    .support-card ul { list-style: none; margin: 18px 0 24px; padding: 0; display: grid; gap: 8px; font-weight: 600; }
+    .support-card li { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+    .support-card li svg { flex: none; margin-top: 4px; color: var(--saffron-ink); }
+    .support-card .btn svg { flex: none; margin-right: 6px; vertical-align: -4px; }
+    #support { scroll-margin-top: 84px; }
+    .support-card .sup-note { margin-top: 12px; font-size: 15px; color: var(--text-2); }
+    .support-free { display: grid; gap: 10px; }
+    .support-free h3 { margin: 0 0 4px; }
+    .support-free a { display: block; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text); font-weight: 700; text-decoration: none; }
+    .support-free a:hover, .support-free a:focus-visible { border-color: var(--saffron); }
+    @media (max-width: 860px) { .support-card { grid-template-columns: 1fr; } }
     .install-help { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; margin-top: 28px; padding: 18px 22px; border-radius: 18px; border: 1px solid var(--line-2); }
     .install-help > div { flex: 1 1 320px; min-width: 0; }
     .install-help h3 { margin: 0 0 6px; }
@@ -891,6 +913,8 @@
     .dls-steps span { color: var(--muted); font-size: 13.5px; }
     .dls-alt { margin: 14px 0 0; font-size: 13.5px; color: var(--muted); }
     .dls-alt a { color: var(--saffron-ink); font-weight: 700; }
+    .dls-support { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line-2); font-size: 14.5px; }
+    .dls-support svg, .dls-support a { color: var(--saffron-ink); font-weight: 700; }
     /* Video library teaser */
     .vteaser { padding-block: clamp(36px, 6vw, 64px) 0; }
     .vteaser-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 20px; margin-bottom: 18px; }
@@ -952,6 +976,7 @@
       </nav>
       <div class="header-actions">
         <a class="btn btn-primary btn-small header-download" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe"><span data-i18n="mini">Download</span></a>
+        <a class="header-support" href="#support"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span data-i18n="supNav">Support</span></a>
         <div class="lang" role="group" aria-label="Language">
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
           <button type="button" data-lang="hi" aria-pressed="false" lang="hi">हिं</button>
@@ -987,7 +1012,7 @@
               <span id="download-label" data-i18n="download">Download for Windows</span>
             </a>
           </div>
-          <p class="hero-help"><a href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer" data-i18n="heroHelp">Need help installing? WhatsApp us</a><a href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="heroSupport">Support Sahkarmi</a></p>
+          <p class="hero-help"><a href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer" data-i18n="heroHelp">Need help installing? WhatsApp us</a></p>
           <div class="to-pc" id="to-pc" hidden>
             <p class="to-pc-title" data-i18n="toPcTitle">On your phone? Sahkarmi installs on a Windows PC.</p>
             <div class="to-pc-actions">
@@ -1621,10 +1646,6 @@
           <div><h3 data-i18n="ihH">Need help installing Sahkarmi?</h3><p data-i18n="ihP">Message us on WhatsApp. Tell us your Windows version and what you see on the screen.</p></div>
           <a class="btn btn-ghost" href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer" data-i18n="ihBtn">Get help on WhatsApp</a>
         </div>
-        <div class="install-help reveal" id="support">
-          <div><h3 data-i18n="spH">Like Sahkarmi?</h3><p data-i18n="spP">Sahkarmi is free, and it stays free whether you support it or not. If it helps you, you can support the work on GitHub Sponsors.</p></div>
-          <a class="btn btn-ghost" href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="spBtn">Support Sahkarmi</a>
-        </div>
         <p class="platforms sr-only">
           <a data-platform="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">Windows installer</a>
         </p>
@@ -1662,6 +1683,31 @@
     </section>
 
     <!-- Final call -->
+    <section id="support" aria-labelledby="support-h">
+      <div class="wrap">
+        <div class="support-card reveal">
+          <div>
+            <p class="eyebrow" data-i18n="spEyebrow">Support Sahkarmi</p>
+            <h2 id="support-h" data-i18n="spH">Sahkarmi is free. Help it stay strong.</h2>
+            <p data-i18n="spP">Everything in the app is open to everyone, whether you support it or not. If it saved you some work, you can help us build the next part.</p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span data-i18n="sp1">More Indian languages</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span data-i18n="sp2">Stronger approval checks before anything is sent or posted</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span data-i18n="sp3">Regular fixes and updates</span></li>
+            </ul>
+            <a class="btn btn-primary" href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><span data-i18n="spBtn">Support Sahkarmi</span></a>
+            <p class="sup-note" data-i18n="spNote">On GitHub Sponsors. Any way you like, once or every month.</p>
+          </div>
+          <div class="support-free">
+            <h3 data-i18n="spFreeH">Other ways to help</h3>
+            <a href="https://github.com/ganguydhrubo/sahakarmi" target="_blank" rel="noopener noreferrer" data-i18n="spStar">Give a star on GitHub</a>
+            <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="spReview">Write a review on Microsoft Store</a>
+            <a href="https://wa.me/?text=Sahkarmi%20is%20a%20free%20AI%20team%20for%20Windows.%20https%3A%2F%2Fsahkarmi.site" target="_blank" rel="noopener noreferrer" data-i18n="spShare">Tell a friend on WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="go" aria-labelledby="go-h">
       <div class="aurora soft" aria-hidden="true"><i></i><i></i><i></i></div>
       <video class="go-film" muted loop playsinline preload="none" poster="/assets/cinema/dusk-poster.webp" aria-hidden="true" tabindex="-1">
@@ -1792,6 +1838,7 @@
       <li><b data-i18n="dls3">Pick a coworker and say what to do</b><span data-i18n="dls3P">The free AI is built in. No key, no account, no card.</span></li>
     </ol>
     <p class="dls-alt"><a id="dls-retry" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe" data-i18n="dlsRetry">Download did not start? Try again</a> · <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="dlsStore">No warning: get it from the Microsoft Store</a></p>
+    <p class="dls-support"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><a href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="dlsSup">Sahkarmi is free. Support it if you like</a> · <a href="https://github.com/ganguydhrubo/sahakarmi" target="_blank" rel="noopener noreferrer" data-i18n="dlsStar">Give it a star</a></p>
   </div>
   <div class="dl-bar" id="dl-bar" aria-hidden="true">
     <span class="dl-bar-text" data-i18n="barText">Your free AI team for Windows</span>
@@ -2215,11 +2262,22 @@
         ihH: "Need help installing Sahkarmi?",
         ihP: "Message us on WhatsApp. Tell us your Windows version and what you see on the screen.",
         ihBtn: "Get help on WhatsApp",
-        spH: "Like Sahkarmi?",
-        spP: "Sahkarmi is free, and it stays free whether you support it or not. If it helps you, you can support the work on GitHub Sponsors.",
-        spBtn: "Support Sahkarmi",
         heroHelp: "Need help installing? WhatsApp us",
-        heroSupport: "Support Sahkarmi",
+        supNav: "Support",
+        spEyebrow: "Support Sahkarmi",
+        spH: "Sahkarmi is free. Help it stay strong.",
+        spP: "Everything in the app is open to everyone, whether you support it or not. If it saved you some work, you can help us build the next part.",
+        sp1: "More Indian languages",
+        sp2: "Stronger approval checks before anything is sent or posted",
+        sp3: "Regular fixes and updates",
+        spBtn: "Support Sahkarmi",
+        spNote: "On GitHub Sponsors. Any way you like, once or every month.",
+        spFreeH: "Other ways to help",
+        spStar: "Give a star on GitHub",
+        spReview: "Write a review on Microsoft Store",
+        spShare: "Tell a friend on WhatsApp",
+        dlsSup: "Sahkarmi is free. Support it if you like",
+        dlsStar: "Give it a star",
         talk: "Talk to a human:",
         footInstall: "Install guide",
         footDocs: "Get started",
@@ -2730,11 +2788,22 @@
         ihH: "सहकर्मी इंस्टॉल करने में मदद चाहिए?",
         ihP: "हमें WhatsApp पर लिखें. अपना Windows वर्ज़न और स्क्रीन पर क्या दिख रहा है, यह बताएँ.",
         ihBtn: "WhatsApp पर मदद लें",
-        spH: "सहकर्मी पसंद आया?",
-        spP: "सहकर्मी मुफ़्त है, और आप सहयोग करें या न करें, मुफ़्त ही रहेगा. अगर यह आपके काम आता है, तो आप GitHub Sponsors पर इस काम का सहयोग कर सकते हैं.",
-        spBtn: "सहकर्मी का सहयोग करें",
         heroHelp: "इंस्टॉल में मदद चाहिए? WhatsApp करें",
-        heroSupport: "सहकर्मी का सहयोग करें",
+        supNav: "सहयोग",
+        spEyebrow: "सहकर्मी का सहयोग",
+        spH: "सहकर्मी मुफ़्त है. इसे मज़बूत बनाए रखने में मदद करें.",
+        spP: "आप सहयोग करें या न करें, ऐप की हर चीज़ सबके लिए खुली है. अगर इससे आपका कुछ काम बचा, तो अगला हिस्सा बनाने में हमारी मदद कर सकते हैं.",
+        sp1: "और भारतीय भाषाएँ",
+        sp2: "कुछ भी भेजने या पोस्ट करने से पहले और मज़बूत मंज़ूरी",
+        sp3: "नियमित सुधार और अपडेट",
+        spBtn: "सहकर्मी का सहयोग करें",
+        spNote: "GitHub Sponsors पर. जैसे आप चाहें, एक बार या हर महीने.",
+        spFreeH: "मदद के और तरीके",
+        spStar: "GitHub पर स्टार दें",
+        spReview: "Microsoft Store पर रिव्यू लिखें",
+        spShare: "WhatsApp पर दोस्त को बताएँ",
+        dlsSup: "सहकर्मी मुफ़्त है. चाहें तो सहयोग करें",
+        dlsStar: "स्टार दें",
         talk: "किसी इंसान से बात करें:",
         footInstall: "इंस्टॉल गाइड",
         footDocs: "शुरुआत करें",
