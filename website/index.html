@@ -91,7 +91,7 @@
         "alternateName": "सहकर्मी",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Windows 10, Windows 11",
-        "softwareVersion": "0.22.0",
+        "softwareVersion": "0.34.0",
         "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
@@ -449,6 +449,7 @@
     .faq p { color: var(--text-2); padding: 0 0 16px; max-width: 78ch; }
 
     /* Community */
+    .hero-help { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 14px 0 0; font-weight: 700; }
     .install-help { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; margin-top: 28px; padding: 18px 22px; border-radius: 18px; border: 1px solid var(--line-2); }
     .install-help > div { flex: 1 1 320px; min-width: 0; }
     .install-help h3 { margin: 0 0 6px; }
@@ -950,7 +951,7 @@
         <a class="nav-more" href="#community" data-i18n="navCommunity">Community</a>
       </nav>
       <div class="header-actions">
-        <a class="btn btn-primary btn-small header-download" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe"><span data-i18n="mini">Download</span></a>
+        <a class="btn btn-primary btn-small header-download" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe"><span data-i18n="mini">Download</span></a>
         <div class="lang" role="group" aria-label="Language">
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
           <button type="button" data-lang="hi" aria-pressed="false" lang="hi">हिं</button>
@@ -975,17 +976,18 @@
       <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <a class="tg-announce phone-announce" href="#phone"><span class="phone-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/></svg></span><span data-i18n="phoneAnnounce">New in 0.33: use Sahkarmi from your iPhone or Android</span><b aria-hidden="true">→</b></a>
+          <a class="tg-announce phone-announce" href="/changelog.html"><span class="phone-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16v9H9l-5 4z"/></svg></span><span data-i18n="phoneAnnounce">New in 0.34: say your job in one box, the right coworker takes it</span><b aria-hidden="true">→</b></a>
           <h1><span data-i18n="h1a">Hire an AI team.</span> <span class="accent" data-i18n="h1b">Pay ₹0.</span></h1>
           <p class="rotator"><span data-i18n="rotPre">They</span> <span class="rot-words"><span data-i18n="rot1" class="on">chase your invoices.</span><span data-i18n="rot2">answer your customers.</span><span data-i18n="rot3">write your posts.</span><span data-i18n="rot4">research your market.</span><span data-i18n="rot5">fix your code.</span><span data-i18n="rot6">work while you sleep.</span></span></p>
           <p class="lead" data-i18n="lead">Sahkarmi is free, open-source AI that uses your Windows PC like a coworker would. It browses websites, opens and works in desktop apps, researches, writes, works inside 1,660 apps and runs on a schedule. Before it pays, sends or posts, it asks you.</p>
           <div class="cta-row hero-cta">
             <a class="ms-badge hero-store" href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer"><img src="/assets/ms-store-badge.svg" width="190" height="52" alt="Download from the Microsoft Store" /></a>
-            <a class="btn btn-primary btn-glow btn-xl" id="hero-download" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">
+            <a class="btn btn-primary btn-glow btn-xl" id="hero-download" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
               <span id="download-label" data-i18n="download">Download for Windows</span>
             </a>
           </div>
+          <p class="hero-help"><a href="https://wa.me/919874076688?text=Hello%2C%20I%20need%20help%20with%20Sahkarmi." target="_blank" rel="noopener noreferrer" data-i18n="heroHelp">Need help installing? WhatsApp us</a><a href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="heroSupport">Support Sahkarmi</a></p>
           <div class="to-pc" id="to-pc" hidden>
             <p class="to-pc-title" data-i18n="toPcTitle">On your phone? Sahkarmi installs on a Windows PC.</p>
             <div class="to-pc-actions">
@@ -994,7 +996,7 @@
             </div>
             <p class="to-pc-note" data-i18n="toPcNote">Then open sahkarmi.site/download on your PC. Once it is installed, your phone can use it too.</p>
           </div>
-          <p class="hero-facts"><span class="hero-fact"><i class="live-dot" aria-hidden="true"></i><span data-i18n="hfVersion">Version</span>&nbsp;<b data-release-version>0.22.0</b></span><span class="hero-fact" data-release-size="win">240 MB</span><span class="hero-fact" data-i18n="hfWin">Windows 10 and 11</span><span class="hero-fact" data-i18n="hfFree">Free, no account, no card</span></p>
+          <p class="hero-facts"><span class="hero-fact"><i class="live-dot" aria-hidden="true"></i><span data-i18n="hfVersion">Version</span>&nbsp;<b data-release-version>0.34.0</b></span><span class="hero-fact" data-release-size="win">246 MB</span><span class="hero-fact" data-i18n="hfWin">Windows 10 and 11</span><span class="hero-fact" data-i18n="hfFree">Free, no account, no card</span></p>
           <p class="cta-meta"><span id="dl-meta" data-i18n="dlMeta">The Microsoft Store version is signed by Microsoft and updates itself.</span> <a class="watch-link" href="#see"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span data-i18n="watch">Watch the 2-minute film</span></a></p>
           <ul class="proof">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="var(--saffron-ink)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span data-i18n="p1">Runs on your PC</span></li>
@@ -1108,7 +1110,7 @@
       <div class="phone-glow" aria-hidden="true"></div>
       <div class="wrap phone-grid">
         <div class="phone-copy reveal">
-          <p class="eyebrow phone-eyebrow"><span class="phone-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/></svg></span><span data-i18n="phEyebrow">New in 0.33 · Phone &amp; Host</span></p>
+          <p class="eyebrow phone-eyebrow"><span class="phone-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/></svg></span><span data-i18n="phEyebrow">Phone &amp; Host</span></p>
           <h2 id="phone-h" data-i18n="phH2">Your PC, in your pocket.</h2>
           <p class="lead" data-i18n="phLead">Approve requests, chat with your coworkers and run routines from your iPhone or Android, wherever you are. Your phone talks straight to your own PC through your free Tailscale. No company server in between, nothing to pay.</p>
           <ol class="phone-steps">
@@ -1554,7 +1556,7 @@
         <div class="section-head reveal">
           <p class="eyebrow" data-i18n="dlEyebrow">Download</p>
           <h2 id="dl-h" data-i18n="dlH2">Download for Windows</h2>
-          <p class="lead"><span data-i18n="dlLead">Every file is built by GitHub Actions from the public source, with SHA-256 checksums and a provenance attestation on the release page. Current version:</span> <strong data-release-version>0.22.0</strong></p>
+          <p class="lead"><span data-i18n="dlLead">Every file is built by GitHub Actions from the public source, with SHA-256 checksums and a provenance attestation on the release page. Current version:</span> <strong data-release-version>0.34.0</strong></p>
         </div>
         <div class="dl-grid reveal">
           <div class="dl-card store" id="card-store">
@@ -1581,8 +1583,8 @@
               <div><h3>Windows</h3><span class="os-sub">10 · 11 · 64-bit</span></div>
             </div>
             <span class="status tested" data-i18n="stWin">Built and tested by the project</span>
-            <p><span data-i18n="winP">Windows 10 or 11, 64-bit. SmartScreen will warn because the installer is not code-signed yet: choose More info, then Run anyway.</span> <span class="size">(<span data-release-size="win">240 MB</span>)</span></p>
-            <a class="btn btn-primary" data-platform-tile="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe"><span data-i18n="winBtn">Download .exe</span></a>
+            <p><span data-i18n="winP">Windows 10 or 11, 64-bit. SmartScreen will warn because the installer is not code-signed yet: choose More info, then Run anyway.</span> <span class="size">(<span data-release-size="win">246 MB</span>)</span></p>
+            <a class="btn btn-primary" data-platform-tile="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe"><span data-i18n="winBtn">Download .exe</span></a>
             <small><a href="/install.html#windows" data-i18n="winHelp">Windows install and first-launch steps</a></small>
           </div>
           <div class="dl-card dl-cli" id="card-cli">
@@ -1601,12 +1603,12 @@
           <li><b data-i18n="ds3">Say what to do</b><span data-i18n="ds3P">Pick a coworker and type or speak the job. The free AI is built in: no key, no account.</span></li>
         </ol>
         <dl class="dl-facts reveal" aria-label="Release details">
-          <div><dt data-i18n="dfVersion">Version</dt><dd data-release-version>0.22.0</dd></div>
-          <div><dt data-i18n="dfDate">Released</dt><dd><time data-release-date datetime="2026-11-05">2026-11-05</time></dd></div>
-          <div><dt data-i18n="dfSize">Download size</dt><dd data-release-size="win">240 MB</dd></div>
+          <div><dt data-i18n="dfVersion">Version</dt><dd data-release-version>0.34.0</dd></div>
+          <div><dt data-i18n="dfDate">Released</dt><dd><time data-release-date datetime="2026-11-18">2026-11-18</time></dd></div>
+          <div><dt data-i18n="dfSize">Download size</dt><dd data-release-size="win">246 MB</dd></div>
           <div><dt data-i18n="dfSystem">System</dt><dd data-i18n="dfSystemV">Windows 10 or 11, 64-bit (x64)</dd></div>
           <div><dt data-i18n="dfLicense">License</dt><dd><a href="https://github.com/ganguydhrubo/sahakarmi/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-i18n="dfLicenseV">Apache 2.0, free and open source</a></dd></div>
-          <div class="dl-sha"><dt data-i18n="dfSha">SHA-256 of the installer</dt><dd><code id="release-sha" data-release-sha256="win">f26bcb4502308f2803b6c83e00f23e1b77dcfb7e449b87b0064b6fe8faa9999b</code> <button type="button" data-copy-from="#release-sha" data-i18n="msCopy">Copy</button> <a href="/install.html#verify" data-i18n="dfGuide">Installation guide</a></dd></div>
+          <div class="dl-sha"><dt data-i18n="dfSha">SHA-256 of the installer</dt><dd><code id="release-sha" data-release-sha256="win">f1690bf619439de9b246c1cd8eb51a215ed063cb5831745e227471223caa3a6a</code> <button type="button" data-copy-from="#release-sha" data-i18n="msCopy">Copy</button> <a href="/install.html#verify" data-i18n="dfGuide">Installation guide</a></dd></div>
         </dl>
         <div class="dl-help reveal">
           <a href="https://github.com/ganguydhrubo/sahakarmi/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="allReleases">All releases and checksums on GitHub</a>
@@ -1624,7 +1626,7 @@
           <a class="btn btn-ghost" href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="spBtn">Support Sahkarmi</a>
         </div>
         <p class="platforms sr-only">
-          <a data-platform="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">Windows installer</a>
+          <a data-platform="win" href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">Windows installer</a>
         </p>
       </div>
     </section>
@@ -1671,7 +1673,7 @@
         <p class="eyebrow" data-i18n="goEyebrow">Ready when you are</p>
         <h2 id="go-h" data-i18n="goH2">Your AI team is ready to start.</h2>
         <p class="lead" data-i18n="goLead">Download free. Up and running in minutes. No account, no card.</p>
-        <a class="btn btn-primary btn-glow btn-xl" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe">
+        <a class="btn btn-primary btn-glow btn-xl" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
           <span data-i18n="goBtn">Download free for Windows</span>
         </a>
@@ -1789,11 +1791,11 @@
       <li><b data-i18n="dls2">Windows protected your PC? Choose More info, then Run anyway</b><span data-i18n="dls2P">It shows because the installer is not code-signed yet. The source is open on GitHub.</span></li>
       <li><b data-i18n="dls3">Pick a coworker and say what to do</b><span data-i18n="dls3P">The free AI is built in. No key, no account, no card.</span></li>
     </ol>
-    <p class="dls-alt"><a id="dls-retry" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe" data-i18n="dlsRetry">Download did not start? Try again</a> · <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="dlsStore">No warning: get it from the Microsoft Store</a></p>
+    <p class="dls-alt"><a id="dls-retry" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe" data-i18n="dlsRetry">Download did not start? Try again</a> · <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="dlsStore">No warning: get it from the Microsoft Store</a></p>
   </div>
   <div class="dl-bar" id="dl-bar" aria-hidden="true">
     <span class="dl-bar-text" data-i18n="barText">Your free AI team for Windows</span>
-    <a class="btn btn-primary btn-small" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.22.0/Sahkarmi-0.22.0-x64.exe" tabindex="-1"><span data-i18n="mini">Download</span></a>
+    <a class="btn btn-primary btn-small" data-download href="https://github.com/ganguydhrubo/sahakarmi/releases/download/v0.34.0/Sahkarmi-0.34.0-x64.exe" tabindex="-1"><span data-i18n="mini">Download</span></a>
   </div>
 
   <footer>
@@ -2216,6 +2218,8 @@
         spH: "Like Sahkarmi?",
         spP: "Sahkarmi is free, and it stays free whether you support it or not. If it helps you, you can support the work on GitHub Sponsors.",
         spBtn: "Support Sahkarmi",
+        heroHelp: "Need help installing? WhatsApp us",
+        heroSupport: "Support Sahkarmi",
         talk: "Talk to a human:",
         footInstall: "Install guide",
         footDocs: "Get started",
@@ -2279,7 +2283,7 @@
         pMore: "GitHub Copilot, Cursor, Qwen Code, Kimi Code, Cline, Grok, Mistral Vibe, Kiro, Goose, Factory Droid and Qoder. Sahkarmi installs each one for you when you press Connect.",
         pMoreT: "11 more AI agents",
         pMoreC: "Your plan; Copilot and Kiro have free tiers",
-        phoneAnnounce: "New in 0.33: use Sahkarmi from your iPhone or Android",
+        phoneAnnounce: "New in 0.34: say your job in one box, the right coworker takes it",
         toPcTitle: "On your phone? Sahkarmi installs on a Windows PC.",
         toPcShare: "Send the link to my PC",
         toPcMail: "Email it to myself",
@@ -2290,7 +2294,7 @@
         hfWin: "Windows 10 and 11",
         hfFree: "Free, no account, no card",
         navPhone: "Phone",
-        phEyebrow: "New in 0.33 · Phone & Host",
+        phEyebrow: "Phone & Host",
         phH2: "Your PC, in your pocket.",
         phLead: "Approve requests, chat with your coworkers and run routines from your iPhone or Android, wherever you are. Your phone talks straight to your own PC through your free Tailscale. No company server in between, nothing to pay.",
         ph1: "Get the free Tailscale app",
@@ -2729,6 +2733,8 @@
         spH: "सहकर्मी पसंद आया?",
         spP: "सहकर्मी मुफ़्त है, और आप सहयोग करें या न करें, मुफ़्त ही रहेगा. अगर यह आपके काम आता है, तो आप GitHub Sponsors पर इस काम का सहयोग कर सकते हैं.",
         spBtn: "सहकर्मी का सहयोग करें",
+        heroHelp: "इंस्टॉल में मदद चाहिए? WhatsApp करें",
+        heroSupport: "सहकर्मी का सहयोग करें",
         talk: "किसी इंसान से बात करें:",
         footInstall: "इंस्टॉल गाइड",
         footDocs: "शुरुआत करें",
@@ -2792,7 +2798,7 @@
         pMore: "GitHub Copilot, Cursor, Qwen Code, Kimi Code, Cline, Grok, Mistral Vibe, Kiro, Goose, Factory Droid और Qoder. Connect दबाते ही सहकर्मी इन्हें आपके लिए इंस्टॉल करता है.",
         pMoreT: "11 और AI एजेंट",
         pMoreC: "आपका प्लान; Copilot और Kiro के फ्री प्लान हैं",
-        phoneAnnounce: "नया 0.33 में: अपने iPhone या Android से सहकर्मी चलाएँ",
+        phoneAnnounce: "नया 0.34 में: एक ही बॉक्स में काम बताएँ, सही सहकर्मी उसे उठाएगा",
         toPcTitle: "फ़ोन पर हैं? सहकर्मी Windows PC पर इंस्टॉल होता है.",
         toPcShare: "लिंक अपने PC पर भेजें",
         toPcMail: "खुद को ईमेल करें",
@@ -2803,7 +2809,7 @@
         hfWin: "Windows 10 और 11",
         hfFree: "मुफ़्त, न अकाउंट, न कार्ड",
         navPhone: "फ़ोन",
-        phEyebrow: "नया 0.33 में · फ़ोन और होस्ट",
+        phEyebrow: "फ़ोन और होस्ट",
         phH2: "आपका PC, आपकी जेब में.",
         phLead: "कहीं से भी अपने iPhone या Android पर अनुरोध मंज़ूर करें, सहकर्मियों से चैट करें और रूटीन चलाएँ. आपका फ़ोन आपके मुफ़्त Tailscale से सीधे आपके PC से बात करता है. बीच में किसी कंपनी का सर्वर नहीं, कोई पैसा नहीं.",
         ph1: "मुफ़्त Tailscale ऐप लें",
