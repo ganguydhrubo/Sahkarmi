@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/bookkeeper.html" />
   <meta property="og:title" content="AI Bookkeeper: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Turns bills, receipts and bank statements into clean, categorised entries ready for Tally or Zoho Books. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/bookkeeper-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/bookkeeper-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,6 +131,8 @@
     <h1>AI Bookkeeper</h1>
     <p class="lead">Turns bills, receipts and bank statements into clean, categorised entries ready for Tally or Zoho Books.</p>
     <p><strong>Role:</strong> Day-to-day books · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/bookkeeper-1200.webp" srcset="/assets/coworkers/bookkeeper-640.webp 640w, /assets/coworkers/bookkeeper-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="A young bookkeeper in Kolkata sorting paper bills into bundles" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">The bills come in a plastic bag on the last day of the month. Some are faded, two are photos on WhatsApp, and one is only a UPI screenshot. The bookkeeper coworker reads them, makes one voucher line for each, and keeps the doubtful ones apart.</p>
     <h2 id="example">Example: a first task</h2>
     <p class="box">“Here are the November bills, the purchase invoices and the HDFC current account statement, all in Shared/Accounts/Books. Make the voucher sheet for Tally, and tell me which bank entries have no bill.”</p>
     <h3>What comes back</h3>
@@ -137,6 +140,19 @@
         <li>A voucher sheet with date, voucher type, party, ledger, GST split, amount and narration, one line per entry, ready to import into Tally or Zoho Books.</li>
         <li>A review list: bank entries with no bill, bills with no bank entry, and lines where the ledger was unclear.</li>
         <li>A short summary of the month by ledger, so you can see expenses by head at a glance.</li>
+      </ul>
+    <h3>A voucher sheet (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Date</th><th>Type</th><th>Ledger</th><th>Amount</th><th>Narration</th></tr></thead><tbody>
+      <tr><td>03/11/2026</td><td>Purchase</td><td>Stationery</td><td>₹1,180</td><td>Bill 552, GST 18% (₹1,000 + ₹180)</td></tr>
+      <tr><td>05/11/2026</td><td>Payment</td><td>Electricity</td><td>₹4,260</td><td>October bill, paid by UPI</td></tr>
+      <tr><td>09/11/2026</td><td>Purchase</td><td>Packing material</td><td>₹2,360</td><td>Bill PK/77, GST 18% (₹2,000 + ₹360)</td></tr>
+      <tr><td>12/11/2026</td><td>Review</td><td>Not decided</td><td>₹900</td><td>Bank entry with no bill</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Find bills entered twice this month.</li>
+        <li>Show all cash payments above ₹10,000 so I can check them with my CA.</li>
+        <li>Make the ledger-wise expense total for November.</li>
       </ul>
     <h3>Good to know</h3>
     <ul>

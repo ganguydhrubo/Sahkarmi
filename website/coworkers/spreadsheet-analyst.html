@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/spreadsheet-analyst.html" />
   <meta property="og:title" content="AI Spreadsheet Analyst: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Answers questions from your Excel or Google Sheets data with formulas, pivots and charts you can reuse. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/spreadsheet-analyst-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/spreadsheet-analyst-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,8 +131,35 @@
     <h1>AI Spreadsheet Analyst</h1>
     <p class="lead">Answers questions from your Excel or Google Sheets data with formulas, pivots and charts you can reuse.</p>
     <p><strong>Role:</strong> Excel and Google Sheets analysis · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/spreadsheet-analyst-1200.webp" srcset="/assets/coworkers/spreadsheet-analyst-640.webp 640w, /assets/coworkers/spreadsheet-analyst-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="A warehouse supervisor in Bhiwandi checking stock with a clipboard and laptop" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">The file has 4,000 rows and one simple question: which items are not moving? This coworker answers it in a new sheet with live formulas, so next month you paste new rows and the answer changes by itself. Your own sheet stays as it was.</p>
     <h2 id="example">Example: a first task</h2>
-    <p>Put the spreadsheet or export, and the question to answer in <code>Shared/Research/Spreadsheets</code>, then ask in plain words for the workbook with analysis sheets; a short answer with key numbers and notes on how to refresh it. Start with one small, real piece of work and check what comes back.</p>
+    <p class="box">“stock.xlsx in Shared/Research/Spreadsheets has all our items with last sale date. Show which items did not sell for 90 days and how much money is stuck. Do not change my sheet.”</p>
+    <h3>What comes back</h3>
+    <ul>
+        <li>A workbook with a new analysis sheet, using live formulas and a pivot.</li>
+        <li>A short answer with the main numbers.</li>
+        <li>A note on how to refresh it next month.</li>
+      </ul>
+    <h3>A slow-stock summary (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Group</th><th>Items</th><th>Stock value</th><th>Share</th></tr></thead><tbody>
+      <tr><td>Sold in last 30 days</td><td>210</td><td>₹6,30,000</td><td>63%</td></tr>
+      <tr><td>Sold 31–90 days ago</td><td>85</td><td>₹2,20,000</td><td>22%</td></tr>
+      <tr><td>Not sold for 90 days</td><td>55</td><td>₹1,50,000</td><td>15%</td></tr>
+      <tr><td>Total</td><td>350</td><td>₹10,00,000</td><td>100%</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Which ten items block the most money?</li>
+        <li>Make a chart of monthly sales by city.</li>
+        <li>Explain this formula to me in simple words.</li>
+      </ul>
+    <h3>Good to know</h3>
+    <ul>
+        <li>Totals are checked against your raw rows before it reports done.</li>
+        <li>It asks before writing over your own sheet.</li>
+        <li>Dates saved as text are a common problem; it finds them and tells you.</li>
+      </ul>
     <h2 id="covers">What the AI Spreadsheet Analyst covers</h2>
     <p>Excel analyst · Google Sheets · spreadsheet analysis · pivot tables · VLOOKUP · XLOOKUP · formulas · macros · data analysis · MIS executive</p>
 

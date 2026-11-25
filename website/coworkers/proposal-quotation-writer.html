@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/proposal-quotation-writer.html" />
   <meta property="og:title" content="AI Proposal &amp; Quotation Writer: Free AI Coworker | Sahkarmi" />
   <meta property="og:description" content="Turns a customer requirement into a priced quotation or proposal on your letterhead, with GST and terms. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/proposal-quotation-writer-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/proposal-quotation-writer-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,8 +131,37 @@
     <h1>AI Proposal &amp; Quotation Writer</h1>
     <p class="lead">Turns a customer requirement into a priced quotation or proposal on your letterhead, with GST and terms.</p>
     <p><strong>Role:</strong> Quotations and sales proposals · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/proposal-quotation-writer-1200.webp" srcset="/assets/coworkers/proposal-quotation-writer-640.webp 640w, /assets/coworkers/proposal-quotation-writer-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="A furniture workshop owner in Coimbatore measuring a frame beside his laptop" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">The customer sends a rough list on WhatsApp and wants a price today. This coworker writes the list again line by line, prices it from your own rates, adds GST, and tells you which line is below your margin before the customer sees it.</p>
     <h2 id="example">Example: a first task</h2>
-    <p>Put the customer's requirement (message, RFQ or BOQ), and price list or costing in <code>Shared/Sales/Quotations</code>, then ask in plain words for a quotation or proposal PDF and editable copy; a costing sheet with margin per line and a list of points to confirm with the customer. Start with one small, real piece of work and check what comes back.</p>
+    <p class="box">“A customer sent this list on WhatsApp: 4 office tables, 8 chairs, fitting at site. Our rates are in Shared/Sales/Quotations/rates.xlsx. Make the quotation on our letterhead, and warn me if any line is below 15% margin.”</p>
+    <h3>What comes back</h3>
+    <ul>
+        <li>A quotation in PDF and an editable copy, with total in figures and words.</li>
+        <li>A costing sheet with margin on each line, for you only.</li>
+        <li>A list of points to confirm with the customer.</li>
+      </ul>
+    <h3>A quotation with its costing (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th><th>Margin</th></tr></thead><tbody>
+      <tr><td>Office table, teak finish</td><td>4</td><td>₹9,500</td><td>₹38,000</td><td>24%</td></tr>
+      <tr><td>Chair, cushioned</td><td>8</td><td>₹3,200</td><td>₹25,600</td><td>21%</td></tr>
+      <tr><td>Fitting at site</td><td>1</td><td>₹4,000</td><td>₹4,000</td><td>9%, below your floor</td></tr>
+      <tr><td>Total before GST</td><td></td><td></td><td>₹67,600</td><td></td></tr>
+      <tr><td>GST 18%</td><td></td><td></td><td>₹12,168</td><td></td></tr>
+      <tr><td>Grand total</td><td></td><td></td><td>₹79,768</td><td></td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Make a second option with a cheaper finish.</li>
+        <li>Write the terms: 50% advance, delivery in 20 days.</li>
+        <li>List what I should confirm with the customer first.</li>
+      </ul>
+    <h3>Good to know</h3>
+    <ul>
+        <li>Freight and fitting are shown on their own lines so the customer can see them.</li>
+        <li>It asks before sending, and before quoting below your margin floor.</li>
+        <li>Anything unclear in the request goes to the confirm list, it is not guessed.</li>
+      </ul>
     <h2 id="covers">What the AI Proposal &amp; Quotation Writer covers</h2>
     <p>quotation · proforma · sales proposal · estimate · price quote · commercial offer · techno-commercial proposal · BOQ pricing · RFQ response</p>
 

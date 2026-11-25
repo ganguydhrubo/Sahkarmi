@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/bank-reconciliation.html" />
   <meta property="og:title" content="AI Bank Reconciliation: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Matches bank, UPI and payment-gateway statements with the books and explains every difference. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/bank-reconciliation-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/bank-reconciliation-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,8 +131,36 @@
     <h1>AI Bank Reconciliation</h1>
     <p class="lead">Matches bank, UPI and payment-gateway statements with the books and explains every difference.</p>
     <p><strong>Role:</strong> Bank and ledger reconciliation · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/bank-reconciliation-1200.webp" srcset="/assets/coworkers/bank-reconciliation-640.webp 640w, /assets/coworkers/bank-reconciliation-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="An accountant in Jaipur comparing a bank statement with a spreadsheet at night" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">The bank says one number and the books say another. The difference is usually small things: a charge nobody booked, a cheque still in someone's drawer, a gateway settlement that came after its fee. This coworker finds each one and puts a reason beside it.</p>
     <h2 id="example">Example: a first task</h2>
-    <p>Put bank statements for the period (Excel, CSV or PDF), and the bank ledger from the books in <code>Shared/Accounts/Reconciliation</code>, then ask in plain words for a bank reconciliation statement; a matched / unmatched workbook and suggested adjusting entries. Start with one small, real piece of work and check what comes back.</p>
+    <p class="box">“HDFC statement for October and the bank ledger from Tally are in Shared/Accounts/Reconciliation, with the Razorpay settlement report. Make the BRS and tell me the reason for every unmatched line.”</p>
+    <h3>What comes back</h3>
+    <ul>
+        <li>A bank reconciliation statement that ties to the bank closing balance.</li>
+        <li>A workbook of matched and unmatched lines, each unmatched line with its reason.</li>
+        <li>Suggested entries for bank charges, interest and gateway fees.</li>
+      </ul>
+    <h3>A bank reconciliation statement (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Line</th><th>Amount</th></tr></thead><tbody>
+      <tr><td>Balance in books</td><td>₹4,12,300</td></tr>
+      <tr><td>Add: cheque issued, not yet cleared (no. 004512)</td><td>₹25,000</td></tr>
+      <tr><td>Less: cheque deposited, not yet credited</td><td>₹18,000</td></tr>
+      <tr><td>Less: bank charges not booked</td><td>₹590</td></tr>
+      <tr><td>Balance in bank</td><td>₹4,18,710</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Match the Razorpay settlements and show the fee and GST on each.</li>
+        <li>Which UPI credits have no customer name?</li>
+        <li>Give me the entries I must pass for bank charges and interest.</li>
+      </ul>
+    <h3>Good to know</h3>
+    <ul>
+        <li>It matches UTR and cheque numbers first, and only then amount and date.</li>
+        <li>It never posts to your books. You pass the entries after checking them.</li>
+        <li>It does not match one bank line twice, so a repeated amount stays visible.</li>
+      </ul>
     <h2 id="covers">What the AI Bank Reconciliation covers</h2>
     <p>bank reconciliation · BRS · ledger reconciliation · Razorpay settlement reconciliation · UPI reconciliation · party ledger reconciliation · vendor statement reconciliation · suspense clearing</p>
 

@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/sales-invoicing.html" />
   <meta property="og:title" content="AI Sales Invoicing: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Prepares GST-compliant sales invoices, credit notes and e-invoice / e-way bill data from orders. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/sales-invoicing-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/sales-invoicing-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,8 +131,35 @@
     <h1>AI Sales Invoicing</h1>
     <p class="lead">Prepares GST-compliant sales invoices, credit notes and e-invoice / e-way bill data from orders.</p>
     <p><strong>Role:</strong> Raising GST invoices · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/sales-invoicing-1200.webp" srcset="/assets/coworkers/sales-invoicing-640.webp 640w, /assets/coworkers/sales-invoicing-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="A billing clerk in Nagpur printing an invoice while a delivery boy waits" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">The goods are packed and the delivery boy is waiting. One wrong state code and the customer sends the bill back. This coworker checks the GSTIN, the place of supply and the rate first, then makes the invoices in your own series.</p>
     <h2 id="example">Example: a first task</h2>
-    <p>Put orders, delivery challans or a list of what to bill, and the seller's GSTIN, address and invoice series in <code>Shared/Accounts/Invoices</code>, then ask in plain words for invoice and credit-note PDFs; an e-invoice / e-way bill upload file and a sales register for the batch. Start with one small, real piece of work and check what comes back.</p>
+    <p class="box">“Today's orders are in Shared/Accounts/Invoices/orders.xlsx, and the customer master with GSTINs is beside it. Make the invoices in our series from INV/1041 and the sales register.”</p>
+    <h3>What comes back</h3>
+    <ul>
+        <li>Invoice PDFs in your format, numbered in sequence.</li>
+        <li>A register for the batch whose total is equal to the sum of the invoices.</li>
+        <li>A JSON or Excel file for e-invoice or e-way bill upload, where your business needs it.</li>
+      </ul>
+    <h3>A sales register for the batch (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Invoice</th><th>Buyer state</th><th>Taxable</th><th>Tax</th><th>Total</th></tr></thead><tbody>
+      <tr><td>INV/1041</td><td>Maharashtra (27)</td><td>₹20,000</td><td>CGST ₹1,800 + SGST ₹1,800</td><td>₹23,600</td></tr>
+      <tr><td>INV/1042</td><td>Gujarat (24)</td><td>₹15,000</td><td>IGST ₹2,700</td><td>₹17,700</td></tr>
+      <tr><td>INV/1043</td><td>Maharashtra (27)</td><td>₹8,000</td><td>CGST ₹720 + SGST ₹720</td><td>₹9,440</td></tr>
+      <tr><td>Total</td><td></td><td>₹43,000</td><td>₹7,740</td><td>₹50,740</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Make a credit note for two returned boxes on INV/1041.</li>
+        <li>Check today's orders for missing GSTINs before billing.</li>
+        <li>Prepare the e-way bill data for consignments that need it.</li>
+      </ul>
+    <h3>Good to know</h3>
+    <ul>
+        <li>Same state gets CGST and SGST, another state gets IGST; it checks this from the place of supply.</li>
+        <li>Generating an IRN or e-way bill, sending an invoice or cancelling one needs your approval.</li>
+        <li>You or your CA confirm whether e-invoicing applies to you.</li>
+      </ul>
     <h2 id="covers">What the AI Sales Invoicing covers</h2>
     <p>invoice preparation · billing executive · GST tax invoice · e-invoice · IRN · e-way bill · credit note · debit note · proforma invoice · accounts receivable</p>
 

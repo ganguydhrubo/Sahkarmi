@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/payment-reminders.html" />
   <meta property="og:title" content="AI Payment Reminders: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Tracks unpaid invoices by age and drafts friendly reminders. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/payment-reminders-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/payment-reminders-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,8 +131,35 @@
     <h1>AI Payment Reminders</h1>
     <p class="lead">Tracks unpaid invoices by age and drafts friendly reminders.</p>
     <p><strong>Role:</strong> Collections · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/payment-reminders-1200.webp" srcset="/assets/coworkers/payment-reminders-640.webp 640w, /assets/coworkers/payment-reminders-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="An old grain trader in Delhi thinking over his ledger and laptop" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">Asking for your own money is uncomfortable, so it waits. Ninety days later it is a bigger problem. This coworker sorts dues by age, writes a polite line for the new ones and a firmer one for the old ones, and keeps a note of who promised what.</p>
     <h2 id="example">Example: a first task</h2>
-    <p>Put a ledger or outstanding-invoices export in <code>Shared/Accounts/Receivables</code>, then ask in plain words for an ageing report; reminder drafts and a collections tracker. Start with one small, real piece of work and check what comes back.</p>
+    <p class="box">“The outstanding list from Tally is in Shared/Accounts/Receivables. Make the ageing by customer, and draft a reminder for everyone above 30 days. Use the UPI ID in bank-details.txt.”</p>
+    <h3>What comes back</h3>
+    <ul>
+        <li>An ageing report: each customer in 0-30, 31-60, 61-90 and 90+ days, with totals that match the ledger.</li>
+        <li>One reminder per overdue customer with invoice numbers, amounts and your payment details.</li>
+        <li>A collections tracker with promised dates and the next reminder.</li>
+      </ul>
+    <h3>An ageing report (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Customer</th><th>0–30 days</th><th>31–60</th><th>61–90</th><th>90+</th><th>Total</th></tr></thead><tbody>
+      <tr><td>Gupta Stores</td><td>₹18,000</td><td>₹0</td><td>₹0</td><td>₹0</td><td>₹18,000</td></tr>
+      <tr><td>Royal Caterers</td><td>₹12,500</td><td>₹22,000</td><td>₹0</td><td>₹0</td><td>₹34,500</td></tr>
+      <tr><td>S. K. Agencies</td><td>₹0</td><td>₹0</td><td>₹40,000</td><td>₹15,500</td><td>₹55,500</td></tr>
+      <tr><td>Total</td><td>₹30,500</td><td>₹22,000</td><td>₹40,000</td><td>₹15,500</td><td>₹1,08,000</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>Who promised to pay this week and did not?</li>
+        <li>Write the reminder in Hindi, very polite, for Gupta Stores.</li>
+        <li>Every Monday, update the ageing and show me the five biggest dues.</li>
+      </ul>
+    <h3>Good to know</h3>
+    <ul>
+        <li>It copies payment details exactly as you gave them, so check the UPI ID once before the first run.</li>
+        <li>It asks before sending any reminder, and before offering any discount or settlement.</li>
+        <li>It can open WhatsApp Business or your email in Sahkarmi's browser, with your own sign-in.</li>
+      </ul>
     <h2 id="covers">What the AI Payment Reminders covers</h2>
     <p>accounts receivable · collections · overdue invoices · payment follow-up · ageing report</p>
 

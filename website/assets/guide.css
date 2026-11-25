@@ -69,3 +69,12 @@ details { border-bottom: 1px solid var(--line); padding: 10px 0; }
 summary { cursor: pointer; font-weight: 700; color: var(--text); }
 header nav a { white-space: nowrap; }
 @media (max-width: 600px) { header nav { gap: 12px; font-size: 14px; } header nav .nav-wide { display: none; } }
+/* Coworker pages with their own picture, sample and prompts */
+.scene { margin: 24px 0; }
+.scene img { display: block; width: 100%; height: auto; border-radius: 18px; }
+.scene figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
+table.sample { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 14px; }
+table.sample td { font-variant-numeric: tabular-nums; min-width: 92px; }
+table.sample tr:last-child td { border-bottom: 0; }
+.asks { list-style: none; padding: 0; display: grid; gap: 10px; }
+.asks li { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px 16px 16px 4px; padding: 12px 16px; color: var(--text); }

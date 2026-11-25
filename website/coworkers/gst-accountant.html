@@ -19,9 +19,9 @@
   <meta property="og:url" content="https://sahkarmi.site/coworkers/gst-accountant.html" />
   <meta property="og:title" content="AI GST Accountant: Free AI Coworker for Windows | Sahkarmi" />
   <meta property="og:description" content="Prepares GSTR-1/3B figures, checks invoices and reconciles purchases with 2B. Free, open-source AI coworker for Windows." />
-  <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
+  <meta property="og:image" content="https://sahkarmi.site/assets/coworkers/gst-accountant-1200.webp" />
   <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image:height" content="800" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preload" href="/assets/fonts/mukta-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/assets/guide.css" />
@@ -41,7 +41,8 @@
       "about": {
         "@id": "https://sahkarmi.site/#software"
       },
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://sahkarmi.site/assets/coworkers/gst-accountant-1200.webp"
     },
     {
       "@type": "BreadcrumbList",
@@ -130,6 +131,8 @@
     <h1>AI GST Accountant</h1>
     <p class="lead">Prepares GSTR-1/3B figures, checks invoices and reconciles purchases with 2B.</p>
     <p><strong>Role:</strong> GST and bookkeeping · Ready to use with Sahkarmi's built-in tools.</p>
+    <figure class="scene" style="margin:24px 0"><img style="display:block;width:100%;height:auto;border-radius:18px" src="/assets/coworkers/gst-accountant-1200.webp" srcset="/assets/coworkers/gst-accountant-640.webp 640w, /assets/coworkers/gst-accountant-1200.webp 1200w" sizes="(max-width: 900px) 92vw, 860px" width="1200" height="800" alt="A shop accountant in Kanpur checking a paper bill against her laptop" fetchpriority="high" /><figcaption>Picture made with AI</figcaption></figure>
+    <p class="lead">It is the 8th of the month. The supplier bills are in a spike file, the sales are in Tally, and the 2B has three bills you have never seen. Most of the work is not the return itself. It is finding which lines do not agree, and why.</p>
     <h2 id="example">Example: a first task</h2>
     <p class="box">“October 2026 sales and purchase registers are in Shared/Accounts/GST, exported from Tally. The 2B for October is there too. Prepare the GSTR-1 tables and the 3B summary, and list every purchase invoice that does not match 2B.”</p>
     <h3>What comes back</h3>
@@ -138,6 +141,19 @@
         <li>A 3B sheet with outward tax, eligible ITC and net tax payable, every figure traced back to the registers.</li>
         <li>A 2B mismatch sheet in four groups: matched, in books but not in 2B, in 2B but not in books, and value differences, each line with the supplier GSTIN and invoice number.</li>
         <li>A one-page note: tax payable, ITC you can claim now, ITC on hold, and the open questions for you or your CA.</li>
+      </ul>
+    <h3>A 2B mismatch sheet (made-up sample)</h3>
+    <table class="sample"><thead><tr><th>Supplier</th><th>Invoice</th><th>Tax in books</th><th>Tax in 2B</th><th>What it says</th></tr></thead><tbody>
+      <tr><td>Mehta Traders</td><td>MT/418</td><td>₹3,600</td><td>₹3,600</td><td>Matched</td></tr>
+      <tr><td>Shree Paints</td><td>SP-2207</td><td>₹1,980</td><td>Not found</td><td>In books, not in 2B. Ask the supplier</td></tr>
+      <tr><td>Om Hardware</td><td>OH/91</td><td>₹2,700</td><td>₹2,070</td><td>Value differs by ₹630. Check the bill</td></tr>
+      <tr><td>Anand Steel</td><td>AS/1120</td><td>Not found</td><td>₹5,400</td><td>In 2B, not booked. Find the bill</td></tr>
+    </tbody></table>
+    <h3>More you can ask</h3>
+    <ul class="asks">
+        <li>List every sale to another state that was billed with CGST and SGST.</li>
+        <li>Show me ITC on hold from last month that has now come in 2B.</li>
+        <li>Make a short list of suppliers I must call, with invoice numbers.</li>
       </ul>
     <h3>Good to know</h3>
     <ul>
