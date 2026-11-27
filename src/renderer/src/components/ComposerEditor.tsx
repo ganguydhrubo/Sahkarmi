@@ -13,6 +13,9 @@ interface ComposerEditorProps {
   disabled: boolean;
   onValueChange: (value: string) => void;
   onSubmit: () => void;
+  /** A message the owner may want to send next; shown in the empty box, Tab takes it. */
+  suggestion?: string | null;
+  onAcceptSuggestion?: () => void;
   /** Escape with no mention list open (the chat uses it to stop a working coworker). */
   onEscape?: () => void;
   /** A paste longer than LONG_PASTE_CHARS goes here (the chat attaches it as a text file). */
@@ -148,6 +151,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
         return;
       }
     }
+    // Tab in the empty box takes the suggested next message.
+    if (event.key === "Tab" && !event.shiftKey && !mention() && props.suggestion && !props.value) {
+      event.preventDefault();
+      props.onAcceptSuggestion?.();
+      return;
+    }
     if (event.key === "Escape" && mention()) {
       event.preventDefault();
       setMention(null);
@@ -206,7 +215,14 @@ export function ComposerEditor(props: ComposerEditorProps) {
     <div class="composer-editor-root">
       <Show when={!props.value}>
         <span class="composer-editor-placeholder" aria-hidden="true">
-          {props.placeholder}
+          <Show when={props.suggestion} fallback={props.placeholder}>
+            {(text) => (
+              <span class="composer-suggestion">
+                {text()}
+                <kbd class="composer-suggestion-key">Tab</kbd>
+              </span>
+            )}
+          </Show>
         </span>
       </Show>
       {/* biome-ignore lint/a11y/useSemanticElements: contenteditable is required for inline agent chips. */}

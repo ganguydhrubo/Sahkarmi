@@ -5051,6 +5051,17 @@ ${carryOver}`
         changeNote: typeof args.changeNote === "string" ? args.changeNote : undefined,
         author,
       });
+      // A first save is something new learned; an improved version is not announced again.
+      if (skill.version === 1) {
+        this.#emit({
+          type: "learned",
+          botId: senderBotId,
+          source: "skill",
+          id: skill.id,
+          workspaceId: this.#store.list().find((bot) => bot.id === senderBotId)?.workspaceId ?? "",
+          text: skill.name,
+        });
+      }
       return {
         success: true,
         contentItems: [
@@ -5092,6 +5103,16 @@ ${carryOver}`
         authorBotId: senderBotId,
       });
       const updated = saved.createdAt !== saved.updatedAt;
+      if (!updated) {
+        this.#emit({
+          type: "learned",
+          botId: senderBotId,
+          source: "memory",
+          id: saved.id,
+          workspaceId: bot.workspaceId,
+          text: `${saved.key}: ${saved.content}`.replace(/\s+/g, " ").trim().slice(0, 200),
+        });
+      }
       return reply({
         success: true,
         message: `${updated ? "Memory updated" : "Memory saved"} under the key "${saved.key}".`,

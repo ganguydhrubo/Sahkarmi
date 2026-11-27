@@ -182,6 +182,7 @@ export const IPC_CHANNELS = {
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
   homeSideAnswer: "home:side-answer",
+  homeSuggestNext: "home:suggest-next",
   browserTeachStart: "browser:teach-start",
   browserTeachStop: "browser:teach-stop",
   browserTeachCount: "browser:teach-count",
@@ -1976,6 +1977,18 @@ export type AgentEvent =
   | { type: "error"; botId?: string; code: string; message: string }
   /** Something worth a line in the chat that is not a failure. */
   | { type: "notice"; botId: string; code: string; message: string }
+  /**
+   * A coworker really stored something for next time: a new skill or a new team memory. Sent
+   * only for a first save (never for an update), so undoing it cannot lose older work.
+   */
+  | {
+      type: "learned";
+      botId: string;
+      source: "skill" | "memory";
+      id: string;
+      workspaceId: string;
+      text: string;
+    }
   | { type: "knowledge-changed"; bases: KnowledgeBaseSummary[] }
   | { type: "knowledge-progress"; progress: KnowledgeProgress }
   | { type: "knowledge-semantic"; status: KnowledgeSemanticStatus };
@@ -3585,6 +3598,13 @@ export interface HomeDesktopApi {
    * own. Null when the AI is slow, fails or was overtaken by a newer question.
    */
   sideAnswer?: (input: SideQuestionRequest) => Promise<string | null>;
+  /** A short message the owner may want to send next (Tab accepts it). Null when unclear. */
+  suggestNext?: (input: {
+    coworkerName: string;
+    coworkerRole: string;
+    recent: Array<{ from: "owner" | "coworker"; text: string }>;
+    language: string;
+  }) => Promise<string | null>;
 }
 
 export interface SideQuestionRequest {

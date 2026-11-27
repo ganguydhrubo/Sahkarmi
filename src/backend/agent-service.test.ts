@@ -1412,6 +1412,10 @@ describe.sequential("AgentService", () => {
     });
     const { store, mailbox } = stores();
     service = new AgentService(store, mailbox, fakeBrowser());
+    const learned: AgentEvent[] = [];
+    service.on("event", (event: AgentEvent) => {
+      if (event.type === "learned") learned.push(event);
+    });
     await service.initialize();
     await service.sendMessage({ botId: "asha-accounts", text: "Reconcile the bank" });
     await waitFor(async () =>
@@ -1427,6 +1431,16 @@ describe.sequential("AgentService", () => {
     );
     expect(text).toContain("2. Match by amount and date.");
     expect(text).toMatch(/^By: .+$/m);
+    // The owner is told, in that coworker's chat, that something real was stored (with Undo).
+    expect(learned).toEqual([
+      expect.objectContaining({
+        type: "learned",
+        botId: "asha-accounts",
+        source: "skill",
+        id: "bank-reconciliation",
+        text: "Bank reconciliation",
+      }),
+    ]);
   });
 
   it("hands a refused skill back to the coworker instead of showing the owner an error", async () => {

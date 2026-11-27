@@ -327,6 +327,7 @@ const sahkarmiApi: SahkarmiDesktopApi = {
   home: {
     understand: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeUnderstand, input),
     sideAnswer: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeSideAnswer, input),
+    suggestNext: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeSuggestNext, input),
   },
   intelligence: {
     status: (workspaceId) =>

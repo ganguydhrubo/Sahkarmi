@@ -58,6 +58,7 @@ const SEND_KEY_KEY = "sahkarmi:send-key";
 const HOME_READER_KEY = "sahkarmi:home-reader";
 const FINISH_SOUND_KEY = "sahkarmi:finish-sound";
 const KEEP_AWAKE_KEY = "sahkarmi:keep-awake";
+const NEXT_SUGGESTION_KEY = "sahkarmi:next-suggestion";
 
 /** Large was removed (26 Nov 2026): text was cut in many places. A stored "large" opens as normal. */
 export type UiSize = "compact" | "normal";
@@ -127,6 +128,10 @@ const [homeReader, setHomeReaderSignal] = createSignal<HomeReader>(
 const [finishSound, setFinishSoundSignal] = createSignal(readStored(FINISH_SOUND_KEY) !== "off");
 /** Keep the PC from sleeping while Sahkarmi is open, so scheduled work runs. Off by default. */
 const [keepAwake, setKeepAwakeSignal] = createSignal(readStored(KEEP_AWAKE_KEY) === "on");
+/** A suggested next message in the chat box, accepted with Tab. On unless switched off. */
+const [nextSuggestion, setNextSuggestionSignal] = createSignal(
+  readStored(NEXT_SUGGESTION_KEY) !== "off",
+);
 const [sendKey, setSendKeySignal] = createSignal<SendKey>(
   readStored(SEND_KEY_KEY) === "ctrl-enter" ? "ctrl-enter" : "enter",
 );
@@ -155,11 +160,17 @@ export {
   homeReader,
   keepAwake,
   language,
+  nextSuggestion,
   sendKey,
   theme,
   trade,
   uiSize,
 };
+
+export function setNextSuggestion(on: boolean): void {
+  setNextSuggestionSignal(on);
+  writeStored(NEXT_SUGGESTION_KEY, on ? "on" : "off");
+}
 
 export function setFinishSound(on: boolean): void {
   setFinishSoundSignal(on);

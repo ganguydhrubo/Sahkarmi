@@ -595,6 +595,24 @@ export function App() {
       case "prompt":
         setPendingPrompts((current) => ({ ...current, [event.botId]: event }));
         return;
+      case "learned":
+        setUiErrors((current) => ({
+          ...current,
+          [event.botId]: [
+            ...(current[event.botId] ?? []),
+            {
+              id: `learned-${event.source}-${event.id}-${Date.now()}`,
+              author: "bot",
+              body: t(event.source === "skill" ? "learnedSkill" : "learnedMemory", {
+                text: event.text,
+              }),
+              time: formatTime(new Date().toISOString()),
+              status: t("learnedStatus"),
+              learned: { source: event.source, id: event.id, workspaceId: event.workspaceId },
+            },
+          ],
+        }));
+        return;
       case "notice":
         appendUiError(
           event.botId,
@@ -1343,6 +1361,36 @@ export function App() {
     }));
   }
 
+  /** The owner takes back something a coworker stored: it is removed for good. */
+  async function undoLearned(botId: string, messageId: string) {
+    const note = uiErrors()[botId]?.find((item) => item.id === messageId);
+    const learned = note?.learned;
+    if (!learned || learned.undone) return;
+    try {
+      if (learned.source === "skill") {
+        await window.sahkarmi.marketplace.removeLearnedSkill(learned.id);
+      } else {
+        await window.sahkarmi.memory.delete(learned.id, learned.workspaceId);
+      }
+    } catch (error) {
+      appendUiError(botId, error, vocab().ERROR_TITLES.notice ?? "Note");
+      return;
+    }
+    setUiErrors((current) => ({
+      ...current,
+      [botId]: (current[botId] ?? []).map((item) =>
+        item.id === messageId
+          ? {
+              ...item,
+              body: t("learnedUndone"),
+              status: t("learnedUndoneStatus"),
+              learned: { ...learned, undone: true },
+            }
+          : item,
+      ),
+    }));
+  }
+
   /** The coworker started working: its "this message waits" note is no longer true. */
   function clearWaitNotes(botId: string) {
     const notes = uiErrors()[botId];
@@ -1843,6 +1891,10 @@ export function App() {
                     onCreateAgent={() => void createAgent()}
                     onSelectAgent={selectBot}
                     onUpdateBot={updateBot}
+                    onUndoLearned={(messageId) => {
+                      const botId = activeBot()?.id;
+                      if (botId) void undoLearned(botId, messageId);
+                    }}
                     onSendMessage={sendMessage}
                     onScheduleMessage={scheduleMessage}
                     onToggleSchedule={(task) =>

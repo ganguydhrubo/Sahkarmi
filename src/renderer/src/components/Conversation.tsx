@@ -57,7 +57,7 @@ import { featureOn } from "../features";
 import { t } from "../i18n";
 import { markdownToPlainText } from "../markdown";
 import { isSystemNote, routineDesignNote, routineNote, systemNoteText } from "../message-display";
-import { activityStyle, sendKey } from "../preferences";
+import { activityStyle, language, nextSuggestion, sendKey } from "../preferences";
 import { starterPrompts } from "../starter-prompts";
 import { speakingId, speakText, stopSpeaking } from "../voice-store";
 import { ActivityIndicator } from "./ActivityIndicator";
@@ -150,6 +150,8 @@ interface ConversationProps {
   onCreateAgent: () => void;
   onSelectAgent: (botId: string) => void;
   onUpdateBot: (botId: string, updates: Omit<UpdateBotInput, "botId">) => Promise<void>;
+  /** Takes back a skill or memory the coworker stored (the "I learned" line's Undo). */
+  onUndoLearned?: (messageId: string) => void;
   onDeleteBot?: (botId: string) => void;
   onSendMessage: (
     body: string,
@@ -707,6 +709,7 @@ function MessageBody(props: {
   onPreview: (attachment: AttachmentSummary) => void;
   onAttachmentAction: (attachment: AttachmentSummary, action: "open" | "reveal") => void;
   onResend?: (body: string) => void;
+  onUndoLearned?: (messageId: string) => void;
   /** Set only on the latest reply: a tap sends the choice as the owner's answer. */
   onQuickReply?: (choice: string) => void;
 }) {
@@ -832,6 +835,18 @@ function MessageBody(props: {
               onClick={() => props.onResend?.(props.message.body)}
             >
               {t("sendAgain")}
+            </button>
+          </Show>
+          <Show
+            when={props.message.learned && !props.message.learned.undone && props.onUndoLearned}
+          >
+            <button
+              type="button"
+              class="message-resend"
+              title={t("learnedUndoHint")}
+              onClick={() => props.onUndoLearned?.(props.message.id)}
+            >
+              {t("learnedUndo")}
             </button>
           </Show>
         </div>
@@ -1392,6 +1407,56 @@ export function Conversation(props: ConversationProps) {
       })
       .catch(() => undefined);
   });
+  // The suggested next message: once the coworker has answered and the box is empty, a free AI
+  // proposes what the owner may want to send next. One ask per answer; Tab takes it.
+  const [suggestion, setSuggestion] = createSignal<{ forId: string; text: string } | null>(null);
+  let suggestedFor = "";
+  let suggestTimer: ReturnType<typeof setTimeout> | undefined;
+  let suggestToken = 0;
+  const lastAnswer = createMemo(() => {
+    const said = props.messages.filter(
+      (message) => (message.kind === "text" || !message.kind) && message.body.trim(),
+    );
+    const last = said[said.length - 1];
+    return last && last.author === "bot" && !last.streaming ? { last, said } : null;
+  });
+  const shownSuggestion = () => {
+    const current = suggestion();
+    return current && current.forId === lastAnswer()?.last.id && !agentActivity()
+      ? current.text
+      : null;
+  };
+  createEffect(() => {
+    const answer = lastAnswer();
+    const botId = props.bot?.id;
+    clearTimeout(suggestTimer);
+    if (!answer || !botId || agentActivity() || !nextSuggestion()) return;
+    const ask = window.sahkarmi.home?.suggestNext;
+    const key = `${botId}:${answer.last.id}`;
+    if (!ask || suggestedFor === key) return;
+    suggestTimer = setTimeout(() => {
+      // Only for the chat the owner is looking at, with nothing typed yet.
+      if (!document.hasFocus() || currentDraft().text.trim() || props.bot?.id !== botId) return;
+      suggestedFor = key;
+      suggestToken += 1;
+      const token = suggestToken;
+      void ask({
+        coworkerName: props.bot?.name ?? "",
+        coworkerRole: props.bot?.role ?? "",
+        recent: answer.said.slice(-8).map((message) => ({
+          from: message.author === "you" ? ("owner" as const) : ("coworker" as const),
+          text: message.body,
+        })),
+        language: new Intl.DisplayNames(["en"], { type: "language" }).of(language()) ?? "",
+      })
+        .then((text) => {
+          if (token === suggestToken && text) setSuggestion({ forId: answer.last.id, text });
+        })
+        .catch(() => undefined);
+    }, 1_200);
+  });
+  onCleanup(() => clearTimeout(suggestTimer));
+
   /** The owner removes one message from this chat; the coworker's AI is not disturbed. */
   async function removeMessage(messageId: string) {
     const botId = props.bot?.id;
@@ -3139,6 +3204,7 @@ export function Conversation(props: ConversationProps) {
                                 onPreview={(attachment) => void previewAttachment(attachment)}
                                 onAttachmentAction={attachmentAction}
                                 onResend={(body) => void props.onSendMessage(body, [], null)}
+                                onUndoLearned={props.onUndoLearned}
                                 onQuickReply={
                                   message.author === "bot" &&
                                   props.messages[props.messages.length - 1]?.id === message.id
@@ -3451,6 +3517,13 @@ export function Conversation(props: ConversationProps) {
                         : t("messagePlaceholder", { name: props.bot?.name ?? "" })
               }
               ariaLabel={t("messagePlaceholder", { name: props.bot?.name ?? "" })}
+              suggestion={shownSuggestion()}
+              onAcceptSuggestion={() => {
+                const text = shownSuggestion();
+                if (!text) return;
+                updateCurrentDraft({ text });
+                setSuggestion(null);
+              }}
               onValueChange={(text) => updateCurrentDraft({ text })}
               onSubmit={() => void submitMessage()}
               onEscape={() => {

@@ -104,6 +104,14 @@ export const revampEn = {
   tickerFree: "Sahkarmi is free and open for everyone",
   tickerHide: "Hide this strip",
   menuMarkUnread: "Mark as unread",
+  learnedStatus: "Learned for next time",
+  learnedSkill:
+    "I learned how to do this and saved it as a skill: {text}. I will follow it next time.",
+  learnedMemory: "I will remember this: {text}",
+  learnedUndo: "Undo",
+  learnedUndoHint: "Forget this. It is removed for good.",
+  learnedUndone: "Forgotten. I will not use that.",
+  learnedUndoneStatus: "Removed",
   sideAskOpen: "Ask on the side",
   teachStart: "Teach a task",
   teachHint: "Do the job once here; Sahkarmi notes your steps so a coworker can do it next time.",
@@ -268,6 +276,9 @@ export const revampEn = {
     "Free AI: a free AI reads your words before you press Start and shows what it understood. Coworker's AI: nothing is read until you press Start.",
   homeReaderFree: "Free AI, before Start",
   homeReaderCoworker: "Coworker's AI, after Start",
+  nextSuggestionLabel: "Suggest my next message",
+  nextSuggestionHint:
+    "After a coworker answers, a free AI suggests what you may want to send next. It shows in the empty message box; press Tab to use it.",
   homeBigOne: "Use one coworker instead",
   homeStartTeam: "Start with a team",
   teamAutoNote:
@@ -397,6 +408,14 @@ export const revampHi: RevampDictionary = {
   tickerFree: "Sahkarmi सबके लिए मुफ़्त और खुला है",
   tickerHide: "यह पट्टी छिपाएँ",
   menuMarkUnread: "अपठित करें",
+  learnedStatus: "अगली बार के लिए सीखा",
+  learnedSkill:
+    "मैंने यह काम करना सीख लिया और इसे स्किल के रूप में सेव किया: {text}. अगली बार मैं इसी तरह करूँगा.",
+  learnedMemory: "मैं यह याद रखूँगा: {text}",
+  learnedUndo: "वापस लें",
+  learnedUndoHint: "इसे भूल जाओ. यह हमेशा के लिए हट जाता है.",
+  learnedUndone: "भुला दिया. मैं इसका इस्तेमाल नहीं करूँगा.",
+  learnedUndoneStatus: "हटाया गया",
   sideAskOpen: "साथ में पूछें",
   teachStart: "काम सिखाएँ",
   teachHint: "काम यहाँ एक बार करके दिखाएँ; Sahkarmi आपके कदम नोट करता है ताकि अगली बार सहकर्मी कर सके.",
@@ -559,6 +578,9 @@ export const revampHi: RevampDictionary = {
     "मुफ़्त AI: शुरू दबाने से पहले एक मुफ़्त AI आपकी बात पढ़कर बताता है कि उसने क्या समझा। सहकर्मी का AI: शुरू दबाने तक कुछ नहीं पढ़ा जाता।",
   homeReaderFree: "मुफ़्त AI, शुरू से पहले",
   homeReaderCoworker: "सहकर्मी का AI, शुरू के बाद",
+  nextSuggestionLabel: "मेरा अगला संदेश सुझाएँ",
+  nextSuggestionHint:
+    "सहकर्मी के जवाब के बाद एक मुफ़्त AI सुझाता है कि आप आगे क्या भेजना चाहेंगे. यह ख़ाली संदेश बॉक्स में दिखता है; इस्तेमाल करने के लिए Tab दबाएँ.",
   homeBigOne: "एक ही सहकर्मी से करवाएँ",
   homeStartTeam: "टीम के साथ शुरू करें",
   teamAutoNote:
@@ -685,6 +707,13 @@ export const revampBn: RevampDictionary = {
   tickerFree: "Sahkarmi সবার জন্য ফ্রি ও খোলা",
   tickerHide: "এই পট্টি লুকান",
   menuMarkUnread: "অপঠিত করুন",
+  learnedStatus: "পরের বারের জন্য শিখেছি",
+  learnedSkill: "আমি এই কাজটা করতে শিখেছি এবং স্কিল হিসেবে সেভ করেছি: {text}. পরের বার এভাবেই করব.",
+  learnedMemory: "আমি এটা মনে রাখব: {text}",
+  learnedUndo: "ফিরিয়ে নিন",
+  learnedUndoHint: "এটা ভুলে যাও. চিরতরে মুছে যাবে.",
+  learnedUndone: "ভুলে গেছি. এটা আর ব্যবহার করব না.",
+  learnedUndoneStatus: "মুছে ফেলা হয়েছে",
   sideAskOpen: "পাশে জিজ্ঞেস করুন",
   teachStart: "কাজ শেখান",
   teachHint: "কাজটি এখানে একবার করে দেখান; Sahkarmi আপনার ধাপগুলো লিখে রাখে যাতে পরের বার সহকর্মী করতে পারে.",
@@ -845,6 +874,9 @@ export const revampBn: RevampDictionary = {
     "ফ্রি AI: শুরু চাপার আগে একটি ফ্রি AI আপনার কথা পড়ে জানায় সে কী বুঝেছে। সহকর্মীর AI: শুরু না চাপা পর্যন্ত কিছু পড়া হয় না।",
   homeReaderFree: "ফ্রি AI, শুরুর আগে",
   homeReaderCoworker: "সহকর্মীর AI, শুরুর পরে",
+  nextSuggestionLabel: "আমার পরের বার্তা সাজেস্ট করুন",
+  nextSuggestionHint:
+    "সহকর্মী উত্তর দেওয়ার পর একটি ফ্রি AI সাজেস্ট করে আপনি এরপর কী পাঠাতে চাইতে পারেন. এটি খালি বার্তা বক্সে দেখায়; ব্যবহার করতে Tab চাপুন.",
   homeBigOne: "একজন সহকর্মীকে দিয়েই করান",
   homeStartTeam: "টিম নিয়ে শুরু করুন",
   teamAutoNote:
