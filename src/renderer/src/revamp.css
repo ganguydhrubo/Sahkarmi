@@ -2694,3 +2694,39 @@
     animation: none;
   }
 }
+
+/* Five links in the rail now (Support, Star, Discord, Telegram, Website): a little smaller and
+   closer, and on a short window the words go so the icons always fit. */
+.rail-support {
+  gap: 3px;
+  padding: 4px 0;
+}
+
+.rail-support .support-3d,
+.rail-support .support-3d svg {
+  width: 34px;
+  height: 34px;
+}
+
+.rail-support-link {
+  gap: 0;
+  font-size: 10.5px;
+}
+
+@media (max-height: 860px) {
+  .rail-support-link > span:last-child {
+    display: none;
+  }
+
+  .rail-support {
+    gap: 5px;
+  }
+}
+
+@media (max-height: 700px) {
+  .rail-support .support-3d,
+  .rail-support .support-3d svg {
+    width: 28px;
+    height: 28px;
+  }
+}

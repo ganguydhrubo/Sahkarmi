@@ -1768,6 +1768,16 @@ function SimpleNavigation(props: NavigationProps) {
               url: "https://github.com/ganguydhrubo/Sahkarmi",
             },
             {
+              kind: "discord" as const,
+              label: "railDiscord" as const,
+              url: "https://discord.com/invite/unk83wqPUD",
+            },
+            {
+              kind: "telegram" as const,
+              label: "railTelegram" as const,
+              url: "https://t.me/dhruboG",
+            },
+            {
               kind: "website" as const,
               label: "railWebsite" as const,
               url: "https://sahkarmi.site",
