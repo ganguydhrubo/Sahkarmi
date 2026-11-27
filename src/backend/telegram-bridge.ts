@@ -75,6 +75,10 @@ export interface TelegramAgent {
   submitSecureInput?(id: string, value: string): Promise<unknown>;
   dismissSecureInput?(id: string): Promise<unknown>;
   takeOverSecureInput?(id: string): unknown;
+  /** The owner's routines, so one can be started from the phone with /run. */
+  listRoutines?(): Array<{ id: string; name: string; enabled: boolean }>;
+  /** Starts a routine now, exactly as "Run now" in the app does. Rejects with the reason. */
+  runRoutine?(id: string): Promise<unknown>;
 }
 
 export interface TelegramBridgeOptions {
@@ -160,6 +164,10 @@ const HELP = [
   "/coworkers - pick the coworker to talk to",
   "/use <name or number> - talk to another coworker",
   "/ceo - talk to the CEO of your workspace",
+  "",
+  "Routines:",
+  "/routines - your routines",
+  "/run <name> - start a routine now",
   "",
   "Approvals, when you are away from your computer:",
   "/pending - approvals waiting for you",
@@ -698,6 +706,17 @@ export class TelegramBridge {
       );
       return;
     }
+    const routineCommand = text.match(/^\/(run|routines)(?:@\w+)?(?:\s+(.*))?$/i);
+    if (routineCommand) {
+      this.#adoptPrivateChatOwner(chat.type, chat.id, from?.id);
+      await this.#handleRoutineCommand(
+        chat.id,
+        from,
+        (routineCommand[1] as string).toLowerCase() === "run" ? "run" : "list",
+        routineCommand[2]?.trim() ?? "",
+      );
+      return;
+    }
     if (text.startsWith("/")) {
       await this.#send(chat.id, HELP);
       return;
@@ -734,6 +753,63 @@ export class TelegramBridge {
    * are all the existing ones. Nothing here can approve something the policy never asked about,
    * and there is deliberately no command that changes policy.
    */
+  /**
+   * /routines lists the owner's routines; /run <name> starts one now, as "Run now" in the app
+   * does. Only the owner's own Telegram user may do it, the same check as for approvals.
+   */
+  async #handleRoutineCommand(
+    chatId: number,
+    from: { id: number; username?: string; is_bot?: boolean } | undefined,
+    action: "run" | "list",
+    wanted: string,
+  ): Promise<void> {
+    const ownerId = this.#ownerUserId();
+    if (ownerId == null || from?.id !== ownerId || from.is_bot === true) {
+      this.#log("warn", "Telegram routine command refused: not the owner");
+      await this.#send(chatId, "Not allowed.");
+      return;
+    }
+    if (!this.#agent.listRoutines || !this.#agent.runRoutine) {
+      await this.#send(chatId, "Routines are not available here.");
+      return;
+    }
+    const routines = this.#agent.listRoutines().filter((routine) => routine.enabled);
+    if (routines.length === 0) {
+      await this.#send(
+        chatId,
+        "You have no routines yet. Make one in Sahkarmi under More > Routines.",
+      );
+      return;
+    }
+    const list = routines.map((routine) => `- ${routine.name}`).join("\n");
+    if (action === "list" || !wanted) {
+      await this.#send(chatId, `Your routines:\n${list}\n\nStart one with /run <name>.`);
+      return;
+    }
+    const match = matchRoutine(routines, wanted);
+    if (match === null) {
+      await this.#send(chatId, `No routine called "${wanted}".\n\nYour routines:\n${list}`);
+      return;
+    }
+    if (Array.isArray(match)) {
+      const names = match.map((routine) => `- ${routine.name}`).join("\n");
+      await this.#send(
+        chatId,
+        `More than one routine starts with "${wanted}":\n${names}\n\nSend the full name.`,
+      );
+      return;
+    }
+    try {
+      await this.#agent.runRoutine(match.id);
+      await this.#send(chatId, `Started: ${match.name}`);
+    } catch (error) {
+      await this.#send(
+        chatId,
+        `Could not start "${match.name}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   async #handleApprovalCommand(
     chatId: number,
     from: { id: number; username?: string; is_bot?: boolean } | undefined,
@@ -928,7 +1004,7 @@ export class TelegramBridge {
     // has a space in it: codes, IDs and passwords have none, chat almost always does, and a
     // sentence must never be typed into a sign-in page.
     if (replyTo !== undefined && !byReply && !command) return false;
-    if (!byReply && !command && /s/.test(text)) return false;
+    if (!byReply && !command && /\s/.test(text)) return false;
     const target = byReply ?? (open.length === 1 ? open[0] : undefined);
     if (!command) await this.#deleteOwnerMessage(chatId, message.message_id);
     if (!target) {
@@ -1460,4 +1536,23 @@ export class TelegramBridge {
     this.#onStatus?.(status);
     return status;
   }
+}
+
+/**
+ * The routine the owner means: the exact name first (any letter case), else the only routine
+ * whose name starts with the words. Several starting the same way are returned as a list, so
+ * nothing is started by a guess; null when nothing fits.
+ */
+export function matchRoutine<T extends { name: string }>(
+  routines: T[],
+  wanted: string,
+): T | T[] | null {
+  const words = wanted.trim().toLowerCase();
+  if (!words) return null;
+  const exact = routines.filter((routine) => routine.name.trim().toLowerCase() === words);
+  if (exact.length === 1) return exact[0] as T;
+  if (exact.length > 1) return exact;
+  const starts = routines.filter((routine) => routine.name.trim().toLowerCase().startsWith(words));
+  if (starts.length === 1) return starts[0] as T;
+  return starts.length > 1 ? starts : null;
 }

@@ -12,6 +12,7 @@ import type {
 import { ApprovalStore } from "./approval-store";
 import { SecretCodec } from "./secret-store";
 import {
+  matchRoutine,
   PAIRING_COOLDOWN_MS,
   PAIRING_MAX_ATTEMPTS,
   type TelegramAgent,
@@ -459,6 +460,60 @@ describe("TelegramBridge", () => {
     expect(telegram.sent.at(-1)?.text).not.toContain("Thinking");
   });
 
+  it("lists routines and starts one from the phone, without guessing between two names", async () => {
+    const started: string[] = [];
+    const { telegram } = await paired({
+      agent: {
+        listRoutines: () => [
+          { id: "r1", name: "Morning report", enabled: true },
+          { id: "r2", name: "Month end", enabled: true },
+          { id: "r3", name: "Old routine", enabled: false },
+        ],
+        runRoutine: async (id: string) => {
+          if (id === "r2") throw new Error("This routine is already running.");
+          started.push(id);
+        },
+      },
+    });
+    telegram.say(OWNER, "/routines");
+    await until(() => telegram.sent.at(-1)?.text.startsWith("Your routines:") === true);
+    expect(telegram.sent.at(-1)?.text).toContain("- Morning report");
+    // A switched-off routine is not offered.
+    expect(telegram.sent.at(-1)?.text).not.toContain("Old routine");
+
+    telegram.say(OWNER, "/run morning");
+    await until(() => telegram.sent.at(-1)?.text === "Started: Morning report");
+    expect(started).toEqual(["r1"]);
+
+    // "mo" fits two routines: nothing starts, the owner is asked for the full name.
+    telegram.say(OWNER, "/run mo");
+    await until(() => telegram.sent.at(-1)?.text.startsWith("More than one routine") === true);
+    expect(started).toEqual(["r1"]);
+
+    telegram.say(OWNER, "/run payroll");
+    await until(
+      () => telegram.sent.at(-1)?.text.startsWith('No routine called "payroll"') === true,
+    );
+
+    // The app's own reason comes back when a routine cannot start.
+    telegram.say(OWNER, "/run Month end");
+    await until(
+      () =>
+        telegram.sent.at(-1)?.text ===
+        'Could not start "Month end": This routine is already running.',
+    );
+    expect(started).toEqual(["r1"]);
+  });
+
+  it("matches a routine by exact name first, then by the only name that starts so", () => {
+    const routines = [{ name: "Report" }, { name: "Report weekly" }, { name: "Stock check" }];
+    expect(matchRoutine(routines, "report")).toEqual({ name: "Report" });
+    expect(matchRoutine(routines, "stock")).toEqual({ name: "Stock check" });
+    expect(matchRoutine(routines, "rep")).toHaveLength(2);
+    expect(matchRoutine(routines, "check")).toBeNull();
+    expect(matchRoutine(routines, "  ")).toBeNull();
+  });
+
   it("tells the owner about new approvals once", async () => {
     const { telegram, coworkers, status } = await connected();
     telegram.say(OWNER, `/start ${status.pairingCode}`);
@@ -892,6 +947,19 @@ describe("Telegram: codes, login IDs and passwords a coworker asks for", () => {
     expect(telegram.sent.some((item) => item.text.includes("482913"))).toBe(false);
     // The request message gives way once it is answered.
     await until(() => telegram.edits.some((edit) => edit.message_id === messageId));
+  });
+
+  it("never types an ordinary sentence into the page, whatever letters it has", async () => {
+    const { telegram, cards, coworkers } = await pairedWithCards();
+    const before = telegram.sent.length;
+    cards.ask("otp");
+    await askedFor(telegram, "OTP", before);
+    // Not a reply, and it has spaces: it is chat, even though it has no letter "s" in it.
+    const chat = telegram.say(OWNER, "ok do it now");
+    await until(() => coworkers.asked.length === 1);
+    expect(coworkers.asked[0]?.text).toBe("ok do it now");
+    expect(cards.submitted).toEqual([]);
+    expect(telegram.deleted).not.toContain(chat);
   });
 
   it("answers a login ID sent without replying when it is the only request open", async () => {

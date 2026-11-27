@@ -2959,6 +2959,14 @@ if (!hasSingleInstanceLock) {
           listBots: () => service.listBots(),
           sendMessage: (input) => service.sendMessage(input),
           readConversation: (botId) => service.readConversation(botId),
+          // /routines and /run from the phone: the same list and the same "Run now" as the app.
+          listRoutines: () =>
+            routines.state().routines.map((routine) => ({
+              id: routine.id,
+              name: routine.name,
+              enabled: routine.enabled,
+            })),
+          runRoutine: (id) => routines.runNow(id),
           subscribe: (listener) => {
             service.on("event", listener);
             return () => service.off("event", listener);
