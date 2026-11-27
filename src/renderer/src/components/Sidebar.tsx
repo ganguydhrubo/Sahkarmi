@@ -140,6 +140,10 @@ interface SidebarProps {
   onSelectBot: (botId: string) => void;
   onCreateBot: () => void;
   onEditBot: (botId: string) => void;
+  /** Counts the chat as unread again, so the owner comes back to it. */
+  onMarkUnread?: (botId: string) => void;
+  /** Muted: no notification and no finished sound from this coworker. */
+  onSetBotMuted?: (botId: string, muted: boolean) => void;
   onDeleteBot: (botId: string) => Promise<void>;
   onSelectView: (view: CenterView) => void;
   onSelectWorkspace: (workspaceId: string) => void;
@@ -1310,6 +1314,38 @@ export function Sidebar(props: SidebarProps) {
                   <EditIcon />
                   <span>{t("editCoworker")}</span>
                 </button>
+                <Show when={props.onMarkUnread}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const botId = menu().botId;
+                      setContextMenu(null);
+                      props.onMarkUnread?.(botId);
+                    }}
+                  >
+                    <span>{t("menuMarkUnread")}</span>
+                  </button>
+                </Show>
+                <Show when={props.onSetBotMuted}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const botId = menu().botId;
+                      const muted =
+                        props.bots.find((bot) => bot.id === botId)?.notifications === false;
+                      setContextMenu(null);
+                      props.onSetBotMuted?.(botId, !muted);
+                    }}
+                  >
+                    <span>
+                      {props.bots.find((bot) => bot.id === menu().botId)?.notifications === false
+                        ? t("menuUnmute")
+                        : t("menuMute")}
+                    </span>
+                  </button>
+                </Show>
                 <Show when={props.onSetBotFolder && allFolders().length > 0}>
                   <button type="button" role="menuitem" onClick={() => setBotMenuMode("move")}>
                     <span>{t("moveToFolder")}…</span>

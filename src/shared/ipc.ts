@@ -178,6 +178,7 @@ export const IPC_CHANNELS = {
   intelligenceOutcomes: "intelligence:outcomes",
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
+  powerKeepAwake: "power:keep-awake",
   intelligencePredictions: "intelligence:predictions",
   intelligenceAnalyzeRun: "intelligence:analyze-run",
   intelligenceDecisions: "intelligence:decisions",
@@ -2464,6 +2465,8 @@ export interface SahkarmiDesktopApi {
   setTheme?: (theme: "system" | "light" | "dark") => Promise<void>;
   /** The owner's UI size, as a real Electron zoom (CSS zoom broke menus and panels). */
   setUiZoom?: (factor: number) => void;
+  /** Stops Windows from sleeping while the app is open (the screen may still switch off). */
+  setKeepAwake?: (on: boolean) => void;
   getAppInfo: () => Promise<AppInfo>;
   getSetupState: () => Promise<AppSetupState>;
   saveSetup: (input: SaveSetupInput) => Promise<AppSetupState>;

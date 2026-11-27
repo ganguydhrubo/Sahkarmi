@@ -56,6 +56,8 @@ const LANGUAGE_KEY = "sahkarmi:language";
 const UI_SIZE_KEY = "sahkarmi:ui-size";
 const SEND_KEY_KEY = "sahkarmi:send-key";
 const HOME_READER_KEY = "sahkarmi:home-reader";
+const FINISH_SOUND_KEY = "sahkarmi:finish-sound";
+const KEEP_AWAKE_KEY = "sahkarmi:keep-awake";
 
 /** Large was removed (26 Nov 2026): text was cut in many places. A stored "large" opens as normal. */
 export type UiSize = "compact" | "normal";
@@ -121,6 +123,10 @@ const [uiSize, setUiSizeSignal] = createSignal<UiSize>(parseUiSize(readStored(UI
 const [homeReader, setHomeReaderSignal] = createSignal<HomeReader>(
   readStored(HOME_READER_KEY) === "coworker" ? "coworker" : "free",
 );
+/** A soft chime when a coworker finishes. On unless the owner switched it off. */
+const [finishSound, setFinishSoundSignal] = createSignal(readStored(FINISH_SOUND_KEY) !== "off");
+/** Keep the PC from sleeping while Sahkarmi is open, so scheduled work runs. Off by default. */
+const [keepAwake, setKeepAwakeSignal] = createSignal(readStored(KEEP_AWAKE_KEY) === "on");
 const [sendKey, setSendKeySignal] = createSignal<SendKey>(
   readStored(SEND_KEY_KEY) === "ctrl-enter" ? "ctrl-enter" : "enter",
 );
@@ -142,7 +148,29 @@ export function setTrade(next: TradeId): void {
   writeStored(TRADE_KEY, next);
 }
 
-export { activityStyle, activityStyleChoice, homeReader, language, sendKey, theme, trade, uiSize };
+export {
+  activityStyle,
+  activityStyleChoice,
+  finishSound,
+  homeReader,
+  keepAwake,
+  language,
+  sendKey,
+  theme,
+  trade,
+  uiSize,
+};
+
+export function setFinishSound(on: boolean): void {
+  setFinishSoundSignal(on);
+  writeStored(FINISH_SOUND_KEY, on ? "on" : "off");
+}
+
+export function setKeepAwake(on: boolean): void {
+  setKeepAwakeSignal(on);
+  writeStored(KEEP_AWAKE_KEY, on ? "on" : "off");
+  window.sahkarmi?.setKeepAwake?.(on);
+}
 
 export function setHomeReader(next: HomeReader): void {
   setHomeReaderSignal(next);
@@ -216,6 +244,7 @@ function applyTheme(next: ThemePreference): void {
 }
 
 export function applyStoredPreferences(): void {
+  if (keepAwake()) window.sahkarmi?.setKeepAwake?.(true);
   applyTheme(theme());
   applyUiSize(uiSize());
   void window.sahkarmi?.setTheme?.(theme())?.catch(() => undefined);

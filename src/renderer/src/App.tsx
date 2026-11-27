@@ -67,6 +67,7 @@ import { WelcomeCard } from "./components/WelcomeCard";
 import { WhatsNewDialog } from "./components/WhatsNewDialog";
 import { accentForAvatarColor, accentForBot, type BotMessage, type BotProfile } from "./data";
 import { featureOn, features, loadFeatures } from "./features";
+import { playFinishSound } from "./finish-sound";
 import { t } from "./i18n";
 import {
   dismissWelcome,
@@ -75,6 +76,7 @@ import {
   welcomeEligible,
 } from "./onboarding";
 import { planStatusLine } from "./plan-status";
+import { finishSound } from "./preferences";
 import { rememberSettingsSection } from "./settings-section";
 import { teamWork } from "./team-work";
 import { loadVoiceState, speakText, voiceState } from "./voice-store";
@@ -582,6 +584,10 @@ export function App() {
         }));
         setActiveTurns((current) => ({ ...current, [event.botId]: null }));
         if (event.status === "completed") {
+          // A chime, unless this coworker is muted or the owner is watching this very chat.
+          const finished = botList().find((bot) => bot.id === event.botId);
+          const watching = activeBotId() === event.botId && document.hasFocus();
+          if (finishSound() && finished?.notifications !== false && !watching) playFinishSound();
           markReplyCompleted(event.botId);
           readReplyAloud(event.botId);
         }
@@ -906,6 +912,11 @@ export function App() {
     if (timer) clearTimeout(timer);
     recentReplyTimers.delete(botId);
     setRecentReplies((current) => (current[botId] ? { ...current, [botId]: false } : current));
+  }
+
+  /** The owner wants to come back to this chat: it counts as unread until it is opened again. */
+  function markUnread(botId: string) {
+    setUnreadReplies((current) => ({ ...current, [botId]: Math.max(1, current[botId] ?? 0) }));
   }
 
   function clearReplyIndicators(botId: string) {
@@ -1552,6 +1563,8 @@ export function App() {
                 onSelectBot={selectBot}
                 onCreateBot={() => void createAgent()}
                 onEditBot={editBot}
+                onMarkUnread={markUnread}
+                onSetBotMuted={(botId, muted) => void updateBot(botId, { notifications: !muted })}
                 onDeleteBot={deleteBot}
                 onSelectView={(next) => {
                   setAgentPickerOpen(false);

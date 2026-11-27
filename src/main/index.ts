@@ -15,6 +15,7 @@ import {
   nativeTheme,
   type OpenDialogOptions,
   powerMonitor,
+  powerSaveBlocker,
   protocol,
   type SaveDialogOptions,
   safeStorage,
@@ -3497,6 +3498,18 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       role: typeof input.role === "string" ? input.role : null,
       defaultBotId: typeof input.defaultBotId === "string" ? input.defaultBotId : null,
     });
+  });
+  // Keep awake: the owner asked that the PC does not sleep while Sahkarmi is open, so
+  // scheduled jobs run. Only sleep is held off; the screen may still switch off.
+  let keepAwakeId: number | null = null;
+  handleTrusted(IPC_CHANNELS.powerKeepAwake, (on: unknown) => {
+    if (on === true && keepAwakeId === null) {
+      keepAwakeId = powerSaveBlocker.start("prevent-app-suspension");
+    } else if (on !== true && keepAwakeId !== null) {
+      if (powerSaveBlocker.isStarted(keepAwakeId)) powerSaveBlocker.stop(keepAwakeId);
+      keepAwakeId = null;
+    }
+    return keepAwakeId !== null;
   });
   // Home's AI preview. One read at a time: newer words stop the older read.
   let homeRead: AbortController | null = null;

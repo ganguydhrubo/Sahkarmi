@@ -12,13 +12,17 @@ import { LANGUAGE_OPTIONS, type MessageKey, t } from "../i18n";
 import {
   type ActivityStyleChoice,
   activityStyleChoice,
+  finishSound,
   type HomeReader,
   homeReader,
+  keepAwake,
   language,
   type SendKey,
   sendKey,
   setActivityStyle,
+  setFinishSound,
   setHomeReader,
+  setKeepAwake,
   setLanguage,
   setSendKey,
   setUiSize,
@@ -146,6 +150,10 @@ interface SettingsViewProps {
 const UI_SIZES: Array<{ value: UiSize; label: MessageKey }> = [
   { value: "compact", label: "uiSizeCompact" },
   { value: "normal", label: "uiSizeNormal" },
+];
+const ON_OFF: Array<{ value: "on" | "off"; label: MessageKey }> = [
+  { value: "on", label: "switchOn" },
+  { value: "off", label: "switchOff" },
 ];
 const HOME_READERS: Array<{ value: HomeReader; label: MessageKey }> = [
   { value: "free", label: "homeReaderFree" },
@@ -377,6 +385,31 @@ export function SettingsView(props: SettingsViewProps) {
                   "homeReaderLabel",
                   "homeReaderHint",
                   segmented("homeReaderLabel", HOME_READERS, homeReader, setHomeReader),
+                  true,
+                )}
+              </section>
+              <section class="settings-card">
+                <h2>{t("comfortCard")}</h2>
+                {row(
+                  "finishSoundLabel",
+                  "finishSoundHint",
+                  segmented(
+                    "finishSoundLabel",
+                    ON_OFF,
+                    () => (finishSound() ? "on" : "off"),
+                    (value) => setFinishSound(value === "on"),
+                  ),
+                  true,
+                )}
+                {row(
+                  "keepAwakeLabel",
+                  "keepAwakeHint",
+                  segmented(
+                    "keepAwakeLabel",
+                    ON_OFF,
+                    () => (keepAwake() ? "on" : "off"),
+                    (value) => setKeepAwake(value === "on"),
+                  ),
                   true,
                 )}
               </section>

@@ -66,6 +66,9 @@ window.addEventListener("paste", (event) => {
 
 const sahkarmiApi: SahkarmiDesktopApi = {
   setTheme: (theme) => ipcRenderer.invoke(IPC_CHANNELS.setTheme, theme),
+  setKeepAwake: (on) => {
+    void ipcRenderer.invoke(IPC_CHANNELS.powerKeepAwake, on === true).catch(() => undefined);
+  },
   setUiZoom: (factor) => {
     if (Number.isFinite(factor) && factor >= 0.5 && factor <= 2) webFrame.setZoomFactor(factor);
   },
