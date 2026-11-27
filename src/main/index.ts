@@ -1018,6 +1018,10 @@ function registerIpcHandlers(
   });
   handleTrusted(IPC_CHANNELS.browserGetTakeover, () => service.getTakeover());
   handleTrusted(IPC_CHANNELS.browserTakeOver, () => service.takeOverBrowser());
+  // Teach a task: the owner's own steps in the browser, noted only while they ask for it.
+  handleTrusted(IPC_CHANNELS.browserTeachStart, () => browser.startTeaching?.() ?? false);
+  handleTrusted(IPC_CHANNELS.browserTeachStop, () => browser.stopTeaching?.() ?? []);
+  handleTrusted(IPC_CHANNELS.browserTeachCount, () => browser.teachingCount?.() ?? null);
   handleTrusted(IPC_CHANNELS.browserHandBack, (note: unknown) =>
     service.handBackBrowser(typeof note === "string" && note.trim() ? note : null),
   );

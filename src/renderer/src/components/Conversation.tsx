@@ -87,6 +87,7 @@ import { SidebarToggleIcon } from "./Sidebar";
 import { SideQuestion } from "./SideQuestion";
 import { StatusDot, statusLabel } from "./StatusDot";
 import { TaskQueueStrip } from "./TaskQueueStrip";
+import { TeachPanel } from "./TeachPanel";
 import { Tip } from "./Tip";
 import { ToolCallCard, type ToolCallSummary, ToolGroupCard } from "./ToolCallCard";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -4002,6 +4003,9 @@ export function Conversation(props: ConversationProps) {
                   aria-label={t("handBackNote")}
                   onInput={(event) => setHandBackNote(event.currentTarget.value)}
                 />
+                <Show when={window.sahkarmi.browser.teachStart}>
+                  <TeachPanel />
+                </Show>
               </Show>
             </div>
           </Show>

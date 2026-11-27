@@ -142,6 +142,9 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     getTakeover: () => ipcRenderer.invoke(IPC_CHANNELS.browserGetTakeover),
     takeOver: () => ipcRenderer.invoke(IPC_CHANNELS.browserTakeOver),
     handBack: (note) => ipcRenderer.invoke(IPC_CHANNELS.browserHandBack, note ?? null),
+    teachStart: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachStart),
+    teachStop: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachStop),
+    teachCount: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachCount),
     declineTakeover: (note) =>
       ipcRenderer.invoke(IPC_CHANNELS.browserDeclineTakeover, note ?? null),
     preview: (tabId) => ipcRenderer.invoke(IPC_CHANNELS.browserPreview, tabId),

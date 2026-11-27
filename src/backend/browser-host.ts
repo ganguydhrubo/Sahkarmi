@@ -23,6 +23,7 @@ import type {
   BrowserVisibilityInput,
   SocialPlatform,
 } from "../shared/ipc";
+import { addTeachStep, plainAddress, type TeachStep } from "../shared/teach";
 import { ACT_DESCRIPTION, SCREENSHOT_DESCRIPTION, SNAPSHOT_DESCRIPTION } from "./browser-act";
 import {
   ActionMemory,
@@ -52,6 +53,7 @@ import {
   siteOfHost,
   siteOfUrl,
 } from "./publishing-accounts";
+import { readTeachLine, teachRecorderScript } from "./teach-recorder";
 
 export interface BrowserHostEvents {
   changed: [tabs: BrowserTab[], activeTabId: string | null];
@@ -525,6 +527,11 @@ export class BrowserHost implements CoworkerBrowser {
   #activeTabId: string | null = null;
   /** The owner has taken over: coworkers' new tabs open behind the tab the owner is using. */
   #ownerHolding = false;
+  /**
+   * "Teach a task": while set, the owner's clicks and typing in their own pages are noted
+   * as steps. Kept in memory only, never on disk; gone when the browser is handed back.
+   */
+  #teaching: { nonce: string; steps: TeachStep[] } | null = null;
   /** Pages the owner used during this takeover (plain pages until it is handed back). */
   readonly #ownerViews = new Set<WebContentsView>();
   #visible = false;
@@ -794,6 +801,8 @@ export class BrowserHost implements CoworkerBrowser {
       if (this.#attachedView) this.#giveToOwner(this.#attachedView);
       return;
     }
+    // A recording nobody saved goes with the takeover.
+    this.#teaching = null;
     // Handed back: coworkers get their "always focused" page again.
     for (const view of this.#ownerViews) {
       if (!view.webContents.isDestroyed()) keepPageFocused(view.webContents);
@@ -812,6 +821,51 @@ export class BrowserHost implements CoworkerBrowser {
     this.#ownerViews.add(view);
     releasePageFocus(contents);
     contents.focus();
+    this.#watchForTeaching(contents);
+  }
+
+  /** Starts noting the owner's steps. False when the owner has not taken over. */
+  startTeaching(): boolean {
+    if (!this.#ownerHolding) return false;
+    this.#teaching = { nonce: `sahkarmi-teach-${randomUUID()}:`, steps: [] };
+    const shown = this.#attachedView?.webContents;
+    if (shown && !shown.isDestroyed()) {
+      const address = plainAddress(shown.getURL());
+      if (address) this.#teaching.steps.push({ kind: "open", url: address });
+    }
+    for (const view of this.#ownerViews) this.#watchForTeaching(view.webContents);
+    return true;
+  }
+
+  /** Ends the recording and hands over what was noted. */
+  stopTeaching(): TeachStep[] {
+    const steps = this.#teaching?.steps ?? [];
+    this.#teaching = null;
+    return steps;
+  }
+
+  /** How many steps are noted so far; null when nothing is being taught. */
+  teachingCount(): number | null {
+    return this.#teaching ? this.#teaching.steps.length : null;
+  }
+
+  /** Puts the step watcher into one of the owner's pages (a no-op unless teaching). */
+  #watchForTeaching(contents: WebContents): void {
+    const teaching = this.#teaching;
+    if (!teaching || contents.isDestroyed() || !this.#ownerUses(contents)) return;
+    void contents
+      .executeJavaScriptInIsolatedWorld(TEACH_WORLD_ID, [
+        { code: teachRecorderScript(teaching.nonce) },
+      ])
+      .catch(() => undefined);
+  }
+
+  /** A console line from a page: kept as a step only while teaching, from the owner's page. */
+  #noteTeachLine(contents: WebContents, message: unknown): void {
+    const teaching = this.#teaching;
+    if (!teaching || !this.#ownerUses(contents)) return;
+    const step = readTeachLine(message, teaching.nonce);
+    if (step) addTeachStep(teaching.steps, step);
   }
 
   /** True while the owner has taken over and this page is one they are using. */
@@ -923,6 +977,15 @@ export class BrowserHost implements CoworkerBrowser {
     // Only once a page is loaded: switched on before the first load, the setting never applies.
     view.webContents.on("dom-ready", () => {
       if (!this.#ownerUses(view.webContents)) keepPageFocused(view.webContents);
+      // A new page has no watcher yet: put it back while the owner is teaching.
+      else this.#watchForTeaching(view.webContents);
+    });
+    view.webContents.on("console-message", (event: unknown, _level?: unknown, text?: unknown) => {
+      const line =
+        typeof (event as { message?: unknown } | null)?.message === "string"
+          ? (event as { message: string }).message
+          : text;
+      this.#noteTeachLine(view.webContents, line);
     });
     return view;
   }
@@ -1717,6 +1780,11 @@ export class BrowserHost implements CoworkerBrowser {
     });
     contents.on("did-navigate", (_event, url, httpResponseCode) => {
       if (!current()) return;
+      // Teaching: a page the owner moved to is a step of its own.
+      if (this.#teaching && this.#ownerUses(contents)) {
+        const address = plainAddress(url);
+        if (address) addTeachStep(this.#teaching.steps, { kind: "open", url: address });
+      }
       // A full load reads the site afresh.
       tab.stale = false;
       tab.ownerTyped = false;
@@ -2127,6 +2195,10 @@ export interface CoworkerBrowser extends BrowserToolTarget {
   activate(tabId: string): Promise<void>;
   /** The owner's Back, Forward and Reload buttons. */
   navigate?(tabId: string, action: BrowserNavigation): Promise<void>;
+  /** "Teach a task": note the owner's steps during a takeover (built-in browser only). */
+  startTeaching?(): boolean;
+  stopTeaching?(): TeachStep[];
+  teachingCount?(): number | null;
   /** The owner typed an address: load it in this tab, keeping its Back history. Null: no such tab. */
   openInTab?(tabId: string, url: string): Promise<BrowserTab | null>;
   setVisible(input: BrowserVisibilityInput): Promise<void>;
@@ -3227,6 +3299,9 @@ function releasePageFocus(contents: WebContents): void {
     // DevTools is open on this page: nothing of ours to remove.
   }
 }
+
+/** The page world the teaching watcher runs in; page scripts cannot reach it. */
+const TEACH_WORLD_ID = 4711;
 
 async function withDevToolsDebugger<T>(
   contents: WebContents,

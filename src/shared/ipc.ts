@@ -1,5 +1,6 @@
 import type { IntelligenceDesktopApi } from "./intelligence";
 import type { ResourceAccess, ResourceKind } from "./resource-access";
+import type { TeachStep } from "./teach";
 export const IPC_CHANNELS = {
   setTheme: "app:set-theme",
   getAppInfo: "app:get-info",
@@ -181,6 +182,9 @@ export const IPC_CHANNELS = {
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
   homeSideAnswer: "home:side-answer",
+  browserTeachStart: "browser:teach-start",
+  browserTeachStop: "browser:teach-stop",
+  browserTeachCount: "browser:teach-count",
   powerKeepAwake: "power:keep-awake",
   intelligencePredictions: "intelligence:predictions",
   intelligenceAnalyzeRun: "intelligence:analyze-run",
@@ -2105,6 +2109,12 @@ export interface BrowserDesktopApi {
   getTakeover: () => Promise<BrowserTakeoverState>;
   takeOver: () => Promise<BrowserTakeoverState>;
   handBack: (note?: string | null) => Promise<BrowserTakeoverState>;
+  /** Teach a task: start noting the owner's steps. False when it cannot (not taken over). */
+  teachStart?: () => Promise<boolean>;
+  /** Ends the recording and returns the steps in order. */
+  teachStop?: () => Promise<TeachStep[]>;
+  /** Steps noted so far; null when nothing is being taught. */
+  teachCount?: () => Promise<number | null>;
   /** Says no to every pending "please take over" request; coworkers are told not to continue. */
   declineTakeover: (note?: string | null) => Promise<BrowserTakeoverState>;
   /** A small picture of a tab for the compact browser card; null when it cannot be captured. */

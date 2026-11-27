@@ -2842,3 +2842,118 @@
   margin-top: 4px !important;
   color: var(--text-secondary);
 }
+
+/* "Teach a task" inside the takeover banner. */
+.teach-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: var(--fs-sm, 12px);
+}
+
+.teach-panel button {
+  min-height: 30px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.14);
+  border-radius: 999px;
+  background: var(--card-bg);
+  padding: 0 12px;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.teach-panel .button-primary {
+  border-color: transparent;
+  background: rgb(var(--primary-rgb));
+  color: var(--on-primary);
+}
+
+.teach-panel button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.teach-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teach-hint {
+  color: var(--text-secondary);
+}
+
+.teach-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.teach-live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5484d;
+  animation: teach-live-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes teach-live-dot {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teach-live i {
+    animation: none;
+  }
+}
+
+.teach-review {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+}
+
+.teach-review p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.teach-review input,
+.teach-review textarea {
+  width: 100%;
+  border: 1px solid var(--card-line);
+  border-radius: 8px;
+  background: var(--card-bg);
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.teach-review textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.teach-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.teach-saved {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.teach-error {
+  width: 100%;
+  color: var(--danger);
+}
