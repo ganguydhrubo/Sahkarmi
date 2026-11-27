@@ -12,8 +12,11 @@ import {
   voiceState,
 } from "../voice-store";
 
-/** Most-spoken Indian languages first; the rest appear behind "Show all". */
-const FIRST_INDIC = ["indic-hi", "indic-bn", "indic-mr", "indic-te", "indic-ta", "indic-gu"];
+/**
+ * Indian voice typing is offered for Hindi and Bengali only. A model the owner already
+ * installed for another Indian language stays listed, so nothing they set up disappears.
+ */
+const SHOWN_INDIC = ["indic-hi", "indic-bn"];
 
 const SUMMARY_KEYS: Record<string, MessageKey> = {
   "english-fast": "voiceSumEnglishFast",
@@ -39,29 +42,25 @@ const SPEAKER_KEYS: Record<string, MessageKey> = {
   "Deep 2": "voiceSpeakerDeep2",
 };
 
-/** Whisper turbo language choices: Indian languages it knows, then common world languages. */
+/** Whisper turbo language choices: the app's own languages (English, Hindi, Bengali and the world languages). */
 const WHISPER_LANGUAGES: [string, string][] = [
   ["en", "English"],
   ["hi", "हिन्दी"],
   ["bn", "বাংলা"],
-  ["mr", "मराठी"],
-  ["te", "తెలుగు"],
-  ["ta", "தமிழ்"],
-  ["gu", "ગુજરાતી"],
-  ["kn", "ಕನ್ನಡ"],
-  ["ml", "മലയാളം"],
-  ["pa", "ਪੰਜਾਬੀ"],
-  ["ur", "اردو"],
-  ["ne", "नेपाली"],
-  ["as", "অসমীয়া"],
-  ["sa", "संस्कृतम्"],
-  ["sd", "سنڌي"],
   ["ar", "العربية"],
-  ["fr", "Français"],
   ["de", "Deutsch"],
   ["es", "Español"],
+  ["fr", "Français"],
+  ["he", "עברית"],
+  ["it", "Italiano"],
   ["ja", "日本語"],
-  ["zh", "中文"],
+  ["ko", "한국어"],
+  ["nl", "Nederlands"],
+  ["pl", "Polski"],
+  ["pt", "Português"],
+  ["ru", "Русский"],
+  ["tr", "Türkçe"],
+  ["zh", "简体中文"],
 ];
 
 const SAMPLES: Record<string, string> = {
@@ -87,7 +86,6 @@ function modelSummary(model: VoiceModelInfo): string {
 
 export function VoiceSettings() {
   const [error, setError] = createSignal<string | null>(null);
-  const [showAll, setShowAll] = createSignal(false);
   onMount(loadVoiceState);
 
   const models = () => voiceState()?.models ?? [];
@@ -96,8 +94,7 @@ export function VoiceSettings() {
     models().filter((model) => model.type === "dictation" && model.group === group);
   const indic = () =>
     dictation("indic").filter(
-      (model) =>
-        showAll() || model.installed || model.phase !== "idle" || FIRST_INDIC.includes(model.id),
+      (model) => model.installed || model.phase !== "idle" || SHOWN_INDIC.includes(model.id),
     );
   const speech = () => models().filter((model) => model.type === "speech");
   const busy = (model: VoiceModelInfo) =>
@@ -261,9 +258,6 @@ export function VoiceSettings() {
       <ul class="feature-list voice-model-list">
         <For each={indic()}>{(model) => <ModelRow model={model} />}</For>
       </ul>
-      <button type="button" class="voice-show-all" onClick={() => setShowAll(!showAll())}>
-        {showAll() ? t("voiceShowFewer") : t("voiceShowAll", { count: "22" })}
-      </button>
       <h4 class="voice-group-title">{t("voiceGroupHinglish")}</h4>
       <ul class="feature-list voice-model-list">
         <For each={dictation("hinglish")}>{(model) => <ModelRow model={model} />}</For>

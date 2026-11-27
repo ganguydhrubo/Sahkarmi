@@ -445,7 +445,9 @@ export class ChromeBrowserHost implements CoworkerBrowser {
 
   async setVisible(input: BrowserVisibilityInput): Promise<void> {
     this.#visible = input.visible;
-    if (input.bounds) this.#bounds = validateBounds(input.bounds);
+    if (input.bounds) {
+      this.#bounds = validateBounds(input.bounds, this.#window.webContents.getZoomFactor());
+    }
     this.#syncPreview();
     if (this.#visible) {
       void this.#showActiveTab();
@@ -1111,9 +1113,9 @@ export class ChromeBrowserHost implements CoworkerBrowser {
       if (this.#screencastSession === tab.sessionId) return;
       await this.#stopScreencast();
       if (!tab.sessionId) return;
-      const scale = this.#window.webContents.getZoomFactor() || 1;
-      const width = Math.max(320, Math.round((this.#bounds?.width ?? 800) * scale * 2));
-      const height = Math.max(240, Math.round((this.#bounds?.height ?? 600) * scale * 2));
+      // Bounds are already window pixels (the UI size zoom is applied in validateBounds).
+      const width = Math.max(320, Math.round((this.#bounds?.width ?? 800) * 2));
+      const height = Math.max(240, Math.round((this.#bounds?.height ?? 600) * 2));
       this.#screencastSession = tab.sessionId;
       await pipe.send(
         "Page.startScreencast",

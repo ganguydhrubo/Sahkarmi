@@ -10,12 +10,15 @@ import type { BotProfile } from "../data";
 import { featureOn } from "../features";
 import { LANGUAGE_OPTIONS, type MessageKey, t } from "../i18n";
 import {
-  type ActivityStyle,
-  activityStyle,
+  type ActivityStyleChoice,
+  activityStyleChoice,
+  type HomeReader,
+  homeReader,
   language,
   type SendKey,
   sendKey,
   setActivityStyle,
+  setHomeReader,
   setLanguage,
   setSendKey,
   setUiSize,
@@ -143,13 +146,17 @@ interface SettingsViewProps {
 const UI_SIZES: Array<{ value: UiSize; label: MessageKey }> = [
   { value: "compact", label: "uiSizeCompact" },
   { value: "normal", label: "uiSizeNormal" },
-  { value: "large", label: "uiSizeLarge" },
+];
+const HOME_READERS: Array<{ value: HomeReader; label: MessageKey }> = [
+  { value: "free", label: "homeReaderFree" },
+  { value: "coworker", label: "homeReaderCoworker" },
 ];
 const SEND_KEYS: Array<{ value: SendKey; label: MessageKey }> = [
   { value: "enter", label: "sendKeyEnter" },
   { value: "ctrl-enter", label: "sendKeyCtrlEnter" },
 ];
-const ACTIVITY_STYLES: Array<{ value: ActivityStyle; label: MessageKey }> = [
+const ACTIVITY_STYLES: Array<{ value: ActivityStyleChoice; label: MessageKey }> = [
+  { value: "auto", label: "activityAuto" },
   { value: "masti", label: "activityMasti" },
   { value: "seedha", label: "activitySeedha" },
   { value: "english", label: "activityEnglish" },
@@ -345,7 +352,12 @@ export function SettingsView(props: SettingsViewProps) {
                 {row(
                   "activityStyleTitle",
                   "activityStyleHint",
-                  segmented("activityStyleTitle", ACTIVITY_STYLES, activityStyle, setActivityStyle),
+                  segmented(
+                    "activityStyleTitle",
+                    ACTIVITY_STYLES,
+                    activityStyleChoice,
+                    setActivityStyle,
+                  ),
                   true,
                 )}
               </section>
@@ -358,6 +370,15 @@ export function SettingsView(props: SettingsViewProps) {
                   true,
                 )}
                 {row("shortcutsLabel", "shortcutsHint", null)}
+              </section>
+              <section class="settings-card">
+                <h2>{t("homeReaderCard")}</h2>
+                {row(
+                  "homeReaderLabel",
+                  "homeReaderHint",
+                  segmented("homeReaderLabel", HOME_READERS, homeReader, setHomeReader),
+                  true,
+                )}
               </section>
             </>
           ))}

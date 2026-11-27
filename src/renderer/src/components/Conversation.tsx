@@ -44,6 +44,8 @@ import {
   PROVIDER_LABELS,
   providerForModel,
 } from "../../../shared/ipc";
+import { parseQuickReplies } from "../../../shared/quick-replies";
+import { isQuietReply, withoutQuietMarker } from "../../../shared/quiet-runs";
 import { deriveActivity, isActivePhase } from "../activity";
 import { format } from "../activity-hinglish";
 import { vocab } from "../activity-vocab";
@@ -129,6 +131,8 @@ interface ConversationProps {
   prompt: Extract<AgentEvent, { type: "prompt" }> | undefined;
   /** A provider said it will retry the current request (real retry event). */
   activityRetry?: { attempt: number | null; maxRetries: number | null } | null;
+  /** Shown above the messages (the CEO's "who is working" strip). */
+  topStrip?: JSX.Element;
   /** Outcome of the coworker's latest turn, from the turn-completed event. */
   turnOutcome?: { status: "completed" | "interrupted" | "failed"; at: number } | null;
   /** A tool call of this coworker is paused in Approvals. */
@@ -196,7 +200,8 @@ type RightPanelMode = "none" | "browser" | "settings";
 
 const EMPTY_DRAFT: ComposerDraft = { text: "", attachments: [], replyToMessageId: null };
 /** A long chat opens with its latest messages only; "Show earlier" adds this many at a time. */
-export const MESSAGE_WINDOW = 80;
+/** Messages drawn at once; older ones load as the owner scrolls up (long chats stay light). */
+export const MESSAGE_WINDOW = 40;
 const ONBOARDING_CHOICES = ["Accounts", "Sales", "Support", "Something else"];
 const SETTINGS_PANEL_STORAGE_KEY = "sahkarmi:settings-panel-width";
 const SETTINGS_PANEL_DEFAULT = 296;
@@ -700,6 +705,8 @@ function MessageBody(props: {
   onPreview: (attachment: AttachmentSummary) => void;
   onAttachmentAction: (attachment: AttachmentSummary, action: "open" | "reveal") => void;
   onResend?: (body: string) => void;
+  /** Set only on the latest reply: a tap sends the choice as the owner's answer. */
+  onQuickReply?: (choice: string) => void;
 }) {
   const canResend = () =>
     props.message.author === "you" &&
@@ -712,7 +719,17 @@ function MessageBody(props: {
   const system = createMemo(() =>
     props.message.author === "you" ? systemNoteText(props.message.body) : null,
   );
-  const body = () => system() ?? design() ?? routine()?.text ?? props.message.body;
+  const quietBody = () => {
+    if (props.message.author === "you" || !isQuietReply(props.message.body)) return null;
+    return withoutQuietMarker(props.message.body) || t("quietRunNote");
+  };
+  // A coworker's "CHOICES: a | b" line becomes tap buttons; the line itself is not shown.
+  const quick = createMemo(() =>
+    props.message.author === "you"
+      ? { text: props.message.body, choices: [] as string[] }
+      : parseQuickReplies(props.message.body),
+  );
+  const body = () => system() ?? design() ?? routine()?.text ?? quietBody() ?? quick().text;
   // A routine step carries the earlier step's result, so it folds sooner.
   const collapsible = () =>
     props.message.author === "you" &&
@@ -782,9 +799,25 @@ function MessageBody(props: {
             aria-expanded={expanded()}
             onClick={() => setExpanded((value) => !value)}
           >
-            {expanded() ? t("showLess") : t("marketShowMore")}
+            {expanded() ? `▴ ${t("msgFold")}` : `▾ ${t("msgShowFull")}`}
           </button>
         </Show>
+      </Show>
+      <Show when={props.onQuickReply && !props.message.streaming && quick().choices.length > 0}>
+        <fieldset class="quick-replies">
+          <legend class="sr-only">{t("quickRepliesLabel")}</legend>
+          <For each={quick().choices}>
+            {(choice) => (
+              <button
+                type="button"
+                class="quick-reply"
+                onClick={() => props.onQuickReply?.(choice)}
+              >
+                {choice}
+              </button>
+            )}
+          </For>
+        </fieldset>
       </Show>
       <Show when={props.message.status}>
         <div class="message-status">
@@ -1450,6 +1483,18 @@ export function Conversation(props: ConversationProps) {
         element.scrollTop = element.scrollHeight - fromBottom;
       });
     }
+  }
+  /** Loads the next older messages when the "Show earlier" button scrolls into view. */
+  function watchEarlier(button: HTMLButtonElement) {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && hiddenCount() > 0) showEarlier();
+      },
+      { root: scrollElement ?? null, rootMargin: "200px 0px 0px 0px" },
+    );
+    observer.observe(button);
+    onCleanup(() => observer.disconnect());
   }
   const messagesById = createMemo(
     () => new Map(props.messages.map((message) => [message.id, message] as const)),
@@ -2401,13 +2446,16 @@ export function Conversation(props: ConversationProps) {
     void window.sahkarmi.browser.navigate(tab.id, action).catch(() => undefined);
   }
 
-  async function openBrowserAddress() {
+  /** The address bar loads in the tab on screen (so Back works); everything else opens a tab. */
+  async function openBrowserAddress(inCurrentTab = false) {
     const value = browserAddress().trim();
     if (!value) return;
     const url = addressToUrl(value);
+    const shownTabId = inCurrentTab ? activeBrowserTab()?.id : undefined;
     try {
       const tab = await window.sahkarmi.browser.open({
         url,
+        ...(shownTabId ? { tabId: shownTabId } : {}),
         ownerThreadId: props.bot?.threadId ?? null,
         ownerBotId: props.bot?.id ?? null,
       });
@@ -2797,6 +2845,7 @@ export function Conversation(props: ConversationProps) {
         />
       </Show>
 
+      {props.topStrip}
       <div
         class="conversation-scroll"
         classList={{
@@ -2992,7 +3041,12 @@ export function Conversation(props: ConversationProps) {
             onUnpin={(pin) => void togglePin(pin.messageId, pin.text)}
           />
           <Show when={hiddenCount() > 0}>
-            <button type="button" class="show-earlier" onClick={() => showEarlier()}>
+            <button
+              type="button"
+              class="show-earlier"
+              ref={(button) => watchEarlier(button)}
+              onClick={() => showEarlier()}
+            >
               {t("showEarlier", { count: String(Math.min(MESSAGE_WINDOW, hiddenCount())) })}
             </button>
           </Show>
@@ -3056,6 +3110,12 @@ export function Conversation(props: ConversationProps) {
                                 onPreview={(attachment) => void previewAttachment(attachment)}
                                 onAttachmentAction={attachmentAction}
                                 onResend={(body) => void props.onSendMessage(body, [], null)}
+                                onQuickReply={
+                                  message.author === "bot" &&
+                                  props.messages[props.messages.length - 1]?.id === message.id
+                                    ? (choice) => void props.onSendMessage(choice, [], null)
+                                    : undefined
+                                }
                               />
                             </div>
                             <MessageActions
@@ -3804,7 +3864,7 @@ export function Conversation(props: ConversationProps) {
               classList={{ "browser-address-secure": /^https:\/\//i.test(browserAddress()) }}
               onSubmit={(event) => {
                 event.preventDefault();
-                void openBrowserAddress();
+                void openBrowserAddress(true);
                 (event.currentTarget.querySelector("input") as HTMLInputElement | null)?.blur();
               }}
             >

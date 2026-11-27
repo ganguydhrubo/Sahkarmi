@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { looksBig, wantsOneCoworker } from "../big-job";
 import type { BotProfile } from "../data";
 import { applyFeatures } from "../features";
-import { setTrade } from "../preferences";
+import { setHomeReader, setTrade } from "../preferences";
 import { TRADES } from "../trade-names";
 import { noteStarterUsed, starterJobs, starterUseCounts } from "../trades";
 import { HomeView } from "./HomeView";
@@ -65,7 +65,7 @@ describe("ready jobs for a line of work", () => {
         expect(hindi[index].id).toBe(job.id);
       }
       // A language with no words of its own reads English.
-      expect(starterJobs(trade, "ta")[0].title).toBe(english[0].title);
+      expect(starterJobs(trade, "de")[0].title).toBe(english[0].title);
     }
   });
 
@@ -223,5 +223,84 @@ describe("Home", () => {
     show({ pendingApprovals: 2, onOpenApprovals });
     fireEvent.click(screen.getByRole("button", { name: /2 approvals are waiting for you/ }));
     expect(onOpenApprovals).toHaveBeenCalled();
+  });
+
+  describe("AI preview before Start", () => {
+    const bridge = window as unknown as { sahkarmi?: unknown };
+    afterEach(() => {
+      bridge.sahkarmi = undefined;
+    });
+
+    it("shows what the AI understood, who will do it and its questions", async () => {
+      const understand = vi.fn(async () => ({
+        understood: "Make a GST invoice for Sharma Traders.",
+        coworkerIds: ["acc"],
+        why: "The accountant makes invoices.",
+        questions: ["Which items and amounts?"],
+        plan: [],
+      }));
+      bridge.sahkarmi = { home: { understand } };
+      const { onSend } = show({ busyBotIds: ["ops"] });
+      const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+      await fireEvent.input(box, { target: { value: "sharma traders ka kaam kar do" } });
+      // Until the AI answers, the lead is suggested as before.
+      expect(screen.getByText("Sahkarmi suggests Team Lead.")).toBeInTheDocument();
+      await waitFor(
+        () =>
+          expect(screen.getByText("Make a GST invoice for Sharma Traders.")).toBeInTheDocument(),
+        { timeout: 3000 },
+      );
+      expect(screen.getByText("Sahkarmi suggests Team Accountant.")).toBeInTheDocument();
+      expect(screen.getByText("The accountant makes invoices.")).toBeInTheDocument();
+      expect(understand).toHaveBeenCalledWith({
+        text: "sharma traders ka kaam kar do",
+        language: "English",
+        team: [
+          { id: "ops", name: "Team Operations", role: "Team · Operations", busy: true },
+          { id: "acc", name: "Team Accountant", role: "Team · Accounts", busy: false },
+          { id: "lead", name: "Team Lead", role: "Team · Lead", busy: false },
+        ],
+      });
+
+      // A tapped question goes into the box for the owner to answer.
+      await fireEvent.click(screen.getByRole("button", { name: "Which items and amounts?" }));
+      expect(box.value).toBe("sharma traders ka kaam kar do\nWhich items and amounts? ");
+      expect(screen.queryByRole("button", { name: "Which items and amounts?" })).toBeNull();
+
+      await fireEvent.click(screen.getByRole("button", { name: "Start" }));
+      await waitFor(() => expect(onSend).toHaveBeenCalled());
+      expect(onSend.mock.calls[0][0]).toBe("acc");
+    });
+
+    it("never makes Start wait: it works while the AI is still reading, and when it fails", async () => {
+      const understand = vi.fn(() => new Promise<null>(() => undefined));
+      bridge.sahkarmi = { home: { understand } };
+      const { onSend } = show();
+      await fireEvent.input(screen.getByRole("textbox"), {
+        target: { value: "make a GST invoice for Sharma Traders" },
+      });
+      await waitFor(() => expect(understand).toHaveBeenCalled(), { timeout: 3000 });
+      expect(screen.getByText("Reading your words…")).toBeInTheDocument();
+      const start = screen.getByRole("button", { name: "Start" });
+      expect(start).toBeEnabled();
+      await fireEvent.click(start);
+      await waitFor(() => expect(onSend).toHaveBeenCalled());
+      // The keyword pick still chose the accountant.
+      expect(onSend.mock.calls[0][0]).toBe("acc");
+      expect(onSend.mock.calls[0][3]).toEqual({ understandFirst: true });
+    });
+
+    it("stays quiet when the owner switched the free AI reader off", async () => {
+      const understand = vi.fn(async () => null);
+      bridge.sahkarmi = { home: { understand } };
+      setHomeReader("coworker");
+      show();
+      await fireEvent.input(screen.getByRole("textbox"), {
+        target: { value: "make a GST invoice for Sharma Traders" },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      expect(understand).not.toHaveBeenCalled();
+      setHomeReader("free");
+    });
   });
 });

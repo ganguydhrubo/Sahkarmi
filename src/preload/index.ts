@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from "electron";
+import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 import {
   type AgentEvent,
   type AiRuntimeStatus,
@@ -66,6 +66,9 @@ window.addEventListener("paste", (event) => {
 
 const sahkarmiApi: SahkarmiDesktopApi = {
   setTheme: (theme) => ipcRenderer.invoke(IPC_CHANNELS.setTheme, theme),
+  setUiZoom: (factor) => {
+    if (Number.isFinite(factor) && factor >= 0.5 && factor <= 2) webFrame.setZoomFactor(factor);
+  },
   getAppInfo: () => ipcRenderer.invoke(IPC_CHANNELS.getAppInfo),
   getSetupState: () => ipcRenderer.invoke(IPC_CHANNELS.getSetupState),
   saveSetup: (input) => ipcRenderer.invoke(IPC_CHANNELS.saveSetup, input),
@@ -312,6 +315,9 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     resourceStatus: () => ipcRenderer.invoke(IPC_CHANNELS.orchestratorResourceStatus),
     getBudgets: () => ipcRenderer.invoke(IPC_CHANNELS.orchestratorGetBudgets),
     setBudgets: (input) => ipcRenderer.invoke(IPC_CHANNELS.orchestratorSetBudgets, input),
+  },
+  home: {
+    understand: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeUnderstand, input),
   },
   intelligence: {
     status: (workspaceId) =>

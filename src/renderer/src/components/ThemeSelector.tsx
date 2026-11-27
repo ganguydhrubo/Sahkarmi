@@ -18,21 +18,6 @@ function SystemIcon() {
   );
 }
 
-function SunIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      class="theme-icon size-4 fill-none stroke-current"
-      stroke-width="1.6"
-      stroke-linecap="round"
-    >
-      <circle cx="10" cy="10" r="3.75" />
-      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.34 4.34l1.42 1.42M14.24 14.24l1.42 1.42M4.34 15.66l1.42-1.42M14.24 5.76l1.42-1.42" />
-    </svg>
-  );
-}
-
 function MoonIcon() {
   return (
     <svg
@@ -65,7 +50,6 @@ function CheckIcon() {
 
 const THEMES: Array<{ value: ThemePreference; label: () => string; icon: () => JSX.Element }> = [
   { value: "system", label: () => t("themeSystem"), icon: SystemIcon },
-  { value: "light", label: () => t("themeLight"), icon: SunIcon },
   { value: "dark", label: () => t("themeDark"), icon: MoonIcon },
 ];
 

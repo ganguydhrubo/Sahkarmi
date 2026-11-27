@@ -1,4 +1,13 @@
-import { createMemo, createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import { Portal } from "solid-js/web";
 import type {
   AgentModelOption,
@@ -18,13 +27,17 @@ import { MAX_FOLDER_DEPTH } from "../../../shared/ipc";
 import type { BotProfile } from "../data";
 import { featureOn } from "../features";
 import { type MessageKey, t } from "../i18n";
+import type { TeamWork } from "../team-work";
 import { AgentAvatar } from "./AgentAvatar";
 import { AvatarAura, statusAura } from "./AvatarAura";
 import { LogoMark } from "./Logo";
 import { type ProviderRefresh, ProviderUpdates } from "./ProviderUpdates";
+import { ScrollLine } from "./ScrollLine";
 import { StatusDot, statusLabel } from "./StatusDot";
+import { SupportIcon } from "./SupportIcons";
 import { UsageCountAsk } from "./UsageCountAsk";
 import { UsageRings } from "./UsageRings";
+import { WorkBadge } from "./WorkBadge";
 import { WorkspaceTeamDialog } from "./WorkspaceTeamDialog";
 
 export type CenterView =
@@ -113,6 +126,10 @@ const RAIL_ITEMS: Array<{
 
 interface SidebarProps {
   bots: BotProfile[];
+  /** "Step 2 of 4: …" for a coworker working through its plan; shown instead of the last message. */
+  planLines?: Record<string, string | null>;
+  /** Who is doing what right now, for each working coworker. */
+  work?: Record<string, TeamWork>;
   activeBotId: string;
   view: CenterView;
   appInfo: AppInfo | null;
@@ -475,13 +492,17 @@ export function Sidebar(props: SidebarProps) {
         (workspace) => workspace.id === props.workspaces.activeWorkspaceId,
       ) ?? props.workspaces.workspaces[0],
   );
+  // All / Unread tabs above the list: Unread keeps only coworkers with new replies.
+  const [listFilter, setListFilter] = createSignal<"all" | "unread">("all");
+  const unreadBots = createMemo(() => props.bots.filter((bot) => (props.unread[bot.id] ?? 0) > 0));
   const filteredBots = createMemo(() => {
     const normalizedQuery = query().trim().toLowerCase();
+    const shown = listFilter() === "unread" ? unreadBots() : props.bots;
     return normalizedQuery
-      ? props.bots.filter((bot) =>
+      ? shown.filter((bot) =>
           `${bot.name} ${bot.role} ${bot.preview}`.toLowerCase().includes(normalizedQuery),
         )
-      : props.bots;
+      : shown;
   });
 
   const topBots = createMemo(() => {
@@ -778,6 +799,8 @@ export function Sidebar(props: SidebarProps) {
     const status = () => props.statuses[bot.id] ?? "idle";
     const aura = statusAura(status);
     const unread = () => props.unread[bot.id] ?? 0;
+    /** While working: what the coworker is doing and for whom, from the real activity. */
+    const liveLine = () => (status() === "working" ? (props.work?.[bot.id]?.line ?? "") : "");
     return (
       <button
         type="button"
@@ -814,6 +837,7 @@ export function Sidebar(props: SidebarProps) {
             <AgentAvatar bot={bot} />
           </AvatarAura>
           <StatusDot status={status()} class="team-row-status" />
+          <WorkBadge kind={status() === "working" ? (props.work?.[bot.id]?.kind ?? null) : null} />
         </span>
         <span class="bot-row-copy">
           <span class="bot-row-heading">
@@ -824,15 +848,24 @@ export function Sidebar(props: SidebarProps) {
                   {t("ceoTag")}
                 </span>
               </Show>
-              <Show when={bot.role}>
-                <span class="team-row-role-pill">{bot.role}</span>
-              </Show>
             </span>
             <Show when={bot.time && bot.time !== "now"}>
               <time class="bot-row-time">{bot.time}</time>
             </Show>
           </span>
-          <span class="team-row-role">{bot.preview || bot.role || "—"}</span>
+          <Show when={bot.role}>
+            <span class="team-row-job" title={bot.role}>
+              {bot.role}
+            </span>
+          </Show>
+          <ScrollLine
+            class="team-row-role"
+            classList={{
+              "team-row-plan": Boolean(props.planLines?.[bot.id] || liveLine()),
+              "team-row-live": status() === "working",
+            }}
+            text={liveLine() || props.planLines?.[bot.id] || bot.preview || bot.role || "—"}
+          />
         </span>
         <Show when={unread() > 0}>
           <span class="team-row-unread" aria-hidden="true">
@@ -921,10 +954,10 @@ export function Sidebar(props: SidebarProps) {
     <aside id="bot-sidebar" aria-label="Coworker navigation" class="sidebar left-rail panel-edge">
       <div class="window-drag sidebar-topbar rail-topbar">
         <div class="rail-brand">
-          <LogoMark size={26} />
+          <LogoMark size={26} motion="shine" />
           <span class="rail-brand-name">
             <strong>Sahkarmi</strong>
-            <small lang="hi">सहकर्मी</small>
+            <small>(Coworkers)</small>
           </span>
         </div>
         <button
@@ -1051,6 +1084,29 @@ export function Sidebar(props: SidebarProps) {
               aria-label={t("searchTeam")}
             />
           </label>
+          <div class="sidebar-list-tabs" role="tablist" aria-label={t("listTabsLabel")}>
+            <button
+              type="button"
+              role="tab"
+              class="sidebar-list-tab"
+              aria-selected={listFilter() === "all"}
+              onClick={() => setListFilter("all")}
+            >
+              {t("listTabAll")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="sidebar-list-tab"
+              aria-selected={listFilter() === "unread"}
+              onClick={() => setListFilter("unread")}
+            >
+              {t("listTabUnread")}
+              <Show when={unreadBots().length > 0}>
+                <span class="sidebar-list-tab-count">{unreadBots().length}</span>
+              </Show>
+            </button>
+          </div>
         </div>
       </Show>
 
@@ -1540,6 +1596,19 @@ const SIMPLE_PLACES: CenterView[] = ["orchestrator", "approvals", "settings"];
 function SimpleNavigation(props: NavigationProps) {
   const [moreOpen, setMoreOpen] = createSignal(false);
   let moreRoot: HTMLDivElement | undefined;
+  let moreMenu: HTMLDivElement | undefined;
+  // The menu opens beside "More"; at a large UI size or in a short window it would run past the
+  // bottom edge and cut off the last items (Help). Lift it until it fits.
+  createEffect(() => {
+    if (!moreOpen() || !moreMenu) return;
+    const menu = moreMenu;
+    menu.style.top = "";
+    requestAnimationFrame(() => {
+      const rect = menu.getBoundingClientRect();
+      const overflow = rect.bottom - (window.innerHeight - 8);
+      if (overflow > 0) menu.style.top = `${-8 - Math.min(overflow, rect.top - 8)}px`;
+    });
+  });
   const moreItems = () =>
     RAIL_ITEMS.filter(
       (item) =>
@@ -1579,7 +1648,7 @@ function SimpleNavigation(props: NavigationProps) {
         title={t("navHome")}
         onClick={() => go("home")}
       >
-        <LogoMark size={30} />
+        <LogoMark size={40} motion="turn" />
       </button>
       <div class="simple-rail-places">
         <button
@@ -1646,6 +1715,7 @@ function SimpleNavigation(props: NavigationProps) {
             <span>{t("navMore")}</span>
           </button>
           <div
+            ref={moreMenu}
             class="simple-more-menu"
             classList={{ "simple-more-open": moreOpen() }}
             role="menu"
@@ -1684,6 +1754,39 @@ function SimpleNavigation(props: NavigationProps) {
           </div>
         </div>
       </div>
+      <nav class="rail-support" aria-label={t("railSupportGroup")}>
+        <For
+          each={[
+            {
+              kind: "support" as const,
+              label: "railSupport" as const,
+              url: "https://github.com/sponsors/ganguydhrubo",
+            },
+            {
+              kind: "star" as const,
+              label: "railStar" as const,
+              url: "https://github.com/ganguydhrubo/Sahkarmi",
+            },
+            {
+              kind: "website" as const,
+              label: "railWebsite" as const,
+              url: "https://sahkarmi.site",
+            },
+          ]}
+        >
+          {(link) => (
+            <button
+              type="button"
+              class="rail-support-link"
+              title={t(link.label)}
+              onClick={() => void window.sahkarmi.openUrl?.(link.url)}
+            >
+              <SupportIcon kind={link.kind} />
+              <span>{t(link.label)}</span>
+            </button>
+          )}
+        </For>
+      </nav>
       <div class="app-rail-bottom">
         <UsageRings onOpenUsage={() => go("usage")} />
         <button

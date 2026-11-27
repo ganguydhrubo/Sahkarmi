@@ -5221,9 +5221,7 @@ body {
   }
 }
 
-.logo-mark__indigo {
-  fill: var(--brand-indigo);
-}
+/* Light theme: the mark's own navy gradient (Logo.tsx); dark themes lighten it below. */
 :root[data-theme="dark"] .logo-mark__indigo {
   fill: #3b4a8c;
 }

@@ -10,14 +10,11 @@ import type {
 } from "../../../shared/ipc";
 import { ACP_AGENT_PROVIDERS, PROVIDER_LABELS } from "../../../shared/ipc";
 import { LANGUAGE_OPTIONS, t } from "../i18n";
-import { language, setLanguage, setTrade, trade } from "../preferences";
+import { hasChosenLanguage, language, setLanguage, setTrade, trade } from "../preferences";
+import { localiseStarterTeam } from "../starter-names";
 import { TRADES, tradeName } from "../trade-names";
+import { LanguageWheel } from "./LanguageWheel";
 import { ProviderPicker, type ProviderPickerOption } from "./ProviderPicker";
-
-/** The languages every new text is written in; the others are in Settings. */
-const START_LANGUAGES = LANGUAGE_OPTIONS.filter((option) =>
-  ["en", "hi", "bn"].includes(option.code),
-);
 
 interface InitialSetupProps {
   reviewing?: boolean;
@@ -69,6 +66,12 @@ export function InitialSetup(props: InitialSetupProps) {
   const [saving, setSaving] = createSignal(false);
   const [permissionBusy, setPermissionBusy] = createSignal<MacPermissionId | null>(null);
   const [error, setError] = createSignal("");
+  // A new owner first picks a language on its own screen, then answers the other questions.
+  const [pickingLanguage, setPickingLanguage] = createSignal(
+    !props.reviewing && !hasChosenLanguage(),
+  );
+  const languageLabel = () =>
+    LANGUAGE_OPTIONS.find((option) => option.code === language())?.label ?? "English";
   const providerOptions = createMemo<ProviderPickerOption[]>(() =>
     [
       ...PROVIDERS,
@@ -146,157 +149,163 @@ export function InitialSetup(props: InitialSetupProps) {
 
   return (
     <main class="initial-setup-screen">
-      <section
-        class="initial-setup"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="initial-setup-title"
-        aria-describedby="initial-setup-description"
-      >
-        <header class="initial-setup-header">
-          <p class="initial-setup-eyebrow">
-            {props.reviewing ? "Sahkarmi setup" : t("startEyebrow")}
-          </p>
-          <h1 id="initial-setup-title">
-            {props.reviewing ? "Providers & permissions" : t("startTitle")}
-          </h1>
-          <p id="initial-setup-description" class="initial-setup-intro">
-            {props.reviewing
-              ? "Choose the default provider for new agents and review macOS permissions."
-              : t("startIntro")}
-          </p>
-        </header>
-
-        <Show when={!props.reviewing}>
-          <fieldset class="start-question">
-            <legend>{t("startLanguage")}</legend>
-            <div class="start-choices">
-              <For each={START_LANGUAGES}>
-                {(option) => (
-                  <button
-                    type="button"
-                    class="start-choice"
-                    classList={{ "start-choice-on": language() === option.code }}
-                    aria-pressed={language() === option.code}
-                    lang={option.code}
-                    onClick={() => setLanguage(option.code)}
-                  >
-                    {option.label}
-                  </button>
-                )}
-              </For>
-            </div>
-          </fieldset>
-          <fieldset class="start-question">
-            <legend>{t("startTrade")}</legend>
-            <p class="start-hint">{t("startTradeHint")}</p>
-            <div class="start-choices start-choices-trade">
-              <For each={TRADES}>
-                {(id) => (
-                  <button
-                    type="button"
-                    class="start-choice"
-                    classList={{ "start-choice-on": trade() === id }}
-                    aria-pressed={trade() === id}
-                    onClick={() => setTrade(id)}
-                  >
-                    {tradeName(id, language())}
-                  </button>
-                )}
-              </For>
-            </div>
-          </fieldset>
-          <div class="start-question start-question-ai">
-            <h2>{t("startAi")}</h2>
-            <p class="start-hint">{t("startAiHint")}</p>
-          </div>
-        </Show>
-
-        <ProviderPicker
-          value={selectedProvider()}
-          options={providerOptions()}
-          ariaLabel={props.reviewing ? "Default provider" : t("startAiLabel")}
-          label={props.reviewing ? "Default provider" : t("startAiLabel")}
-          hint={
-            props.reviewing ? "Used for new agents. You can change it for each agent later." : ""
-          }
-          disabled={saving()}
-          allowUnavailableSelection
-          focusFirst
-          onChange={setSelectedProvider}
+      <Show when={pickingLanguage()}>
+        <LanguageWheel
+          value={language()}
+          onChange={setLanguage}
+          onContinue={() => {
+            setPickingLanguage(false);
+            void localiseStarterTeam(language());
+          }}
         />
+      </Show>
+      <Show when={!pickingLanguage()}>
+        <section
+          class="initial-setup"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="initial-setup-title"
+          aria-describedby="initial-setup-description"
+        >
+          <header class="initial-setup-header">
+            <p class="initial-setup-eyebrow">
+              {props.reviewing ? "Sahkarmi setup" : t("startEyebrow")}
+            </p>
+            <h1 id="initial-setup-title">
+              {props.reviewing ? "Providers & permissions" : t("startTitle")}
+            </h1>
+            <p id="initial-setup-description" class="initial-setup-intro">
+              {props.reviewing
+                ? "Choose the default provider for new agents and review macOS permissions."
+                : t("startIntro")}
+            </p>
+          </header>
 
-        <Show when={props.platform === "darwin"}>
-          <section class="mac-permissions" aria-labelledby="mac-permissions-title">
-            <div class="mac-permissions-heading">
-              <div>
-                <h2 id="mac-permissions-title">Mac permissions</h2>
-                <p>Optional. Computer Use needs both permissions.</p>
+          <Show when={!props.reviewing}>
+            <fieldset class="start-question">
+              <legend>{t("startLanguage")}</legend>
+              <div class="start-language-chosen">
+                <span lang={language()}>{languageLabel()}</span>
+                <button
+                  type="button"
+                  class="start-language-change"
+                  onClick={() => setPickingLanguage(true)}
+                >
+                  {t("startLanguageChange")}
+                </button>
               </div>
+            </fieldset>
+            <fieldset class="start-question">
+              <legend>{t("startTrade")}</legend>
+              <p class="start-hint">{t("startTradeHint")}</p>
+              <div class="start-choices start-choices-trade">
+                <For each={TRADES}>
+                  {(id) => (
+                    <button
+                      type="button"
+                      class="start-choice"
+                      classList={{ "start-choice-on": trade() === id }}
+                      aria-pressed={trade() === id}
+                      onClick={() => setTrade(id)}
+                    >
+                      {tradeName(id, language())}
+                    </button>
+                  )}
+                </For>
+              </div>
+            </fieldset>
+            <div class="start-question start-question-ai">
+              <h2>{t("startAi")}</h2>
+              <p class="start-hint">{t("startAiHint")}</p>
             </div>
-            <div class="mac-permission-list">
-              <For each={PERMISSIONS}>
-                {(permission) => {
-                  const state = () => permissionState(permissions(), permission.id);
-                  return (
-                    <div class="mac-permission-row">
-                      <span class="mac-permission-copy">
-                        <strong>{permission.title}</strong>
-                        <small>{permission.description}</small>
-                      </span>
-                      <button
-                        type="button"
-                        class="mac-permission-action"
-                        classList={{ "mac-permission-allowed": state() === "granted" }}
-                        disabled={
-                          permissionBusy() !== null ||
-                          state() === "granted" ||
-                          state() === "restricted"
-                        }
-                        onClick={() => void requestPermission(permission.id)}
-                      >
-                        {permissionBusy() === permission.id
-                          ? "Checking…"
-                          : permissionLabel(state())}
-                      </button>
-                    </div>
-                  );
-                }}
-              </For>
-            </div>
-          </section>
-        </Show>
-
-        <Show when={error()}>
-          <p class="initial-setup-error" role="alert">
-            {error()}
-          </p>
-        </Show>
-
-        <div class="initial-setup-actions">
-          <Show when={props.reviewing}>
-            <button type="button" class="initial-setup-secondary" onClick={props.onClose}>
-              Cancel
-            </button>
           </Show>
-          <button
-            type="button"
-            class="initial-setup-save"
-            disabled={saving() || !selectedProvider()}
-            onClick={() => void save()}
-          >
-            {saving()
-              ? props.reviewing
-                ? "Saving…"
-                : t("startSaving")
-              : props.reviewing
-                ? "Save changes"
-                : selectedProvider()
-                  ? t("startContinue", { name: providerName(selectedProvider()) })
-                  : t("startChoose")}
-          </button>
-        </div>
-      </section>
+
+          <ProviderPicker
+            value={selectedProvider()}
+            options={providerOptions()}
+            ariaLabel={props.reviewing ? "Default provider" : t("startAiLabel")}
+            label={props.reviewing ? "Default provider" : t("startAiLabel")}
+            hint={
+              props.reviewing ? "Used for new agents. You can change it for each agent later." : ""
+            }
+            disabled={saving()}
+            allowUnavailableSelection
+            focusFirst
+            onChange={setSelectedProvider}
+          />
+
+          <Show when={props.platform === "darwin"}>
+            <section class="mac-permissions" aria-labelledby="mac-permissions-title">
+              <div class="mac-permissions-heading">
+                <div>
+                  <h2 id="mac-permissions-title">Mac permissions</h2>
+                  <p>Optional. Computer Use needs both permissions.</p>
+                </div>
+              </div>
+              <div class="mac-permission-list">
+                <For each={PERMISSIONS}>
+                  {(permission) => {
+                    const state = () => permissionState(permissions(), permission.id);
+                    return (
+                      <div class="mac-permission-row">
+                        <span class="mac-permission-copy">
+                          <strong>{permission.title}</strong>
+                          <small>{permission.description}</small>
+                        </span>
+                        <button
+                          type="button"
+                          class="mac-permission-action"
+                          classList={{ "mac-permission-allowed": state() === "granted" }}
+                          disabled={
+                            permissionBusy() !== null ||
+                            state() === "granted" ||
+                            state() === "restricted"
+                          }
+                          onClick={() => void requestPermission(permission.id)}
+                        >
+                          {permissionBusy() === permission.id
+                            ? "Checking…"
+                            : permissionLabel(state())}
+                        </button>
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+            </section>
+          </Show>
+
+          <Show when={error()}>
+            <p class="initial-setup-error" role="alert">
+              {error()}
+            </p>
+          </Show>
+
+          <div class="initial-setup-actions">
+            <Show when={props.reviewing}>
+              <button type="button" class="initial-setup-secondary" onClick={props.onClose}>
+                Cancel
+              </button>
+            </Show>
+            <button
+              type="button"
+              class="initial-setup-save"
+              disabled={saving() || !selectedProvider()}
+              onClick={() => void save()}
+            >
+              {saving()
+                ? props.reviewing
+                  ? "Saving…"
+                  : t("startSaving")
+                : props.reviewing
+                  ? "Save changes"
+                  : selectedProvider()
+                    ? t("startContinue", { name: providerName(selectedProvider()) })
+                    : t("startChoose")}
+            </button>
+          </div>
+        </section>
+      </Show>
     </main>
   );
 }

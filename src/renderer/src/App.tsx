@@ -60,6 +60,7 @@ import { SchedulesView } from "./components/SchedulesView";
 import { SharedFilesView } from "./components/SharedFilesView";
 import { AppNavigation, type CenterView, Sidebar } from "./components/Sidebar";
 import { SplashScreen } from "./components/SplashScreen";
+import { TeamRunStrip } from "./components/TeamRunStrip";
 import { UpdateControl } from "./components/UpdateControl";
 import { WelcomeCard } from "./components/WelcomeCard";
 import { WhatsNewDialog } from "./components/WhatsNewDialog";
@@ -72,7 +73,9 @@ import {
   settleWelcomeForExistingUser,
   welcomeEligible,
 } from "./onboarding";
+import { planStatusLine } from "./plan-status";
 import { rememberSettingsSection } from "./settings-section";
+import { teamWork } from "./team-work";
 import { loadVoiceState, speakText, voiceState } from "./voice-store";
 
 // Views opened from the rail load on demand, keeping start-up lean.
@@ -189,6 +192,14 @@ export function App() {
   /** Messages on screen from the moment you press Send until the coworker's queue has them. */
   const [pendingSends, setPendingSends] = createSignal<Record<string, BotMessage[]>>({});
   const [plans, setPlans] = createSignal<Record<string, TurnPlan | null>>({});
+  // One plain line per working coworker: "Step 2 of 4: Checking the GST numbers".
+  const planLines = createMemo(() => {
+    const lines: Record<string, string | null> = {};
+    for (const [botId, plan] of Object.entries(plans())) {
+      lines[botId] = planStatusLine(plan, t("planStepLine"));
+    }
+    return lines;
+  });
   let sendSequence = 0;
   const [conversationLoaded, setConversationLoaded] = createSignal<Record<string, boolean>>({});
   const [conversationRevisions, setConversationRevisions] = createSignal<Record<string, number>>(
@@ -1366,6 +1377,33 @@ export function App() {
     }
     return statuses;
   });
+  // Who is doing what, for every working coworker (sidebar rows and the CEO's team strip).
+  const work = createMemo(() =>
+    teamWork({
+      bots: botList(),
+      workingBotIds: Object.entries(coworkerStatuses())
+        .filter(([, status]) => status === "working")
+        .map(([botId]) => botId),
+      queues: queues(),
+      activeTurns: activeTurns(),
+      messages: liveMessages(),
+      planLines: planLines(),
+      forTemplate: t("teamWorkFor"),
+      now: Date.now(),
+    }),
+  );
+  /** The other coworkers working right now, shown on top of the CEO's chat. */
+  const teamRunWorkers = createMemo(() => {
+    const open = activeBot();
+    const ceoBotId = workspaces().workspaces.find(
+      (workspace) => workspace.id === workspaces().activeWorkspaceId,
+    )?.ceoBotId;
+    if (!open || open.id !== ceoBotId) return [];
+    const doing = work();
+    return workspaceBots()
+      .filter((bot) => bot.id !== open.id && doing[bot.id])
+      .map((bot) => ({ bot, work: doing[bot.id] }));
+  });
 
   /** Any chat with a message from the owner: such a user is not new. */
   const hasHistory = createMemo(
@@ -1500,6 +1538,8 @@ export function App() {
             <Show when={!leftPanelCollapsed()}>
               <Sidebar
                 bots={workspaceBots()}
+                planLines={planLines()}
+                work={work()}
                 activeBotId={activeBot()?.id ?? ""}
                 view={view()}
                 appInfo={appInfo()}
@@ -1567,6 +1607,9 @@ export function App() {
                       )?.ceoBotId ?? null
                     }
                     pendingApprovals={pendingApprovals().length}
+                    busyBotIds={Object.entries(coworkerStatuses())
+                      .filter(([, status]) => status === "working")
+                      .map(([botId]) => botId)}
                     onSend={async (botId, text, attachmentDraftIds, options) => {
                       await sendMessageToBot(
                         botId,
@@ -1698,6 +1741,7 @@ export function App() {
                 </Match>
                 <Match when={view() === "coworker"}>
                   <Conversation
+                    topStrip={<TeamRunStrip workers={teamRunWorkers()} onOpenBot={selectBot} />}
                     agentStatus={agentStatus()}
                     bot={activeBot()}
                     bots={botList()}

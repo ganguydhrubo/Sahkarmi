@@ -17,7 +17,6 @@ describe("theme selection", () => {
     setTheme("system");
     const { container } = render(() => <ThemeSelector />);
     for (const [value, key] of [
-      ["light", "themeLight"],
       ["dark", "themeDark"],
       ["system", "themeSystem"],
     ] as const) {
@@ -46,7 +45,7 @@ describe("theme selection", () => {
     render(() => <ThemeSelector />);
     expect(document.documentElement.dataset.theme).toBe("dark");
     for (let index = 0; index < 5; index += 1) {
-      await fireEvent.click(screen.getByRole("button", { name: t("themeLight") }));
+      await fireEvent.click(screen.getByRole("button", { name: t("themeSystem") }));
       await fireEvent.click(screen.getByRole("button", { name: t("themeDark") }));
     }
     expect(screen.getByRole("button", { name: t("themeDark") })).toHaveAttribute(
@@ -54,5 +53,12 @@ describe("theme selection", () => {
       "true",
     );
     expect(document.documentElement.dataset.theme).toBe("dark");
+  });
+
+  it("offers only System and Dark", () => {
+    setLanguage("en");
+    render(() => <ThemeSelector />);
+    expect(screen.queryByRole("button", { name: t("themeLight") })).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 });

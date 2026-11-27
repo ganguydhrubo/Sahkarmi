@@ -156,15 +156,38 @@ function UsageCountSwitch() {
   );
 }
 
+/** "Your AI team" in every language the app speaks - the About strip scrolls through them. */
+const WORLD_LINES: Array<{ lang: string; tag: string; text: string; rtl?: boolean }> = [
+  { lang: "en", tag: "EN", text: "Your AI team" },
+  { lang: "es", tag: "ES", text: "Tu equipo de IA" },
+  { lang: "fr", tag: "FR", text: "Votre équipe IA" },
+  { lang: "de", tag: "DE", text: "Dein KI-Team" },
+  { lang: "ar", tag: "AR", text: "فريقك للذكاء الاصطناعي", rtl: true },
+  { lang: "hi", tag: "HI", text: "आपकी AI टीम" },
+  { lang: "bn", tag: "BN", text: "আপনার AI টিম" },
+  { lang: "ja", tag: "JA", text: "あなたのAIチーム" },
+  { lang: "zh", tag: "ZH", text: "你的 AI 团队" },
+  { lang: "ko", tag: "KO", text: "당신의 AI 팀" },
+  { lang: "pt", tag: "PT", text: "Sua equipe de IA" },
+  { lang: "it", tag: "IT", text: "Il tuo team di IA" },
+  { lang: "ru", tag: "RU", text: "Ваша команда ИИ" },
+  { lang: "tr", tag: "TR", text: "Yapay zekâ ekibiniz" },
+  { lang: "nl", tag: "NL", text: "Jouw AI-team" },
+  { lang: "pl", tag: "PL", text: "Twój zespół AI" },
+  { lang: "he", tag: "HE", text: "צוות ה-AI שלך", rtl: true },
+];
+
 /** Settings > About: the app, its founder and where to find Sahkarmi. */
 export function AboutCard(props: { version: string | null }) {
   return (
     <section class="settings-card settings-about about-card">
       <div class="about-hero about-rise" style="--rise: 0">
         <span class="about-glow" aria-hidden="true" />
-        <LogoMark size={52} />
+        <LogoMark size={52} motion="turn" />
         <div class="about-hero-text">
-          <strong>Sahkarmi · सहकर्मी</strong>
+          <strong>
+            Sahkarmi <small class="about-hero-sub">(Coworkers)</small>
+          </strong>
           <span class="about-version">v{props.version ?? "—"}</span>
           <span class="about-tagline">{t("aboutTagline")}</span>
         </div>
@@ -236,19 +259,33 @@ export function AboutCard(props: { version: string | null }) {
       </div>
 
       <div class="about-rise" style="--rise: 4">
-        <div class="about-made">
-          <span class="about-made-flag" aria-hidden="true" />
-          <ul>
-            <li lang="en">
-              <span class="about-made-tag">EN</span>Your AI team. Made in India.
-            </li>
-            <li lang="hi">
-              <span class="about-made-tag">हि</span>आपकी AI टीम. भारत में बनी.
-            </li>
-            <li lang="bn">
-              <span class="about-made-tag">বা</span>আপনার AI টিম. ভারতে তৈরি.
-            </li>
-          </ul>
+        <div class="about-world">
+          <div class="about-world-head">
+            <span class="about-world-globe" aria-hidden="true">
+              🌍
+            </span>
+            <strong>{t("aboutWorldTitle")}</strong>
+            <span class="about-world-made">
+              <span class="about-world-dot" aria-hidden="true" />
+              Made in India
+            </span>
+          </div>
+          <div class="about-world-track">
+            <ul class="about-world-row">
+              <For each={[...WORLD_LINES, ...WORLD_LINES]}>
+                {(line, i) => (
+                  <li
+                    lang={line.lang}
+                    dir={line.rtl ? "rtl" : "ltr"}
+                    aria-hidden={i() >= WORLD_LINES.length ? "true" : undefined}
+                  >
+                    <span class="about-world-tag">{line.tag}</span>
+                    {line.text}
+                  </li>
+                )}
+              </For>
+            </ul>
+          </div>
         </div>
         <p>{t("aboutBody")}</p>
         <UsageCountSwitch />

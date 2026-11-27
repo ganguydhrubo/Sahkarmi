@@ -252,7 +252,6 @@ export const bn: Dictionary = {
   uiSizeLabel: "ইন্টারফেসের আকার",
   uiSizeCompact: "ছোট",
   uiSizeNormal: "সাধারণ",
-  uiSizeLarge: "বড়",
   sendKeyLabel: "বার্তা পাঠানোর কী",
   sendKeyEnter: "Enter (নতুন লাইনের জন্য Shift+Enter)",
   sendKeyCtrlEnter: "Ctrl+Enter (নতুন লাইনের জন্য Enter)",
@@ -288,7 +287,7 @@ export const bn: Dictionary = {
   updateAutomatic: "আপডেট নিজে থেকে ডাউনলোড হয় এবং অ্যাপ বন্ধ করলে ইনস্টল হয়।",
   updateActionFailed: "আপডেট করা যায়নি। আবার চেষ্টা করুন।",
   about: "পরিচিতি",
-  aboutTagline: "প্রতিটি ভারতীয় ব্যবসার জন্য বিনামূল্যের AI টিম",
+  aboutTagline: "যেকোনো ব্যবসার জন্য বিনামূল্যের AI টিম, আপনার কাজ যা-ই হোক। ভারতে তৈরি।",
   aboutFounder: "প্রতিষ্ঠাতা",
   aboutFounderLine:
     "সহকর্মী বানাচ্ছি যাতে একটি আইডিয়া নিয়ে একজন মানুষও নিজের ভাষায় পুরো টিমের মতো কাজ করতে পারেন।",

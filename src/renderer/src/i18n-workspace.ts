@@ -98,6 +98,7 @@ export const workspaceEn = {
   noteSecureEntered: "🔒 You entered the private detail on {site}. It was not shared in chat.",
   noteSecureDeclined: "You closed the request for a private detail on {site}.",
   voiceSpeakIn: "I will speak in",
+  voiceMoreLanguages: "More languages",
   voiceSpeakHint:
     "Pick the language you speak. Each language has its own free voice model on this PC; Hinglish writes Hindi in English letters.",
   voiceSetupTitle: "Free voice typing on this PC",
@@ -532,7 +533,7 @@ export const workspaceEn = {
   marketSkills: "Skills",
   marketSearch: "Search",
   marketAgentsIntro:
-    "Ready-made coworkers for Indian businesses. Add one and it joins your team with its job already set.",
+    "Ready-made coworkers for every kind of business. Add one and it joins your team with its job already set.",
   marketSkillsIntro:
     "Step-by-step playbooks your coworkers follow. Installing one saves it in Shared/Skills, where every coworker can read it.",
   marketAdd: "Add",
