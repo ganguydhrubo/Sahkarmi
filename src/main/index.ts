@@ -92,6 +92,7 @@ import { RunEventStore } from "../backend/run-events";
 import { parseCadence, ScheduleStore } from "../backend/schedule-store";
 import { SecretCodec, SecretStore } from "../backend/secret-store";
 import { SharedFiles } from "../backend/shared-files";
+import { answerSideQuestion } from "../backend/side-question";
 import { LearnedSkills, SkillLibrary } from "../backend/skill-library";
 import { StartupTimings } from "../backend/startup-timings";
 import { shareWithTailscale, tailscaleStatus, unshareTailscale } from "../backend/tailscale";
@@ -3558,6 +3559,47 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       return null;
     } finally {
       if (homeRead === stop) homeRead = null;
+    }
+  });
+  // A side question while a coworker is busy. One at a time: a newer question stops the older.
+  let sideRead: AbortController | null = null;
+  handleTrusted(IPC_CHANNELS.homeSideAnswer, async (input: unknown) => {
+    sideRead?.abort();
+    sideRead = null;
+    if (!isObject(input) || typeof input.question !== "string") return null;
+    const words = (value: unknown, max: number) =>
+      typeof value === "string" ? value.slice(0, max) : "";
+    const recent = (Array.isArray(input.recent) ? input.recent : [])
+      .filter(isObject)
+      .slice(-8)
+      .map((message) => ({
+        from: message.from === "owner" ? ("owner" as const) : ("coworker" as const),
+        text: words(message.text, 700),
+      }))
+      .filter((message) => message.text);
+    const stop = new AbortController();
+    sideRead = stop;
+    try {
+      const cli = await resolveOpenCodeCli();
+      homeModels ??= listHomeModels(cli.executable);
+      const models = await homeModels;
+      if (models.length === 0) homeModels = null;
+      return await answerSideQuestion(
+        {
+          question: words(input.question, 1_000),
+          coworkerName: words(input.coworkerName, 80) || "the coworker",
+          coworkerRole: words(input.coworkerRole, 120),
+          job: words(input.job, 1_200),
+          recent,
+          language: words(input.language, 40),
+        },
+        openCodeHomeRunner(cli.executable),
+        { models, signal: stop.signal },
+      );
+    } catch {
+      return null;
+    } finally {
+      if (sideRead === stop) sideRead = null;
     }
   });
   handleTrusted(IPC_CHANNELS.intelligencePredictions, (workspaceId: unknown) =>

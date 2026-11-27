@@ -180,6 +180,7 @@ export const IPC_CHANNELS = {
   intelligenceOutcomes: "intelligence:outcomes",
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
+  homeSideAnswer: "home:side-answer",
   powerKeepAwake: "power:keep-awake",
   intelligencePredictions: "intelligence:predictions",
   intelligenceAnalyzeRun: "intelligence:analyze-run",
@@ -3569,4 +3570,19 @@ export interface HomeDesktopApi {
     language: string;
     team: HomeTeamMember[];
   }) => Promise<HomeUnderstanding | null>;
+  /**
+   * A quick side question while a coworker is busy, answered by the free AI in a run of its
+   * own. Null when the AI is slow, fails or was overtaken by a newer question.
+   */
+  sideAnswer?: (input: SideQuestionRequest) => Promise<string | null>;
+}
+
+export interface SideQuestionRequest {
+  question: string;
+  coworkerName: string;
+  coworkerRole: string;
+  /** The job the coworker is doing now, in the owner's words. */
+  job: string;
+  recent: Array<{ from: "owner" | "coworker"; text: string }>;
+  language: string;
 }

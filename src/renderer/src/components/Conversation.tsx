@@ -84,6 +84,7 @@ import {
 } from "./ScheduleControls";
 import { SecureInputCard } from "./SecureInputCard";
 import { SidebarToggleIcon } from "./Sidebar";
+import { SideQuestion } from "./SideQuestion";
 import { StatusDot, statusLabel } from "./StatusDot";
 import { TaskQueueStrip } from "./TaskQueueStrip";
 import { Tip } from "./Tip";
@@ -3402,6 +3403,13 @@ export function Conversation(props: ConversationProps) {
               onRunNow={props.onRunSchedule}
             />
           </div>
+        </Show>
+        <Show when={window.sahkarmi.home?.sideAnswer && props.bot}>
+          <SideQuestion
+            bot={props.bot}
+            messages={props.messages}
+            working={agentActivity() === "Working"}
+          />
         </Show>
         <Show when={scheduleNotice()}>
           <div class="composer-notice" role="status">
