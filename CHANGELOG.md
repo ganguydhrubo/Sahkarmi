@@ -5,6 +5,49 @@ All notable changes to Sahkarmi are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-11-27
+
+### Added
+
+- **Jobs Sahkarmi does from start to finish**: Home now opens with eight jobs that need a
+  computer, not only a chat: find 20 new customers, compare prices online, clear the inbox, post
+  on your pages, bills into Excel, watch competitors, fill an online form, tidy Downloads. Each
+  says where it works (in the browser, on your PC, from your files) and asks before it sends,
+  pays or posts.
+- **Teach a task**: take over the browser, press "Teach a task", do the job once and save it. The
+  steps become a skill a coworker can follow. Passwords, codes and long numbers are never noted.
+- **Ask on the side**: while a coworker is busy, ask a quick question above the message box. A
+  free AI answers from the chat and the job is not disturbed.
+- **Remove a message, clear a chat**: "Remove from chat" on any message; "Clear this chat" on a
+  coworker starts a fresh chat. The AI's own history is never edited, so nothing breaks.
+- **Mark as unread, Mute**: right-click a coworker. A soft sound plays when a coworker finishes
+  (Settings > General), and "Keep this PC awake" lets scheduled jobs run on time.
+- **Routines from your phone**: with Telegram connected, send /routines to see them and /run with
+  the name to start one.
+- **Help in sight, in 17 languages**: Help has its own place in the side rail and opens with the
+  newest features explained in every language.
+- **Support**: one warm Support button in the rail opens the ways to help and to reach us
+  (Support, Star, Discord, Telegram, website).
+
+### Changed
+
+- A calmer side rail: places on top; Support, Help and Settings below; everything stays in sight
+  on a short laptop screen.
+- Settings: each group is a card and each place has a small coloured picture.
+- AI usage: one ring for all connected AIs. It shows the one closest to its limit, with "+2" for
+  the others; pointing at it lists each AI.
+- Voice typing: with the app in English, a PC outside India now listens for English by default;
+  a world language taken from the app language is passed to the on-PC voice model.
+- The brand mark in the rail is bigger and sways in 3D.
+
+### Fixed
+
+- Browser sign-ins: the Facebook side of an Instagram sign-in is now kept across restarts, and a
+  fresh sign-in is no longer overwritten by an older one a second later (accounts were signed out
+  after switching).
+- Telegram: while a coworker waited for a code, an ordinary sentence could be typed into the
+  sign-in page. Only a real code or a reply is used now.
+
 ## [0.35.0] - 2026-11-27
 
 ### Added
