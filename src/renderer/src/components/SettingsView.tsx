@@ -12,13 +12,17 @@ import { LANGUAGE_OPTIONS, type MessageKey, t } from "../i18n";
 import {
   type ActivityStyleChoice,
   activityStyleChoice,
+  finishSound,
   type HomeReader,
   homeReader,
+  keepAwake,
   language,
   type SendKey,
   sendKey,
   setActivityStyle,
+  setFinishSound,
   setHomeReader,
+  setKeepAwake,
   setLanguage,
   setSendKey,
   setUiSize,
@@ -66,6 +70,52 @@ interface SectionItem {
   label: MessageKey;
   description: MessageKey;
 }
+
+/** A small coloured picture for each settings place, so the list reads at a glance. */
+const SECTION_ICONS: Partial<Record<SettingsSection, { tone: string; path: string }>> = {
+  general: { tone: "#64748B", path: "M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4" },
+  voice: {
+    tone: "#E5484D",
+    path: "M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm6-3a6 6 0 0 1-12 0m6 6v3",
+  },
+  host: {
+    tone: "#0EA5E9",
+    path: "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3 15h2",
+  },
+  telegram: { tone: "#2AABEE", path: "M21 4 3 11l6 2.5L11.5 20 21 4zM9 13.5 21 4" },
+  ai: {
+    tone: "#7C3AED",
+    path: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16z",
+  },
+  permissions: {
+    tone: "#16A34A",
+    path: "M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zm-3 9 2 2 4-4",
+  },
+  skills: {
+    tone: "#F59E0B",
+    path: "M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zm0 13a3 3 0 0 1 3-3h11",
+  },
+  mcp: { tone: "#0891B2", path: "M9 3v5m6-5v5M7 8h10v3a5 5 0 0 1-10 0V8zm5 8v5" },
+  assignments: {
+    tone: "#3346A6",
+    path: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm-6 9a6 6 0 0 1 12 0m1-9.2a3 3 0 1 0-1-5.8m2 15h4a5 5 0 0 0-4.5-5",
+  },
+  intelligence: {
+    tone: "#DB2777",
+    path: "M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
+  },
+  features: {
+    tone: "#EA580C",
+    path: "M8 7h8a5 5 0 0 1 0 10H8A5 5 0 0 1 8 7zm8 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
+  },
+  updates: { tone: "#2563EB", path: "M12 4v11m0 0 4-4m-4 4-4-4M5 19h14" },
+  data: { tone: "#475569", path: "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6v-9z" },
+  storage: {
+    tone: "#0D9488",
+    path: "M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zm0 0v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3",
+  },
+  about: { tone: "#1F2A5C", path: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-10v6m0-9.5v.5" },
+};
 
 /** Settings sections, grouped the way people look for them: their own setup, the team, the app. */
 const SECTION_GROUPS: Array<{ label: MessageKey; items: SectionItem[] }> = [
@@ -146,6 +196,10 @@ interface SettingsViewProps {
 const UI_SIZES: Array<{ value: UiSize; label: MessageKey }> = [
   { value: "compact", label: "uiSizeCompact" },
   { value: "normal", label: "uiSizeNormal" },
+];
+const ON_OFF: Array<{ value: "on" | "off"; label: MessageKey }> = [
+  { value: "on", label: "switchOn" },
+  { value: "off", label: "switchOff" },
 ];
 const HOME_READERS: Array<{ value: HomeReader; label: MessageKey }> = [
   { value: "free", label: "homeReaderFree" },
@@ -296,7 +350,20 @@ export function SettingsView(props: SettingsViewProps) {
                       classList={{ "settings-nav-active": section() === item.id }}
                       onClick={() => select(item.id)}
                     >
-                      {t(item.label)}
+                      <Show when={SECTION_ICONS[item.id]}>
+                        {(icon) => (
+                          <span
+                            class="settings-nav-icon"
+                            style={{ "--tile": icon().tone }}
+                            aria-hidden="true"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d={icon().path} />
+                            </svg>
+                          </span>
+                        )}
+                      </Show>
+                      <span class="settings-nav-text">{t(item.label)}</span>
                     </button>
                   )}
                 </For>
@@ -377,6 +444,31 @@ export function SettingsView(props: SettingsViewProps) {
                   "homeReaderLabel",
                   "homeReaderHint",
                   segmented("homeReaderLabel", HOME_READERS, homeReader, setHomeReader),
+                  true,
+                )}
+              </section>
+              <section class="settings-card">
+                <h2>{t("comfortCard")}</h2>
+                {row(
+                  "finishSoundLabel",
+                  "finishSoundHint",
+                  segmented(
+                    "finishSoundLabel",
+                    ON_OFF,
+                    () => (finishSound() ? "on" : "off"),
+                    (value) => setFinishSound(value === "on"),
+                  ),
+                  true,
+                )}
+                {row(
+                  "keepAwakeLabel",
+                  "keepAwakeHint",
+                  segmented(
+                    "keepAwakeLabel",
+                    ON_OFF,
+                    () => (keepAwake() ? "on" : "off"),
+                    (value) => setKeepAwake(value === "on"),
+                  ),
                   true,
                 )}
               </section>

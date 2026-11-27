@@ -66,6 +66,9 @@ window.addEventListener("paste", (event) => {
 
 const sahkarmiApi: SahkarmiDesktopApi = {
   setTheme: (theme) => ipcRenderer.invoke(IPC_CHANNELS.setTheme, theme),
+  setKeepAwake: (on) => {
+    void ipcRenderer.invoke(IPC_CHANNELS.powerKeepAwake, on === true).catch(() => undefined);
+  },
   setUiZoom: (factor) => {
     if (Number.isFinite(factor) && factor >= 0.5 && factor <= 2) webFrame.setZoomFactor(factor);
   },
@@ -110,6 +113,8 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     branchConversation: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentBranchConversation, input),
     sendMessage: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentSendMessage, input),
     setMessageReaction: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentSetMessageReaction, input),
+    hideMessage: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentHideMessage, input),
+    clearConversation: (botId) => ipcRenderer.invoke(IPC_CHANNELS.agentClearConversation, botId),
     listQueue: (botId) => ipcRenderer.invoke(IPC_CHANNELS.agentListQueue, botId),
     cancelQueuedMessage: (input) =>
       ipcRenderer.invoke(IPC_CHANNELS.agentCancelQueuedMessage, input),
@@ -137,6 +142,9 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     getTakeover: () => ipcRenderer.invoke(IPC_CHANNELS.browserGetTakeover),
     takeOver: () => ipcRenderer.invoke(IPC_CHANNELS.browserTakeOver),
     handBack: (note) => ipcRenderer.invoke(IPC_CHANNELS.browserHandBack, note ?? null),
+    teachStart: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachStart),
+    teachStop: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachStop),
+    teachCount: () => ipcRenderer.invoke(IPC_CHANNELS.browserTeachCount),
     declineTakeover: (note) =>
       ipcRenderer.invoke(IPC_CHANNELS.browserDeclineTakeover, note ?? null),
     preview: (tabId) => ipcRenderer.invoke(IPC_CHANNELS.browserPreview, tabId),
@@ -318,6 +326,7 @@ const sahkarmiApi: SahkarmiDesktopApi = {
   },
   home: {
     understand: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeUnderstand, input),
+    sideAnswer: (input) => ipcRenderer.invoke(IPC_CHANNELS.homeSideAnswer, input),
   },
   intelligence: {
     status: (workspaceId) =>

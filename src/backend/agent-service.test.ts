@@ -2248,6 +2248,66 @@ describe.sequential("AgentService", () => {
     );
   });
 
+  it("removes one message from the chat for good, and clears a whole chat into a fresh one", async () => {
+    process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "The invoice is ready.";
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    await service.initialize();
+    await service.sendMessage({ botId: "chief", text: "Make the invoice" });
+    await waitFor(async () =>
+      Boolean(
+        (await service?.readConversation("chief"))?.messages.some(
+          (message) => message.author === "assistant" && message.status === "completed",
+        ),
+      ),
+    );
+    const before = await service.readConversation("chief");
+    const reply = before.messages.find((message) => message.author === "assistant");
+    const asked = before.messages.find((message) => message.text === "Make the invoice");
+    expect(reply && asked).toBeTruthy();
+
+    // One message goes; the rest stays, also when the chat is read again from the AI.
+    await service.hideMessage({ botId: "chief", messageId: reply?.id ?? "" });
+    const after = await service.readConversation("chief");
+    expect(after.messages.some((message) => message.text === "The invoice is ready.")).toBe(false);
+    expect(after.messages.some((message) => message.text === "Make the invoice")).toBe(true);
+    await expect(service.hideMessage({ botId: "chief", messageId: "no-such-id" })).rejects.toThrow(
+      "no longer available",
+    );
+
+    // The whole chat goes, and the coworker starts a fresh chat with its AI.
+    const oldThread = after.threadId;
+    await service.clearConversation("chief");
+    const cleared = await service.readConversation("chief");
+    expect(cleared.messages).toEqual([]);
+    expect(service.listBots().find((bot) => bot.id === "chief")?.threadId ?? null).toBeNull();
+
+    // The fake AI gives the same words again; what matters is that it is a new chat.
+    await service.sendMessage({ botId: "chief", text: "Start again" });
+    await waitFor(async () =>
+      Boolean(
+        (await service?.readConversation("chief"))?.messages.some(
+          (message) => message.author === "assistant" && message.status === "completed",
+        ),
+      ),
+    );
+    const fresh = await service.readConversation("chief");
+    expect(fresh.threadId).not.toBe(oldThread);
+    expect(fresh.messages.some((message) => message.text === "Start again")).toBe(true);
+    expect(fresh.messages.some((message) => message.text === "The invoice is ready.")).toBe(true);
+    expect(fresh.messages.some((message) => message.text === "Make the invoice")).toBe(false);
+  });
+
+  it("does not clear a chat while the coworker is working", async () => {
+    const { store, mailbox } = stores();
+    service = new AgentService(store, mailbox, fakeBrowser());
+    await service.initialize();
+    await service.sendMessage({ botId: "chief", text: "A long job" });
+    await waitFor(async () => Boolean((await service?.readConversation("chief"))?.activeTurnId));
+    await expect(service.clearConversation("chief")).rejects.toThrow("working or has jobs waiting");
+    expect((await service.readConversation("chief")).messages.length).toBeGreaterThan(0);
+  });
+
   it("keeps repeated jobs in the one long chat when the switch is off", async () => {
     process.env.SAHKARMI_FAKE_AUTO_COMPLETE = "Done";
     const { store, mailbox } = stores();

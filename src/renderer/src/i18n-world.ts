@@ -118,6 +118,34 @@ export const ar: WorldDictionary = {
   homeBigAuto: "تبدو هذه مهمة كبيرة، لذا سيتولاها فريق.",
   homeBigOne: "استخدم زميلًا واحدًا بدلًا من ذلك",
   homeStartTeam: "ابدأ مع فريق",
+  helpGroupNew: "جديد ومفيد",
+  helpQPreview: "هل يفهم Sahkarmi مهمتي قبل أن أضغط «ابدأ»؟",
+  helpAPreview:
+    "نعم. في الصفحة الرئيسية اكتب المهمة وانتظر لحظة. سيعرض ما فهمه، ومن سينفذها، وما الذي ينقص. اضغط على سؤال للإجابة عنه. زر «ابدأ» يعمل في أي وقت.",
+  helpQDoing: "كيف أعرف ماذا يفعل الزميل؟",
+  helpADoing:
+    "أثناء العمل يصبح صفّه برتقاليًا ويذكر ما يفعله، مع شارة صغيرة متحركة على صورته. في محادثة المدير (CEO) يظهر شريط في الأعلى بكل من يعمل الآن.",
+  helpQSide: "هل أستطيع أن أسأل شيئًا والزميل مشغول؟",
+  helpASide:
+    'نعم. اضغط "Ask on the side" فوق مربع الرسالة. يجيب ذكاء اصطناعي مجاني من المحادثة، ولا تتأثر المهمة.',
+  helpQTeach: "كيف أعلّم زميلًا مهمة في المتصفح؟",
+  helpATeach:
+    'افتح المتصفح، اضغط "Take over" ثم "Teach a task". نفّذ المهمة مرة واحدة، اضغط "Stop and save" وأعطها اسمًا. كلمات المرور والرموز لا تُسجَّل أبدًا.',
+  helpQTakeover: "كيف أسجّل الدخول أو أنضم إلى مكالمة في المتصفح؟",
+  helpATakeover:
+    'اضغط "Take over". تصبح الصفحة لك: انقر واكتب واستخدم الميكروفون والكاميرا. اضغط "Hand back" عند الانتهاء.',
+  helpQClear: "كيف أحذف رسالة أو أمسح محادثة؟",
+  helpAClear:
+    'على الرسالة افتح النقاط الثلاث واختر "Remove from chat". لمسح المحادثة كلها انقر بالزر الأيمن على الزميل واضغط "Clear this chat" مرتين.',
+  helpQQuiet: "كيف أكتم زميلًا أو أجعل المحادثة غير مقروءة؟",
+  helpAQuiet:
+    'انقر بالزر الأيمن على الزميل. الكتم يوقف صوته وإشعاراته. "Mark as unread" يبقي المحادثة في قائمتك. صوت الانتهاء موجود في الإعدادات > General.',
+  helpQPhoneRun: "هل أستطيع بدء روتين من هاتفي؟",
+  helpAPhoneRun:
+    "نعم، بعد ربط Telegram في الإعدادات. أرسل /routines لرؤية الروتينات و /run مع الاسم لبدء واحد.",
+  helpQTalk: "كيف أتواصل مع فريق Sahkarmi؟",
+  helpATalk: "استخدم أيقونتي Discord و Telegram في جانب التطبيق. نقرأ كل رسالة.",
+  helpButton: "مساعدة",
 };
 
 export const de: WorldDictionary = {
@@ -237,6 +265,34 @@ export const de: WorldDictionary = {
   homeBigAuto: "Das sieht nach einer großen Aufgabe aus, deshalb übernimmt ein Team.",
   homeBigOne: "Stattdessen einen Kollegen nutzen",
   homeStartTeam: "Mit einem Team starten",
+  helpGroupNew: "Neu und nützlich",
+  helpQPreview: "Versteht Sahkarmi meine Aufgabe, bevor ich auf „Starten“ drücke?",
+  helpAPreview:
+    "Ja. Schreiben Sie die Aufgabe auf der Startseite und warten Sie kurz. Es zeigt, was es verstanden hat, wer sie erledigt und was fehlt. Tippen Sie auf eine Frage, um sie zu beantworten. „Starten“ geht jederzeit.",
+  helpQDoing: "Woran sehe ich, was ein Kollege gerade tut?",
+  helpADoing:
+    "Während der Arbeit wird seine Zeile orange und sagt, was er tut, mit einem kleinen bewegten Abzeichen am Bild. Im Chat des CEO zeigt eine Leiste oben alle, die gerade arbeiten.",
+  helpQSide: "Kann ich etwas fragen, während ein Kollege beschäftigt ist?",
+  helpASide:
+    'Ja. Drücken Sie "Ask on the side" über dem Nachrichtenfeld. Eine kostenlose KI antwortet aus dem Chat, die Aufgabe wird nicht gestört.',
+  helpQTeach: "Wie bringe ich einem Kollegen eine Aufgabe im Browser bei?",
+  helpATeach:
+    'Browser öffnen, "Take over" drücken, dann "Teach a task". Die Aufgabe einmal ausführen, "Stop and save" drücken und einen Namen geben. Passwörter und Codes werden nie notiert.',
+  helpQTakeover: "Wie melde ich mich im Browser an oder nehme an einem Anruf teil?",
+  helpATakeover:
+    'Drücken Sie "Take over". Die Seite gehört dann Ihnen: klicken, tippen, Mikrofon und Kamera nutzen. Danach "Hand back" drücken.',
+  helpQClear: "Wie entferne ich eine Nachricht oder leere einen Chat?",
+  helpAClear:
+    'Bei der Nachricht die drei Punkte öffnen und "Remove from chat" wählen. Für den ganzen Chat: Rechtsklick auf den Kollegen und zweimal "Clear this chat".',
+  helpQQuiet: "Wie schalte ich einen Kollegen stumm oder markiere einen Chat als ungelesen?",
+  helpAQuiet:
+    'Rechtsklick auf den Kollegen. Stumm schaltet Ton und Mitteilungen ab. "Mark as unread" hält den Chat in Ihrer Liste. Der Fertig-Ton steht unter Einstellungen > General.',
+  helpQPhoneRun: "Kann ich eine Routine vom Handy starten?",
+  helpAPhoneRun:
+    "Ja, sobald Telegram in den Einstellungen verbunden ist. Senden Sie /routines für die Liste und /run mit dem Namen zum Starten.",
+  helpQTalk: "Wie erreiche ich das Sahkarmi-Team?",
+  helpATalk: "Über die Discord- und Telegram-Symbole links in der App. Wir lesen jede Nachricht.",
+  helpButton: "Hilfe",
 };
 
 export const es: WorldDictionary = {
@@ -355,6 +411,35 @@ export const es: WorldDictionary = {
   homeBigAuto: "Parece una tarea grande, así que la hará un equipo.",
   homeBigOne: "Usar un solo compañero",
   homeStartTeam: "Empezar con un equipo",
+  helpGroupNew: "Nuevo y útil",
+  helpQPreview: "¿Sahkarmi entiende mi tarea antes de pulsar «Empezar»?",
+  helpAPreview:
+    "Sí. En Inicio escriba la tarea y espere un momento. Muestra lo que entendió, quién la hará y qué falta. Toque una pregunta para responderla. «Empezar» funciona en cualquier momento.",
+  helpQDoing: "¿Cómo sé qué está haciendo un compañero?",
+  helpADoing:
+    "Mientras trabaja, su fila se pone naranja y dice qué hace, con una pequeña insignia en movimiento sobre su imagen. En el chat del CEO, una franja arriba muestra a todos los que trabajan.",
+  helpQSide: "¿Puedo preguntar algo mientras un compañero está ocupado?",
+  helpASide:
+    'Sí. Pulse "Ask on the side" encima del cuadro de mensaje. Una IA gratuita responde a partir del chat y la tarea no se interrumpe.',
+  helpQTeach: "¿Cómo le enseño a un compañero una tarea en el navegador?",
+  helpATeach:
+    'Abra el navegador, pulse "Take over" y luego "Teach a task". Haga la tarea una vez, pulse "Stop and save" y póngale nombre. Las contraseñas y los códigos nunca se anotan.',
+  helpQTakeover: "¿Cómo inicio sesión o entro en una llamada en el navegador?",
+  helpATakeover:
+    'Pulse "Take over". La página es suya: haga clic, escriba y use el micrófono y la cámara. Pulse "Hand back" al terminar.',
+  helpQClear: "¿Cómo quito un mensaje o vacío un chat?",
+  helpAClear:
+    'En el mensaje abra los tres puntos y elija "Remove from chat". Para vaciar todo el chat, clic derecho en el compañero y pulse "Clear this chat" dos veces.',
+  helpQQuiet: "¿Cómo silencio a un compañero o marco un chat como no leído?",
+  helpAQuiet:
+    'Clic derecho en el compañero. Silenciar apaga su sonido y avisos. "Mark as unread" mantiene el chat en su lista. El sonido de fin está en Ajustes > General.',
+  helpQPhoneRun: "¿Puedo iniciar una rutina desde el móvil?",
+  helpAPhoneRun:
+    "Sí, cuando Telegram esté conectado en Ajustes. Envíe /routines para verlas y /run con el nombre para iniciar una.",
+  helpQTalk: "¿Cómo contacto con el equipo de Sahkarmi?",
+  helpATalk:
+    "Use los iconos de Discord y Telegram a la izquierda de la app. Leemos todos los mensajes.",
+  helpButton: "Ayuda",
 };
 
 export const fr: WorldDictionary = {
@@ -474,6 +559,35 @@ export const fr: WorldDictionary = {
   homeBigAuto: "Cela ressemble à une grosse tâche, une équipe va donc s’en charger.",
   homeBigOne: "Utiliser un seul collègue",
   homeStartTeam: "Commencer avec une équipe",
+  helpGroupNew: "Nouveau et utile",
+  helpQPreview: "Sahkarmi comprend-il ma tâche avant que j’appuie sur « Démarrer » ?",
+  helpAPreview:
+    "Oui. Sur l’accueil, écrivez la tâche et attendez un instant. Il montre ce qu’il a compris, qui la fera et ce qui manque. Touchez une question pour y répondre. « Démarrer » marche à tout moment.",
+  helpQDoing: "Comment savoir ce que fait un collègue ?",
+  helpADoing:
+    "Pendant qu’il travaille, sa ligne devient orange et dit ce qu’il fait, avec un petit badge animé sur son image. Dans le chat du CEO, une bande en haut montre tous ceux qui travaillent.",
+  helpQSide: "Puis-je poser une question pendant qu’un collègue est occupé ?",
+  helpASide:
+    'Oui. Appuyez sur "Ask on the side" au-dessus de la zone de message. Une IA gratuite répond à partir du chat, sans déranger la tâche.',
+  helpQTeach: "Comment apprendre à un collègue une tâche dans le navigateur ?",
+  helpATeach:
+    'Ouvrez le navigateur, appuyez sur "Take over" puis "Teach a task". Faites la tâche une fois, appuyez sur "Stop and save" et donnez-lui un nom. Les mots de passe et les codes ne sont jamais notés.',
+  helpQTakeover: "Comment me connecter ou rejoindre un appel dans le navigateur ?",
+  helpATakeover:
+    'Appuyez sur "Take over". La page est à vous : cliquez, tapez, utilisez le micro et la caméra. Appuyez sur "Hand back" à la fin.',
+  helpQClear: "Comment retirer un message ou vider un chat ?",
+  helpAClear:
+    'Sur le message, ouvrez les trois points et choisissez "Remove from chat". Pour vider tout le chat, clic droit sur le collègue et appuyez deux fois sur "Clear this chat".',
+  helpQQuiet: "Comment couper le son d’un collègue ou marquer un chat comme non lu ?",
+  helpAQuiet:
+    'Clic droit sur le collègue. Le mode muet coupe son et notifications. "Mark as unread" garde le chat dans votre liste. Le son de fin est dans Réglages > General.',
+  helpQPhoneRun: "Puis-je lancer une routine depuis mon téléphone ?",
+  helpAPhoneRun:
+    "Oui, une fois Telegram connecté dans les réglages. Envoyez /routines pour les voir et /run avec le nom pour en lancer une.",
+  helpQTalk: "Comment joindre l’équipe Sahkarmi ?",
+  helpATalk:
+    "Utilisez les icônes Discord et Telegram à gauche de l’application. Nous lisons chaque message.",
+  helpButton: "Aide",
 };
 
 export const he: WorldDictionary = {
@@ -591,6 +705,34 @@ export const he: WorldDictionary = {
   homeBigAuto: "זו נראית משימה גדולה, ולכן צוות יטפל בה.",
   homeBigOne: "השתמש בעמית אחד במקום",
   homeStartTeam: "התחל עם צוות",
+  helpGroupNew: "חדש ושימושי",
+  helpQPreview: "האם Sahkarmi מבין את המשימה לפני שאני לוחץ «התחל»?",
+  helpAPreview:
+    "כן. בדף הבית כתבו את המשימה וחכו רגע. הוא מציג מה הבין, מי יבצע ומה חסר. הקישו על שאלה כדי לענות. «התחל» פועל בכל רגע.",
+  helpQDoing: "איך אדע מה עמית עושה עכשיו?",
+  helpADoing:
+    "בזמן העבודה השורה שלו נהיית כתומה ומתארת מה הוא עושה, עם תג קטן נע על התמונה. בצ׳אט של ה-CEO פס למעלה מציג את כל מי שעובד.",
+  helpQSide: "אפשר לשאול משהו כשעמית עסוק?",
+  helpASide:
+    'כן. לחצו "Ask on the side" מעל תיבת ההודעה. בינה מלאכותית חינמית עונה מתוך הצ׳אט, והמשימה לא מופרעת.',
+  helpQTeach: "איך מלמדים עמית משימה בדפדפן?",
+  helpATeach:
+    'פתחו את הדפדפן, לחצו "Take over" ואז "Teach a task". בצעו את המשימה פעם אחת, לחצו "Stop and save" ותנו לה שם. סיסמאות וקודים לעולם לא נרשמים.',
+  helpQTakeover: "איך מתחברים או מצטרפים לשיחה בדפדפן?",
+  helpATakeover:
+    'לחצו "Take over". הדף שלכם: לחצו, הקלידו והשתמשו במיקרופון ובמצלמה. בסיום לחצו "Hand back".',
+  helpQClear: "איך מסירים הודעה או מנקים צ׳אט?",
+  helpAClear:
+    'בהודעה פתחו את שלוש הנקודות ובחרו "Remove from chat". לניקוי כל הצ׳אט: לחיצה ימנית על העמית ולחיצה פעמיים על "Clear this chat".',
+  helpQQuiet: "איך משתיקים עמית או מסמנים צ׳אט כלא נקרא?",
+  helpAQuiet:
+    'לחיצה ימנית על העמית. השתקה מכבה את הצליל וההתראות. "Mark as unread" משאיר את הצ׳אט ברשימה. צליל הסיום נמצא בהגדרות > General.',
+  helpQPhoneRun: "אפשר להפעיל שגרה מהטלפון?",
+  helpAPhoneRun:
+    "כן, אחרי חיבור Telegram בהגדרות. שלחו /routines כדי לראות אותן ו-/run עם השם כדי להפעיל.",
+  helpQTalk: "איך פונים לצוות Sahkarmi?",
+  helpATalk: "השתמשו בסמלי Discord ו-Telegram בצד האפליקציה. אנחנו קוראים כל הודעה.",
+  helpButton: "עזרה",
 };
 
 export const it: WorldDictionary = {
@@ -709,6 +851,34 @@ export const it: WorldDictionary = {
   homeBigAuto: "Sembra un lavoro grande, quindi se ne occuperà un team.",
   homeBigOne: "Usa invece un solo collega",
   homeStartTeam: "Inizia con un team",
+  helpGroupNew: "Nuovo e utile",
+  helpQPreview: "Sahkarmi capisce il mio lavoro prima che io prema «Inizia»?",
+  helpAPreview:
+    "Sì. Nella Home scriva il lavoro e attenda un momento. Mostra che cosa ha capito, chi lo farà e che cosa manca. Tocchi una domanda per rispondere. «Inizia» funziona in ogni momento.",
+  helpQDoing: "Come so che cosa sta facendo un collega?",
+  helpADoing:
+    "Mentre lavora, la sua riga diventa arancione e dice che cosa fa, con un piccolo distintivo animato sull’immagine. Nella chat del CEO una striscia in alto mostra chi sta lavorando.",
+  helpQSide: "Posso chiedere qualcosa mentre un collega è occupato?",
+  helpASide:
+    'Sì. Prema "Ask on the side" sopra la casella del messaggio. Un’IA gratuita risponde dalla chat e il lavoro non viene disturbato.',
+  helpQTeach: "Come insegno a un collega un lavoro nel browser?",
+  helpATeach:
+    'Apra il browser, prema "Take over" e poi "Teach a task". Faccia il lavoro una volta, prema "Stop and save" e gli dia un nome. Password e codici non vengono mai annotati.',
+  helpQTakeover: "Come accedo o partecipo a una chiamata nel browser?",
+  helpATakeover:
+    'Prema "Take over". La pagina è sua: clicchi, scriva, usi microfono e fotocamera. Alla fine prema "Hand back".',
+  helpQClear: "Come tolgo un messaggio o svuoto una chat?",
+  helpAClear:
+    'Sul messaggio apra i tre puntini e scelga "Remove from chat". Per svuotare tutta la chat, clic destro sul collega e prema due volte "Clear this chat".',
+  helpQQuiet: "Come silenzio un collega o segno una chat come non letta?",
+  helpAQuiet:
+    'Clic destro sul collega. Il silenzioso spegne suono e notifiche. "Mark as unread" tiene la chat nel suo elenco. Il suono di fine è in Impostazioni > General.',
+  helpQPhoneRun: "Posso avviare una routine dal telefono?",
+  helpAPhoneRun:
+    "Sì, quando Telegram è collegato nelle impostazioni. Invii /routines per vederle e /run con il nome per avviarne una.",
+  helpQTalk: "Come contatto il team di Sahkarmi?",
+  helpATalk: "Usi le icone Discord e Telegram a sinistra nell’app. Leggiamo ogni messaggio.",
+  helpButton: "Aiuto",
 };
 
 export const ja: WorldDictionary = {
@@ -826,6 +996,35 @@ export const ja: WorldDictionary = {
   homeBigAuto: "大きな仕事のようなので、チームで対応します。",
   homeBigOne: "代わりに同僚1人に任せる",
   homeStartTeam: "チームで始める",
+  helpGroupNew: "新しくて便利な機能",
+  helpQPreview: "「開始」を押す前に、Sahkarmi は仕事を理解してくれますか？",
+  helpAPreview:
+    "はい。ホームで仕事を入力して少し待つと、理解した内容、担当する同僚、足りない情報が表示されます。質問をタップして答えられます。「開始」はいつでも押せます。",
+  helpQDoing: "同僚が今何をしているか、どうすればわかりますか？",
+  helpADoing:
+    "作業中は行がオレンジになり、していることが表示され、アイコンに小さく動くバッジが付きます。CEO のチャットでは、上の帯に作業中の全員が表示されます。",
+  helpQSide: "同僚が忙しいときに質問できますか？",
+  helpASide:
+    'はい。メッセージ欄の上の "Ask on the side" を押します。無料の AI がチャットをもとに答え、作業の邪魔はしません。',
+  helpQTeach: "ブラウザーの仕事を同僚に教えるには？",
+  helpATeach:
+    'ブラウザーを開き、"Take over"、次に "Teach a task" を押します。仕事を一度行い、"Stop and save" を押して名前を付けます。パスワードやコードは記録されません。',
+  helpQTakeover: "ブラウザーでサインインや通話をするには？",
+  helpATakeover:
+    '"Take over" を押します。ページを自分で操作でき、クリック、入力、マイクとカメラが使えます。終わったら "Hand back" を押します。',
+  helpQClear: "メッセージを消す、チャットを空にするには？",
+  helpAClear:
+    'メッセージの三点メニューから "Remove from chat" を選びます。チャット全体は、同僚を右クリックして "Clear this chat" を2回押します。',
+  helpQQuiet: "同僚をミュートする、チャットを未読にするには？",
+  helpAQuiet:
+    '同僚を右クリックします。ミュートで音と通知が止まります。"Mark as unread" でチャットが一覧に残ります。完了音は 設定 > General にあります。',
+  helpQPhoneRun: "スマホからルーティンを開始できますか？",
+  helpAPhoneRun:
+    "はい。設定で Telegram を接続すると使えます。/routines で一覧、/run と名前で開始します。",
+  helpQTalk: "Sahkarmi チームに連絡するには？",
+  helpATalk:
+    "アプリ左側の Discord と Telegram のアイコンをお使いください。すべてのメッセージを読みます。",
+  helpButton: "ヘルプ",
 };
 
 export const ko: WorldDictionary = {
@@ -943,6 +1142,34 @@ export const ko: WorldDictionary = {
   homeBigAuto: "큰 일로 보여서 팀이 맡아요.",
   homeBigOne: "대신 동료 한 명에게 맡기기",
   homeStartTeam: "팀으로 시작",
+  helpGroupNew: "새롭고 유용한 기능",
+  helpQPreview: "‘시작’을 누르기 전에 Sahkarmi가 제 일을 이해하나요?",
+  helpAPreview:
+    "네. 홈에서 일을 적고 잠시 기다리면 이해한 내용, 맡을 동료, 빠진 정보를 보여 줍니다. 질문을 눌러 답할 수 있습니다. ‘시작’은 언제든 누를 수 있습니다.",
+  helpQDoing: "동료가 지금 무엇을 하는지 어떻게 알 수 있나요?",
+  helpADoing:
+    "일하는 동안 해당 줄이 주황색이 되고 하는 일을 보여 주며, 그림에 작은 움직이는 배지가 붙습니다. CEO 채팅에서는 위쪽 띠에 일하는 모든 동료가 보입니다.",
+  helpQSide: "동료가 바쁠 때 질문해도 되나요?",
+  helpASide:
+    '네. 메시지 상자 위의 "Ask on the side"를 누르세요. 무료 AI가 채팅을 바탕으로 답하며 작업은 방해받지 않습니다.',
+  helpQTeach: "브라우저 작업을 동료에게 어떻게 가르치나요?",
+  helpATeach:
+    '브라우저를 열고 "Take over", 이어서 "Teach a task"를 누르세요. 작업을 한 번 하고 "Stop and save"를 눌러 이름을 붙입니다. 비밀번호와 코드는 절대 기록되지 않습니다.',
+  helpQTakeover: "브라우저에서 로그인하거나 통화에 참여하려면?",
+  helpATakeover:
+    '"Take over"를 누르세요. 페이지를 직접 다룰 수 있습니다: 클릭, 입력, 마이크와 카메라 사용. 끝나면 "Hand back"을 누르세요.',
+  helpQClear: "메시지를 지우거나 채팅을 비우려면?",
+  helpAClear:
+    '메시지의 점 세 개를 열고 "Remove from chat"을 선택하세요. 채팅 전체는 동료를 오른쪽 클릭하고 "Clear this chat"을 두 번 누릅니다.',
+  helpQQuiet: "동료를 음소거하거나 채팅을 읽지 않음으로 표시하려면?",
+  helpAQuiet:
+    '동료를 오른쪽 클릭하세요. 음소거하면 소리와 알림이 꺼집니다. "Mark as unread"는 채팅을 목록에 남깁니다. 완료 소리는 설정 > General에 있습니다.',
+  helpQPhoneRun: "휴대폰에서 루틴을 시작할 수 있나요?",
+  helpAPhoneRun:
+    "네, 설정에서 Telegram을 연결하면 됩니다. /routines로 목록을 보고 /run과 이름을 보내 시작하세요.",
+  helpQTalk: "Sahkarmi 팀에 어떻게 연락하나요?",
+  helpATalk: "앱 왼쪽의 Discord와 Telegram 아이콘을 사용하세요. 모든 메시지를 읽습니다.",
+  helpButton: "도움말",
 };
 
 export const nl: WorldDictionary = {
@@ -1062,6 +1289,34 @@ export const nl: WorldDictionary = {
   homeBigAuto: "Dit lijkt een grote klus, dus een team gaat het doen.",
   homeBigOne: "Toch één collega gebruiken",
   homeStartTeam: "Starten met een team",
+  helpGroupNew: "Nieuw en handig",
+  helpQPreview: "Begrijpt Sahkarmi mijn taak voordat ik op ‘Starten’ druk?",
+  helpAPreview:
+    "Ja. Typ de taak op Start en wacht even. Het laat zien wat het begreep, wie het doet en wat ontbreekt. Tik op een vraag om te antwoorden. ‘Starten’ werkt altijd.",
+  helpQDoing: "Hoe weet ik wat een collega aan het doen is?",
+  helpADoing:
+    "Tijdens het werk wordt zijn rij oranje en staat er wat hij doet, met een klein bewegend badge op zijn afbeelding. In de chat van de CEO toont een strook bovenaan iedereen die werkt.",
+  helpQSide: "Kan ik iets vragen terwijl een collega bezig is?",
+  helpASide:
+    'Ja. Druk op "Ask on the side" boven het berichtvak. Een gratis AI antwoordt vanuit de chat en de taak wordt niet gestoord.',
+  helpQTeach: "Hoe leer ik een collega een taak in de browser?",
+  helpATeach:
+    'Open de browser, druk op "Take over" en dan "Teach a task". Doe de taak één keer, druk op "Stop and save" en geef een naam. Wachtwoorden en codes worden nooit genoteerd.',
+  helpQTakeover: "Hoe log ik in of neem ik deel aan een gesprek in de browser?",
+  helpATakeover:
+    'Druk op "Take over". De pagina is van u: klikken, typen, microfoon en camera gebruiken. Druk daarna op "Hand back".',
+  helpQClear: "Hoe verwijder ik een bericht of wis ik een chat?",
+  helpAClear:
+    'Open bij het bericht de drie puntjes en kies "Remove from chat". Voor de hele chat: rechtsklik op de collega en druk twee keer op "Clear this chat".',
+  helpQQuiet: "Hoe demp ik een collega of markeer ik een chat als ongelezen?",
+  helpAQuiet:
+    'Rechtsklik op de collega. Dempen zet geluid en meldingen uit. "Mark as unread" houdt de chat in uw lijst. Het klaar-geluid staat in Instellingen > General.',
+  helpQPhoneRun: "Kan ik een routine starten vanaf mijn telefoon?",
+  helpAPhoneRun:
+    "Ja, zodra Telegram in Instellingen is gekoppeld. Stuur /routines voor de lijst en /run met de naam om te starten.",
+  helpQTalk: "Hoe bereik ik het Sahkarmi-team?",
+  helpATalk: "Gebruik de Discord- en Telegram-pictogrammen links in de app. We lezen elk bericht.",
+  helpButton: "Help",
 };
 
 export const pl: WorldDictionary = {
@@ -1181,6 +1436,34 @@ export const pl: WorldDictionary = {
   homeBigAuto: "To wygląda na duże zadanie, więc zajmie się nim zespół.",
   homeBigOne: "Zamiast tego użyj jednego współpracownika",
   homeStartTeam: "Zacznij z zespołem",
+  helpGroupNew: "Nowe i przydatne",
+  helpQPreview: "Czy Sahkarmi rozumie zadanie, zanim nacisnę „Start”?",
+  helpAPreview:
+    "Tak. Na stronie głównej wpisz zadanie i chwilę poczekaj. Pokaże, co zrozumiał, kto je wykona i czego brakuje. Dotknij pytania, aby odpowiedzieć. „Start” działa w każdej chwili.",
+  helpQDoing: "Skąd mam wiedzieć, co robi współpracownik?",
+  helpADoing:
+    "Podczas pracy jego wiersz robi się pomarańczowy i mówi, co robi, a na obrazku jest mała ruchoma plakietka. W czacie CEO pasek u góry pokazuje wszystkich, którzy pracują.",
+  helpQSide: "Czy mogę o coś zapytać, gdy współpracownik jest zajęty?",
+  helpASide:
+    'Tak. Naciśnij "Ask on the side" nad polem wiadomości. Darmowa AI odpowie na podstawie czatu, a zadanie nie zostanie zakłócone.',
+  helpQTeach: "Jak nauczyć współpracownika zadania w przeglądarce?",
+  helpATeach:
+    'Otwórz przeglądarkę, naciśnij "Take over", potem "Teach a task". Wykonaj zadanie raz, naciśnij "Stop and save" i nadaj nazwę. Hasła i kody nigdy nie są zapisywane.',
+  helpQTakeover: "Jak się zalogować lub dołączyć do rozmowy w przeglądarce?",
+  helpATakeover:
+    'Naciśnij "Take over". Strona jest Twoja: klikaj, pisz, używaj mikrofonu i kamery. Na koniec naciśnij "Hand back".',
+  helpQClear: "Jak usunąć wiadomość lub wyczyścić czat?",
+  helpAClear:
+    'Przy wiadomości otwórz trzy kropki i wybierz "Remove from chat". Aby wyczyścić cały czat, kliknij współpracownika prawym przyciskiem i naciśnij dwa razy "Clear this chat".',
+  helpQQuiet: "Jak wyciszyć współpracownika lub oznaczyć czat jako nieprzeczytany?",
+  helpAQuiet:
+    'Kliknij współpracownika prawym przyciskiem. Wyciszenie wyłącza dźwięk i powiadomienia. "Mark as unread" zostawia czat na liście. Dźwięk zakończenia jest w Ustawienia > General.',
+  helpQPhoneRun: "Czy mogę uruchomić rutynę z telefonu?",
+  helpAPhoneRun:
+    "Tak, gdy Telegram jest połączony w ustawieniach. Wyślij /routines, aby je zobaczyć, i /run z nazwą, aby uruchomić.",
+  helpQTalk: "Jak skontaktować się z zespołem Sahkarmi?",
+  helpATalk: "Użyj ikon Discord i Telegram po lewej stronie aplikacji. Czytamy każdą wiadomość.",
+  helpButton: "Pomoc",
 };
 
 export const pt: WorldDictionary = {
@@ -1299,6 +1582,35 @@ export const pt: WorldDictionary = {
   homeBigAuto: "Parece uma tarefa grande, então uma equipe vai fazê-la.",
   homeBigOne: "Usar um só colega",
   homeStartTeam: "Começar com uma equipe",
+  helpGroupNew: "Novo e útil",
+  helpQPreview: "O Sahkarmi entende a minha tarefa antes de eu clicar em «Começar»?",
+  helpAPreview:
+    "Sim. No Início, escreva a tarefa e espere um momento. Ele mostra o que entendeu, quem vai fazer e o que falta. Toque numa pergunta para responder. «Começar» funciona a qualquer momento.",
+  helpQDoing: "Como sei o que um colega está fazendo?",
+  helpADoing:
+    "Enquanto trabalha, a linha dele fica laranja e diz o que está fazendo, com um pequeno selo animado na imagem. No chat do CEO, uma faixa no topo mostra todos os que estão trabalhando.",
+  helpQSide: "Posso perguntar algo enquanto um colega está ocupado?",
+  helpASide:
+    'Sim. Clique em "Ask on the side" acima da caixa de mensagem. Uma IA gratuita responde a partir do chat e a tarefa não é interrompida.',
+  helpQTeach: "Como ensino uma tarefa no navegador a um colega?",
+  helpATeach:
+    'Abra o navegador, clique em "Take over" e depois em "Teach a task". Faça a tarefa uma vez, clique em "Stop and save" e dê um nome. Senhas e códigos nunca são anotados.',
+  helpQTakeover: "Como faço login ou entro numa chamada no navegador?",
+  helpATakeover:
+    'Clique em "Take over". A página é sua: clique, digite, use o microfone e a câmera. Ao terminar, clique em "Hand back".',
+  helpQClear: "Como removo uma mensagem ou limpo um chat?",
+  helpAClear:
+    'Na mensagem, abra os três pontos e escolha "Remove from chat". Para limpar o chat todo, clique com o botão direito no colega e pressione "Clear this chat" duas vezes.',
+  helpQQuiet: "Como silencio um colega ou marco um chat como não lido?",
+  helpAQuiet:
+    'Clique com o botão direito no colega. Silenciar desliga som e notificações. "Mark as unread" mantém o chat na sua lista. O som de conclusão está em Configurações > General.',
+  helpQPhoneRun: "Posso iniciar uma rotina pelo celular?",
+  helpAPhoneRun:
+    "Sim, quando o Telegram estiver conectado nas configurações. Envie /routines para ver as rotinas e /run com o nome para iniciar uma.",
+  helpQTalk: "Como falo com a equipe do Sahkarmi?",
+  helpATalk:
+    "Use os ícones do Discord e do Telegram à esquerda do aplicativo. Lemos todas as mensagens.",
+  helpButton: "Ajuda",
 };
 
 export const ru: WorldDictionary = {
@@ -1416,6 +1728,35 @@ export const ru: WorldDictionary = {
   homeBigAuto: "Похоже, это большая задача, поэтому ею займётся команда.",
   homeBigOne: "Использовать одного коллегу",
   homeStartTeam: "Начать с командой",
+  helpGroupNew: "Новое и полезное",
+  helpQPreview: "Понимает ли Sahkarmi задачу до того, как я нажму «Начать»?",
+  helpAPreview:
+    "Да. На главной напишите задачу и немного подождите. Он покажет, что понял, кто её выполнит и чего не хватает. Нажмите на вопрос, чтобы ответить. «Начать» работает в любой момент.",
+  helpQDoing: "Как узнать, что сейчас делает коллега?",
+  helpADoing:
+    "Во время работы его строка становится оранжевой и сообщает, что он делает, а на картинке появляется маленький движущийся значок. В чате CEO полоса сверху показывает всех, кто работает.",
+  helpQSide: "Можно ли спросить что-то, пока коллега занят?",
+  helpASide:
+    'Да. Нажмите "Ask on the side" над полем сообщения. Бесплатный ИИ ответит по чату, и задача не прервётся.',
+  helpQTeach: "Как научить коллегу задаче в браузере?",
+  helpATeach:
+    'Откройте браузер, нажмите "Take over", затем "Teach a task". Выполните задачу один раз, нажмите "Stop and save" и дайте название. Пароли и коды никогда не записываются.',
+  helpQTakeover: "Как войти в аккаунт или присоединиться к звонку в браузере?",
+  helpATakeover:
+    'Нажмите "Take over". Страница ваша: кликайте, печатайте, используйте микрофон и камеру. В конце нажмите "Hand back".',
+  helpQClear: "Как удалить сообщение или очистить чат?",
+  helpAClear:
+    'У сообщения откройте три точки и выберите "Remove from chat". Чтобы очистить весь чат, щёлкните коллегу правой кнопкой и дважды нажмите "Clear this chat".',
+  helpQQuiet: "Как отключить звук коллеги или пометить чат непрочитанным?",
+  helpAQuiet:
+    'Щёлкните коллегу правой кнопкой. Без звука отключает звук и уведомления. "Mark as unread" оставляет чат в списке. Звук завершения находится в Настройки > General.',
+  helpQPhoneRun: "Можно ли запустить рутину с телефона?",
+  helpAPhoneRun:
+    "Да, когда Telegram подключён в настройках. Отправьте /routines, чтобы увидеть список, и /run с названием, чтобы запустить.",
+  helpQTalk: "Как связаться с командой Sahkarmi?",
+  helpATalk:
+    "Используйте значки Discord и Telegram слева в приложении. Мы читаем каждое сообщение.",
+  helpButton: "Помощь",
 };
 
 export const tr: WorldDictionary = {
@@ -1534,6 +1875,34 @@ export const tr: WorldDictionary = {
   homeBigAuto: "Bu büyük bir iş gibi görünüyor, bu yüzden bir ekip yapacak.",
   homeBigOne: "Bunun yerine tek bir çalışma arkadaşı kullan",
   homeStartTeam: "Bir ekiple başla",
+  helpGroupNew: "Yeni ve kullanışlı",
+  helpQPreview: "“Başla”ya basmadan önce Sahkarmi işimi anlıyor mu?",
+  helpAPreview:
+    "Evet. Ana sayfada işi yazın ve biraz bekleyin. Ne anladığını, kimin yapacağını ve neyin eksik olduğunu gösterir. Yanıtlamak için bir soruya dokunun. “Başla” her zaman çalışır.",
+  helpQDoing: "Bir çalışma arkadaşının ne yaptığını nasıl anlarım?",
+  helpADoing:
+    "Çalışırken satırı turuncu olur ve ne yaptığını yazar; resminde küçük hareketli bir rozet görünür. CEO sohbetinde üstteki şerit çalışan herkesi gösterir.",
+  helpQSide: "Çalışma arkadaşı meşgulken soru sorabilir miyim?",
+  helpASide:
+    'Evet. Mesaj kutusunun üstündeki "Ask on the side" düğmesine basın. Ücretsiz bir yapay zekâ sohbetten yanıt verir, iş etkilenmez.',
+  helpQTeach: "Tarayıcıdaki bir işi çalışma arkadaşına nasıl öğretirim?",
+  helpATeach:
+    'Tarayıcıyı açın, "Take over" ve ardından "Teach a task" düğmesine basın. İşi bir kez yapın, "Stop and save" düğmesine basıp ad verin. Parolalar ve kodlar asla kaydedilmez.',
+  helpQTakeover: "Tarayıcıda nasıl oturum açar veya görüşmeye katılırım?",
+  helpATakeover:
+    '"Take over" düğmesine basın. Sayfa sizindir: tıklayın, yazın, mikrofonu ve kamerayı kullanın. Bitince "Hand back" düğmesine basın.',
+  helpQClear: "Bir mesajı nasıl kaldırır veya sohbeti nasıl temizlerim?",
+  helpAClear:
+    'Mesajda üç noktayı açıp "Remove from chat" seçin. Tüm sohbet için çalışma arkadaşına sağ tıklayın ve "Clear this chat" düğmesine iki kez basın.',
+  helpQQuiet: "Bir çalışma arkadaşını nasıl sessize alır veya sohbeti okunmadı yaparım?",
+  helpAQuiet:
+    'Çalışma arkadaşına sağ tıklayın. Sessize almak sesini ve bildirimlerini kapatır. "Mark as unread" sohbeti listenizde tutar. Bitiş sesi Ayarlar > General içindedir.',
+  helpQPhoneRun: "Telefonumdan bir rutin başlatabilir miyim?",
+  helpAPhoneRun:
+    "Evet, Ayarlar’da Telegram bağlandıktan sonra. Rutinleri görmek için /routines, başlatmak için adıyla birlikte /run gönderin.",
+  helpQTalk: "Sahkarmi ekibine nasıl ulaşırım?",
+  helpATalk: "Uygulamanın solundaki Discord ve Telegram simgelerini kullanın. Her mesajı okuyoruz.",
+  helpButton: "Yardım",
 };
 
 export const zh: WorldDictionary = {
@@ -1649,4 +2018,31 @@ export const zh: WorldDictionary = {
   homeBigAuto: "这看起来是个大任务，所以会交给团队来做。",
   homeBigOne: "改用一位同事",
   homeStartTeam: "用团队开始",
+  helpGroupNew: "新增的实用功能",
+  helpQPreview: "在我按“开始”之前，Sahkarmi 能理解我的任务吗？",
+  helpAPreview:
+    "能。在主页输入任务并稍等片刻，它会显示它的理解、由谁来做以及还缺什么。点一下问题即可回答。“开始”随时可以按。",
+  helpQDoing: "怎么知道同事正在做什么？",
+  helpADoing:
+    "工作时，他那一行会变成橙色并写明正在做的事，头像上还有一个小的动态徽标。在 CEO 的聊天中，顶部的一条栏会显示所有正在工作的同事。",
+  helpQSide: "同事忙的时候我能提问吗？",
+  helpASide: '能。点击消息框上方的 "Ask on the side"。免费的 AI 会根据聊天内容回答，不会打扰任务。',
+  helpQTeach: "怎样教同事在浏览器里做一项工作？",
+  helpATeach:
+    '打开浏览器，点击 "Take over"，再点击 "Teach a task"。把工作做一遍，点击 "Stop and save" 并起个名字。密码和验证码绝不会被记录。',
+  helpQTakeover: "怎样在浏览器里登录或加入通话？",
+  helpATakeover:
+    '点击 "Take over"。页面由你操作：点击、输入、使用麦克风和摄像头。完成后点击 "Hand back"。',
+  helpQClear: "怎样移除一条消息或清空聊天？",
+  helpAClear:
+    '在消息上打开三个点，选择 "Remove from chat"。要清空整个聊天，右键点击同事并按两次 "Clear this chat"。',
+  helpQQuiet: "怎样让同事静音或把聊天标为未读？",
+  helpAQuiet:
+    '右键点击同事。静音会关闭他的声音和通知。"Mark as unread" 会让聊天留在你的列表中。完成提示音在 设置 > General。',
+  helpQPhoneRun: "能用手机启动例行任务吗？",
+  helpAPhoneRun:
+    "能，在设置中连接 Telegram 之后即可。发送 /routines 查看列表，发送 /run 加名称来启动。",
+  helpQTalk: "怎样联系 Sahkarmi 团队？",
+  helpATalk: "使用应用左侧的 Discord 和 Telegram 图标。我们会阅读每一条消息。",
+  helpButton: "帮助",
 };

@@ -75,6 +75,11 @@ export const SPOKEN_CHOICES: Array<{
   })),
 ];
 
+/** With the app in English: India speaks Hinglish to it, the rest of the world English. */
+export function defaultSpokenForEnglish(systemLocale: string | undefined): "hi-en" | "en" {
+  return /-IN$/i.test(systemLocale ?? "") ? "hi-en" : "en";
+}
+
 const SPOKEN_KEY = "sahkarmi.voice.spoken";
 
 function rememberedSpoken(): string | null {
@@ -155,7 +160,18 @@ export function VoiceRecorder(props: {
     if (app === "bn") return "bn";
     // A world app language: speak it, written by the on-PC Whisper model.
     if (SPOKEN_CHOICES.some((choice) => choice.more && choice.code === app)) return app;
+    // English app: Hinglish for a PC set up for India, plain English everywhere else.
+    if (app === "en") return defaultSpokenForEnglish(navigator.language);
     return "hi-en";
+  });
+  // A world language that came from the app language (no chip was tapped): the on-PC model is
+  // still told which language to expect, or it guesses, and guesses wrongly on short phrases.
+  createEffect(() => {
+    if (spokenChoice()) return;
+    const expected = SPOKEN_CHOICES.find((choice) => choice.code === spoken())?.whisper;
+    const settings = voiceState()?.settings;
+    if (!expected || !settings || settings.dictationLanguage) return;
+    void window.sahkarmi.voice.setSettings({ dictationLanguage: expected }).catch(() => undefined);
   });
   const offered = createMemo(() => {
     const models = voiceState()?.models.filter((model) => model.type === "dictation") ?? [];

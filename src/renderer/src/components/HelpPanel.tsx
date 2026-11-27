@@ -30,6 +30,20 @@ const SCREEN_HELP: Record<CenterView, { title: MessageKey; body: MessageKey }> =
 /** Questions people ask, grouped; an answer reused from the old tips list drops its "Topic:" label. */
 const TOPICS: Array<{ group: MessageKey; items: Array<[q: MessageKey, a: MessageKey]> }> = [
   {
+    group: "helpGroupNew",
+    items: [
+      ["helpQPreview", "helpAPreview"],
+      ["helpQDoing", "helpADoing"],
+      ["helpQSide", "helpASide"],
+      ["helpQTeach", "helpATeach"],
+      ["helpQTakeover", "helpATakeover"],
+      ["helpQClear", "helpAClear"],
+      ["helpQQuiet", "helpAQuiet"],
+      ["helpQPhoneRun", "helpAPhoneRun"],
+      ["helpQTalk", "helpATalk"],
+    ],
+  },
+  {
     group: "helpGroupStart",
     items: [
       ["helpQFree", "helpAFree"],

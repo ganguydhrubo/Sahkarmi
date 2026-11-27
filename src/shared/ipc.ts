@@ -1,5 +1,6 @@
 import type { IntelligenceDesktopApi } from "./intelligence";
 import type { ResourceAccess, ResourceKind } from "./resource-access";
+import type { TeachStep } from "./teach";
 export const IPC_CHANNELS = {
   setTheme: "app:set-theme",
   getAppInfo: "app:get-info",
@@ -37,6 +38,8 @@ export const IPC_CHANNELS = {
   agentSearchMessages: "agent:search-messages",
   agentSendMessage: "agent:send-message",
   agentSetMessageReaction: "agent:set-message-reaction",
+  agentHideMessage: "agent:hide-message",
+  agentClearConversation: "agent:clear-conversation",
   agentChooseAttachments: "agent:choose-attachments",
   agentImportAttachments: "agent:import-attachments",
   agentDiscardDraftAttachment: "agent:discard-draft-attachment",
@@ -178,6 +181,11 @@ export const IPC_CHANNELS = {
   intelligenceOutcomes: "intelligence:outcomes",
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
+  homeSideAnswer: "home:side-answer",
+  browserTeachStart: "browser:teach-start",
+  browserTeachStop: "browser:teach-stop",
+  browserTeachCount: "browser:teach-count",
+  powerKeepAwake: "power:keep-awake",
   intelligencePredictions: "intelligence:predictions",
   intelligenceAnalyzeRun: "intelligence:analyze-run",
   intelligenceDecisions: "intelligence:decisions",
@@ -2072,6 +2080,10 @@ export interface AgentDesktopApi {
   branchConversation: (input: BranchConversationInput) => Promise<BotSummary>;
   sendMessage: (input: SendMessageInput) => Promise<QueuedMessageReceipt>;
   setMessageReaction: (input: SetMessageReactionInput) => Promise<void>;
+  /** Removes one message from what the chat shows. Optional: older preloads do not have it. */
+  hideMessage?: (input: { botId: string; messageId: string }) => Promise<void>;
+  /** Clears a coworker's whole chat and starts a fresh one. Rejects while it is working. */
+  clearConversation?: (botId: string) => Promise<void>;
   listQueue: (botId: string) => Promise<QueueSnapshot>;
   cancelQueuedMessage: (input: CancelQueuedMessageInput) => Promise<void>;
   /** Sends a task that was interrupted when Sahkarmi closed again, as a new message. */
@@ -2097,6 +2109,12 @@ export interface BrowserDesktopApi {
   getTakeover: () => Promise<BrowserTakeoverState>;
   takeOver: () => Promise<BrowserTakeoverState>;
   handBack: (note?: string | null) => Promise<BrowserTakeoverState>;
+  /** Teach a task: start noting the owner's steps. False when it cannot (not taken over). */
+  teachStart?: () => Promise<boolean>;
+  /** Ends the recording and returns the steps in order. */
+  teachStop?: () => Promise<TeachStep[]>;
+  /** Steps noted so far; null when nothing is being taught. */
+  teachCount?: () => Promise<number | null>;
   /** Says no to every pending "please take over" request; coworkers are told not to continue. */
   declineTakeover: (note?: string | null) => Promise<BrowserTakeoverState>;
   /** A small picture of a tab for the compact browser card; null when it cannot be captured. */
@@ -2464,6 +2482,8 @@ export interface SahkarmiDesktopApi {
   setTheme?: (theme: "system" | "light" | "dark") => Promise<void>;
   /** The owner's UI size, as a real Electron zoom (CSS zoom broke menus and panels). */
   setUiZoom?: (factor: number) => void;
+  /** Stops Windows from sleeping while the app is open (the screen may still switch off). */
+  setKeepAwake?: (on: boolean) => void;
   getAppInfo: () => Promise<AppInfo>;
   getSetupState: () => Promise<AppSetupState>;
   saveSetup: (input: SaveSetupInput) => Promise<AppSetupState>;
@@ -3560,4 +3580,19 @@ export interface HomeDesktopApi {
     language: string;
     team: HomeTeamMember[];
   }) => Promise<HomeUnderstanding | null>;
+  /**
+   * A quick side question while a coworker is busy, answered by the free AI in a run of its
+   * own. Null when the AI is slow, fails or was overtaken by a newer question.
+   */
+  sideAnswer?: (input: SideQuestionRequest) => Promise<string | null>;
+}
+
+export interface SideQuestionRequest {
+  question: string;
+  coworkerName: string;
+  coworkerRole: string;
+  /** The job the coworker is doing now, in the owner's words. */
+  job: string;
+  recent: Array<{ from: "owner" | "coworker"; text: string }>;
+  language: string;
 }

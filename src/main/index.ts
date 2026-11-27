@@ -15,6 +15,7 @@ import {
   nativeTheme,
   type OpenDialogOptions,
   powerMonitor,
+  powerSaveBlocker,
   protocol,
   type SaveDialogOptions,
   safeStorage,
@@ -91,6 +92,7 @@ import { RunEventStore } from "../backend/run-events";
 import { parseCadence, ScheduleStore } from "../backend/schedule-store";
 import { SecretCodec, SecretStore } from "../backend/secret-store";
 import { SharedFiles } from "../backend/shared-files";
+import { answerSideQuestion } from "../backend/side-question";
 import { LearnedSkills, SkillLibrary } from "../backend/skill-library";
 import { StartupTimings } from "../backend/startup-timings";
 import { shareWithTailscale, tailscaleStatus, unshareTailscale } from "../backend/tailscale";
@@ -885,6 +887,19 @@ function registerIpcHandlers(
     const parsed = parseMessageReaction(input);
     return service.setMessageReaction(parsed);
   });
+  handleTrusted(IPC_CHANNELS.agentHideMessage, (input: unknown) => {
+    if (!isObject(input)) throw new Error("Invalid message.");
+    return service.hideMessage({
+      botId: requireString(input.botId, "botId"),
+      messageId: requireString(input.messageId, "messageId"),
+    });
+  });
+  handleTrusted(IPC_CHANNELS.agentClearConversation, async (botId: unknown) => {
+    const id = requireString(botId, "botId");
+    await service.clearConversation(id);
+    // Pins point at messages that are gone now.
+    await pinStore?.deleteBotData(id);
+  });
   handleTrusted(IPC_CHANNELS.agentChooseAttachments, async () => {
     const options: OpenDialogOptions = { properties: ["openFile", "multiSelections"] };
     const result = mainWindow
@@ -1003,6 +1018,10 @@ function registerIpcHandlers(
   });
   handleTrusted(IPC_CHANNELS.browserGetTakeover, () => service.getTakeover());
   handleTrusted(IPC_CHANNELS.browserTakeOver, () => service.takeOverBrowser());
+  // Teach a task: the owner's own steps in the browser, noted only while they ask for it.
+  handleTrusted(IPC_CHANNELS.browserTeachStart, () => browser.startTeaching?.() ?? false);
+  handleTrusted(IPC_CHANNELS.browserTeachStop, () => browser.stopTeaching?.() ?? []);
+  handleTrusted(IPC_CHANNELS.browserTeachCount, () => browser.teachingCount?.() ?? null);
   handleTrusted(IPC_CHANNELS.browserHandBack, (note: unknown) =>
     service.handBackBrowser(typeof note === "string" && note.trim() ? note : null),
   );
@@ -2944,6 +2963,14 @@ if (!hasSingleInstanceLock) {
           listBots: () => service.listBots(),
           sendMessage: (input) => service.sendMessage(input),
           readConversation: (botId) => service.readConversation(botId),
+          // /routines and /run from the phone: the same list and the same "Run now" as the app.
+          listRoutines: () =>
+            routines.state().routines.map((routine) => ({
+              id: routine.id,
+              name: routine.name,
+              enabled: routine.enabled,
+            })),
+          runRoutine: (id) => routines.runNow(id),
           subscribe: (listener) => {
             service.on("event", listener);
             return () => service.off("event", listener);
@@ -3498,6 +3525,18 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       defaultBotId: typeof input.defaultBotId === "string" ? input.defaultBotId : null,
     });
   });
+  // Keep awake: the owner asked that the PC does not sleep while Sahkarmi is open, so
+  // scheduled jobs run. Only sleep is held off; the screen may still switch off.
+  let keepAwakeId: number | null = null;
+  handleTrusted(IPC_CHANNELS.powerKeepAwake, (on: unknown) => {
+    if (on === true && keepAwakeId === null) {
+      keepAwakeId = powerSaveBlocker.start("prevent-app-suspension");
+    } else if (on !== true && keepAwakeId !== null) {
+      if (powerSaveBlocker.isStarted(keepAwakeId)) powerSaveBlocker.stop(keepAwakeId);
+      keepAwakeId = null;
+    }
+    return keepAwakeId !== null;
+  });
   // Home's AI preview. One read at a time: newer words stop the older read.
   let homeRead: AbortController | null = null;
   let homeModels: Promise<string[]> | null = null;
@@ -3532,6 +3571,47 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       return null;
     } finally {
       if (homeRead === stop) homeRead = null;
+    }
+  });
+  // A side question while a coworker is busy. One at a time: a newer question stops the older.
+  let sideRead: AbortController | null = null;
+  handleTrusted(IPC_CHANNELS.homeSideAnswer, async (input: unknown) => {
+    sideRead?.abort();
+    sideRead = null;
+    if (!isObject(input) || typeof input.question !== "string") return null;
+    const words = (value: unknown, max: number) =>
+      typeof value === "string" ? value.slice(0, max) : "";
+    const recent = (Array.isArray(input.recent) ? input.recent : [])
+      .filter(isObject)
+      .slice(-8)
+      .map((message) => ({
+        from: message.from === "owner" ? ("owner" as const) : ("coworker" as const),
+        text: words(message.text, 700),
+      }))
+      .filter((message) => message.text);
+    const stop = new AbortController();
+    sideRead = stop;
+    try {
+      const cli = await resolveOpenCodeCli();
+      homeModels ??= listHomeModels(cli.executable);
+      const models = await homeModels;
+      if (models.length === 0) homeModels = null;
+      return await answerSideQuestion(
+        {
+          question: words(input.question, 1_000),
+          coworkerName: words(input.coworkerName, 80) || "the coworker",
+          coworkerRole: words(input.coworkerRole, 120),
+          job: words(input.job, 1_200),
+          recent,
+          language: words(input.language, 40),
+        },
+        openCodeHomeRunner(cli.executable),
+        { models, signal: stop.signal },
+      );
+    } catch {
+      return null;
+    } finally {
+      if (sideRead === stop) sideRead = null;
     }
   });
   handleTrusted(IPC_CHANNELS.intelligencePredictions, (workspaceId: unknown) =>

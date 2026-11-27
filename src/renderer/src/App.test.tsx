@@ -626,11 +626,14 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
     await screen.findByRole("heading", { name: "Chief" });
-    const ring = await screen.findByRole("button", { name: "ChatGPT 91%" });
-    expect(screen.getByRole("button", { name: "Claude 77%" })).toHaveClass("usage-ring-mid");
-    expect(screen.queryByRole("button", { name: /^Antigravity/ })).not.toBeInTheDocument();
+    // One ring for every connected AI: the one closest to its limit leads, "+1" for the other.
+    const ring = await screen.findByRole("button", { name: "ChatGPT 91%, Claude 77%" });
+    expect(ring).toHaveTextContent("+1");
+    expect(screen.queryByRole("button", { name: /Antigravity/ })).not.toBeInTheDocument();
     await fireEvent.focus(ring);
+    // Pointing at it lists each AI with its own limits.
     expect(await screen.findByText("5-hour window")).toBeInTheDocument();
+    expect(screen.getByText("Weekly")).toBeInTheDocument();
   });
 
   it("lets the user review providers and permissions from Settings", async () => {

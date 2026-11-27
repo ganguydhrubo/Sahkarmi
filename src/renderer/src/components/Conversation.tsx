@@ -84,8 +84,10 @@ import {
 } from "./ScheduleControls";
 import { SecureInputCard } from "./SecureInputCard";
 import { SidebarToggleIcon } from "./Sidebar";
+import { SideQuestion } from "./SideQuestion";
 import { StatusDot, statusLabel } from "./StatusDot";
 import { TaskQueueStrip } from "./TaskQueueStrip";
+import { TeachPanel } from "./TeachPanel";
 import { Tip } from "./Tip";
 import { ToolCallCard, type ToolCallSummary, ToolGroupCard } from "./ToolCallCard";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -906,6 +908,8 @@ function MessageActions(props: {
   onBranch?: () => void;
   /** Pins or unpins the message in the chat's pin bar. */
   onTogglePin?: () => void;
+  /** Removes the message from this chat (not while it is being written). */
+  onRemove?: () => void;
   pinned?: boolean;
   branchDisabled?: boolean;
 }) {
@@ -1019,6 +1023,17 @@ function MessageActions(props: {
               <button type="button" role="menuitem" onClick={props.onTogglePin}>
                 <span aria-hidden="true">📌</span>
                 <span>{props.pinned ? t("pinUnpin") : t("pinPin")}</span>
+              </button>
+            </Show>
+            <Show when={props.onRemove && !props.message.streaming}>
+              <button
+                type="button"
+                role="menuitem"
+                title={t("msgRemoveHint")}
+                onClick={props.onRemove}
+              >
+                <span aria-hidden="true">🗑</span>
+                <span>{t("msgRemove")}</span>
               </button>
             </Show>
             <Show when={props.message.author === "bot" && props.onBranch}>
@@ -1377,6 +1392,18 @@ export function Conversation(props: ConversationProps) {
       })
       .catch(() => undefined);
   });
+  /** The owner removes one message from this chat; the coworker's AI is not disturbed. */
+  async function removeMessage(messageId: string) {
+    const botId = props.bot?.id;
+    setOpenMoreMessageId(null);
+    if (!botId) return;
+    try {
+      await window.sahkarmi.agent.hideMessage?.({ botId, messageId });
+    } catch (error) {
+      setComposerError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   async function togglePin(messageId: string, text: string) {
     const botId = props.bot?.id;
     setOpenMoreMessageId(null);
@@ -2052,6 +2079,8 @@ export function Conversation(props: ConversationProps) {
       !agentReady() ||
       props.activeTurnId ||
       props.messages.length > 0 ||
+      // A coworker that has done jobs is not new, even with its chat cleared.
+      (props.queue?.deliveries.length ?? 0) > 0 ||
       props.bot?.role.trim() ||
       props.onboardingRequest?.botId === botId ||
       completedOnboardingBots()[botId] ||
@@ -3157,6 +3186,11 @@ export function Conversation(props: ConversationProps) {
                               branchDisabled={agentActivity() === "Working"}
                               pinned={pins().some((pin) => pin.messageId === message.id)}
                               onTogglePin={() => void togglePin(message.id, message.body)}
+                              onRemove={
+                                window.sahkarmi.agent.hideMessage
+                                  ? () => void removeMessage(message.id)
+                                  : undefined
+                              }
                             />
                           </div>
                           <Show when={message.reaction}>
@@ -3370,6 +3404,13 @@ export function Conversation(props: ConversationProps) {
               onRunNow={props.onRunSchedule}
             />
           </div>
+        </Show>
+        <Show when={window.sahkarmi.home?.sideAnswer && props.bot}>
+          <SideQuestion
+            bot={props.bot}
+            messages={props.messages}
+            working={agentActivity() === "Working"}
+          />
         </Show>
         <Show when={scheduleNotice()}>
           <div class="composer-notice" role="status">
@@ -3962,6 +4003,9 @@ export function Conversation(props: ConversationProps) {
                   aria-label={t("handBackNote")}
                   onInput={(event) => setHandBackNote(event.currentTarget.value)}
                 />
+                <Show when={window.sahkarmi.browser.teachStart}>
+                  <TeachPanel />
+                </Show>
               </Show>
             </div>
           </Show>

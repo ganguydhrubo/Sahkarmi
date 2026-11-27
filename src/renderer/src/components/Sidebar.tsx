@@ -140,6 +140,12 @@ interface SidebarProps {
   onSelectBot: (botId: string) => void;
   onCreateBot: () => void;
   onEditBot: (botId: string) => void;
+  /** Counts the chat as unread again, so the owner comes back to it. */
+  onMarkUnread?: (botId: string) => void;
+  /** Clears the coworker's whole chat. Rejects (with the reason) while it is working. */
+  onClearChat?: (botId: string) => Promise<void>;
+  /** Muted: no notification and no finished sound from this coworker. */
+  onSetBotMuted?: (botId: string, muted: boolean) => void;
   onDeleteBot: (botId: string) => Promise<void>;
   onSelectView: (view: CenterView) => void;
   onSelectWorkspace: (workspaceId: string) => void;
@@ -795,6 +801,9 @@ export function Sidebar(props: SidebarProps) {
     </>
   );
 
+  /** The coworker whose "Clear this chat" was pressed once and waits for the second press. */
+  const [clearAskId, setClearAskId] = createSignal<string | null>(null);
+
   const botRow = (bot: BotProfile, depth: number): JSX.Element => {
     const status = () => props.statuses[bot.id] ?? "idle";
     const aura = statusAura(status);
@@ -1310,6 +1319,38 @@ export function Sidebar(props: SidebarProps) {
                   <EditIcon />
                   <span>{t("editCoworker")}</span>
                 </button>
+                <Show when={props.onMarkUnread}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const botId = menu().botId;
+                      setContextMenu(null);
+                      props.onMarkUnread?.(botId);
+                    }}
+                  >
+                    <span>{t("menuMarkUnread")}</span>
+                  </button>
+                </Show>
+                <Show when={props.onSetBotMuted}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const botId = menu().botId;
+                      const muted =
+                        props.bots.find((bot) => bot.id === botId)?.notifications === false;
+                      setContextMenu(null);
+                      props.onSetBotMuted?.(botId, !muted);
+                    }}
+                  >
+                    <span>
+                      {props.bots.find((bot) => bot.id === menu().botId)?.notifications === false
+                        ? t("menuUnmute")
+                        : t("menuMute")}
+                    </span>
+                  </button>
+                </Show>
                 <Show when={props.onSetBotFolder && allFolders().length > 0}>
                   <button type="button" role="menuitem" onClick={() => setBotMenuMode("move")}>
                     <span>{t("moveToFolder")}…</span>
@@ -1317,6 +1358,32 @@ export function Sidebar(props: SidebarProps) {
                 </Show>
               </Show>
               <div class="bot-context-separator" />
+              <Show when={props.onClearChat}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="bot-context-danger"
+                  onClick={() => {
+                    const botId = menu().botId;
+                    // The first press asks; the second one clears.
+                    if (clearAskId() !== botId) {
+                      setClearAskId(botId);
+                      return;
+                    }
+                    setClearAskId(null);
+                    setContextMenu(null);
+                    void props
+                      .onClearChat?.(botId)
+                      .catch((error) =>
+                        window.alert(error instanceof Error ? error.message : String(error)),
+                      );
+                  }}
+                >
+                  <span>
+                    {clearAskId() === menu().botId ? t("menuClearChatSure") : t("menuClearChat")}
+                  </span>
+                </button>
+              </Show>
               <button
                 type="button"
                 role="menuitem"
@@ -1586,6 +1653,42 @@ function MoreIcon() {
   );
 }
 
+function CommunityIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" class="rail-nav-icon">
+      <path d="M10 16.5s-5.8-3.4-5.8-7.6A3.3 3.3 0 0 1 10 6.900a3.3 3.3 0 0 1 5.8 2c0 4.2-5.8 7.6-5.8 7.6Z" />
+    </svg>
+  );
+}
+
+/** The Community menu: ways to get help, follow and support Sahkarmi. */
+const COMMUNITY_LINKS = [
+  {
+    kind: "star" as const,
+    label: "railStar" as const,
+    hint: "railStarHint" as const,
+    url: "https://github.com/ganguydhrubo/Sahkarmi",
+  },
+  {
+    kind: "discord" as const,
+    label: "railDiscord" as const,
+    hint: "railDiscordHint" as const,
+    url: "https://discord.com/invite/unk83wqPUD",
+  },
+  {
+    kind: "telegram" as const,
+    label: "railTelegram" as const,
+    hint: "railTelegramHint" as const,
+    url: "https://t.me/dhruboG",
+  },
+  {
+    kind: "website" as const,
+    label: "railWebsite" as const,
+    hint: "railWebsiteHint" as const,
+    url: "https://sahkarmi.site",
+  },
+];
+
 /** The places that stay on the simple menu; everything else is under More. */
 const SIMPLE_PLACES: CenterView[] = ["orchestrator", "approvals", "settings"];
 
@@ -1595,6 +1698,9 @@ const SIMPLE_PLACES: CenterView[] = ["orchestrator", "approvals", "settings"];
  */
 function SimpleNavigation(props: NavigationProps) {
   const [moreOpen, setMoreOpen] = createSignal(false);
+  /** The Community links (support, star, Discord, Telegram, website) open beside the rail. */
+  const [communityOpen, setCommunityOpen] = createSignal(false);
+  let communityRoot: HTMLDivElement | undefined;
   let moreRoot: HTMLDivElement | undefined;
   let moreMenu: HTMLDivElement | undefined;
   // The menu opens beside "More"; at a large UI size or in a short window it would run past the
@@ -1622,9 +1728,15 @@ function SimpleNavigation(props: NavigationProps) {
   onMount(() => {
     const close = (event: MouseEvent) => {
       if (moreOpen() && moreRoot && !moreRoot.contains(event.target as Node)) setMoreOpen(false);
+      if (communityOpen() && communityRoot && !communityRoot.contains(event.target as Node)) {
+        setCommunityOpen(false);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMoreOpen(false);
+      if (event.key === "Escape") {
+        setMoreOpen(false);
+        setCommunityOpen(false);
+      }
     };
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", closeOnEscape);
@@ -1648,7 +1760,7 @@ function SimpleNavigation(props: NavigationProps) {
         title={t("navHome")}
         onClick={() => go("home")}
       >
-        <LogoMark size={40} motion="turn" />
+        <LogoMark size={48} motion="turn" />
       </button>
       <div class="simple-rail-places">
         <button
@@ -1736,69 +1848,79 @@ function SimpleNavigation(props: NavigationProps) {
                 </button>
               )}
             </For>
-            <Show when={props.onToggleHelp}>
-              <button
-                type="button"
-                role="menuitem"
-                class="simple-more-item"
-                data-help-button
-                onClick={() => {
-                  setMoreOpen(false);
-                  props.onToggleHelp?.();
-                }}
-              >
-                <HelpIcon />
-                <span>{t("helpButton")}</span>
-              </button>
-            </Show>
           </div>
         </div>
       </div>
-      <nav class="rail-support" aria-label={t("railSupportGroup")}>
-        <For
-          each={[
-            {
-              kind: "support" as const,
-              label: "railSupport" as const,
-              url: "https://github.com/sponsors/ganguydhrubo",
-            },
-            {
-              kind: "star" as const,
-              label: "railStar" as const,
-              url: "https://github.com/ganguydhrubo/Sahkarmi",
-            },
-            {
-              kind: "discord" as const,
-              label: "railDiscord" as const,
-              url: "https://discord.com/invite/unk83wqPUD",
-            },
-            {
-              kind: "telegram" as const,
-              label: "railTelegram" as const,
-              url: "https://t.me/dhruboG",
-            },
-            {
-              kind: "website" as const,
-              label: "railWebsite" as const,
-              url: "https://sahkarmi.site",
-            },
-          ]}
-        >
-          {(link) => (
-            <button
-              type="button"
-              class="rail-support-link"
-              title={t(link.label)}
-              onClick={() => void window.sahkarmi.openUrl?.(link.url)}
-            >
-              <SupportIcon kind={link.kind} />
-              <span>{t(link.label)}</span>
-            </button>
-          )}
-        </For>
-      </nav>
       <div class="app-rail-bottom">
         <UsageRings onOpenUsage={() => go("usage")} />
+        <div class="simple-rail-more" ref={communityRoot}>
+          <button
+            type="button"
+            class="simple-rail-place rail-support-place"
+            classList={{ "rail-nav-active": communityOpen() }}
+            aria-expanded={communityOpen()}
+            aria-haspopup="menu"
+            onClick={() => setCommunityOpen((open) => !open)}
+          >
+            <CommunityIcon />
+            <span>{t("railSupport")}</span>
+          </button>
+          <div
+            class="simple-more-menu rail-community-menu"
+            classList={{ "simple-more-open": communityOpen() }}
+            role="menu"
+            aria-label={t("railSupportGroup")}
+          >
+            <div class="rail-support-card">
+              <strong>{t("railSupportTitle")}</strong>
+              <p>{t("railSupportPitch")}</p>
+              <button
+                type="button"
+                class="rail-support-cta"
+                onClick={() => {
+                  setCommunityOpen(false);
+                  void window.sahkarmi.openUrl?.("https://github.com/sponsors/ganguydhrubo");
+                }}
+              >
+                <span aria-hidden="true">♥</span>
+                {t("railSupportCta")}
+              </button>
+            </div>
+            <For each={COMMUNITY_LINKS}>
+              {(link) => (
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="simple-more-item rail-community-item"
+                  onClick={() => {
+                    setCommunityOpen(false);
+                    void window.sahkarmi.openUrl?.(link.url);
+                  }}
+                >
+                  <SupportIcon kind={link.kind} />
+                  <span class="rail-community-text">
+                    <strong>{t(link.label)}</strong>
+                    <small>{t(link.hint)}</small>
+                  </span>
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+        <Show when={props.onToggleHelp}>
+          <button
+            type="button"
+            class="simple-rail-place"
+            classList={{ "rail-nav-active": props.helpOpen === true }}
+            data-help-button
+            aria-expanded={props.helpOpen === true}
+            aria-haspopup="dialog"
+            onClick={() => props.onToggleHelp?.()}
+          >
+            <HelpIcon />
+            <span>{t("helpButton")}</span>
+          </button>
+        </Show>
         <button
           type="button"
           class="simple-rail-place"
