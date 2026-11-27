@@ -77,6 +77,8 @@
   // The opening video plays only where it is welcome: not on data-saver, not when less motion
   // is asked for. The still picture is always there underneath.
   const saving = navigator.connection?.saveData === true;
+  // On a phone the still picture is enough: the film costs data and makes scrolling stutter.
+  const smallScreen = window.matchMedia("(max-width: 760px)").matches;
   // Films wait until the page has finished loading (plus a short pause), so the first view,
   // the words and the download button, is never slowed by a video download.
   const settled = new Promise((resolve) => {
@@ -85,7 +87,7 @@
     else window.addEventListener("load", later, { once: true });
   });
   for (const video of document.querySelectorAll(".scene-video, .go-film")) {
-    if (calm || saving) {
+    if (calm || saving || smallScreen) {
       video.remove();
     } else {
       video.muted = true;

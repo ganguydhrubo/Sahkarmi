@@ -951,6 +951,21 @@
     @media (min-width: 901px) { .nav-more { display: none; } }
     @media (min-width: 901px) and (max-width: 1180px) { .nav a { padding: 8px 8px; font-size: 14.5px; } }
     @media (min-width: 901px) and (max-width: 1040px) { .nav-mid { display: none; } }
+    /* Phones: every table and code box fits the screen, and the page stays light (no frosted
+       glass on cards, no drifting colour clouds or petals, which make an iPhone stutter). */
+    @media (max-width: 640px) {
+      .table-wrap table { min-width: 0; table-layout: fixed; font-size: 13px; }
+      .table-wrap th, .table-wrap td { padding: 10px 8px; overflow-wrap: anywhere; }
+      .table-wrap th { font-size: 10.5px; letter-spacing: 0.02em; }
+      .plug-json { white-space: pre-wrap; overflow-wrap: anywhere; }
+    }
+    @media (max-width: 760px) {
+      .card, .toast, .stats { backdrop-filter: none; -webkit-backdrop-filter: none; }
+      .card { background: var(--card-solid, var(--card)); }
+      .aurora, .petals { display: none; }
+      .hero-glow { animation: none; }
+      html .scene img { animation: none; }
+    }
   </style>
   <link rel="preload" as="image" href="/assets/cinema/dawn-poster.webp" />
   <link rel="stylesheet" href="/assets/cinema.css" />
