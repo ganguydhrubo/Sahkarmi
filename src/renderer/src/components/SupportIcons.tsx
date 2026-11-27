@@ -1,141 +1,87 @@
 import { createUniqueId } from "solid-js";
-import { LogoMark } from "./Logo";
 
 /**
- * Glossy 3D tiles for the rail's support links, all three on the same warm cream tile so they
- * read as one set (heart, gold star, logo). Each is a rounded tile with a light
- * top-left, a darker bottom-right, an inner gloss band and a soft drop shadow, so they
- * read as raised buttons. A sparkle shows on hover (see revamp.css).
+ * The rail's three support links as one set: the same raised, glossy tile in three rich
+ * colours (rose, gold, brand navy), each with a white glyph that has a soft shadow. A sparkle
+ * shows on hover (see revamp.css).
  */
 type Kind = "support" | "star" | "website";
 
-function Tile(props: { id: string; from: string; mid: string; to: string }) {
-  return (
-    <>
-      <defs>
-        <linearGradient id={`${props.id}-tile`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color={props.from} />
-          <stop offset="0.55" stop-color={props.mid} />
-          <stop offset="1" stop-color={props.to} />
-        </linearGradient>
-        <linearGradient id={`${props.id}-gloss`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.5" />
-          <stop offset="1" stop-color="#fff" stop-opacity="0" />
-        </linearGradient>
-        <filter id={`${props.id}-drop`} x="-30%" y="-30%" width="160%" height="170%">
-          <feDropShadow
-            dx="0"
-            dy="2.2"
-            stdDeviation="1.8"
-            flood-color="#1F2A5C"
-            flood-opacity="0.35"
-          />
-        </filter>
-      </defs>
-      <rect
-        x="3"
-        y="3"
-        width="34"
-        height="34"
-        rx="10"
-        fill={`url(#${props.id}-tile)`}
-        filter={`url(#${props.id}-drop)`}
-      />
-      <rect
-        x="3.6"
-        y="3.6"
-        width="32.8"
-        height="32.8"
-        rx="9.6"
-        fill="none"
-        stroke="#fff"
-        stroke-opacity="0.35"
-        stroke-width="0.8"
-      />
-      <path
-        d="M6 13 Q6 5.5 13 5.5 H27 Q34 5.5 34 13 Q20 18 6 13 Z"
-        fill={`url(#${props.id}-gloss)`}
-      />
-    </>
-  );
-}
+const TILE: Record<Kind, { from: string; mid: string; to: string; glow: string }> = {
+  support: { from: "#FF9AA8", mid: "#F0476A", to: "#B3123A", glow: "#B3123A" },
+  star: { from: "#FFE07A", mid: "#F7A823", to: "#C46F06", glow: "#C46F06" },
+  website: { from: "#6C7FE0", mid: "#3346A6", to: "#1A2350", glow: "#1A2350" },
+};
 
-function Sparkle() {
-  return (
-    <path
-      class="support-sparkle"
-      d="M31 6 L32 9 L35 10 L32 11 L31 14 L30 11 L27 10 L30 9 Z"
-      fill="#fff"
-    />
-  );
-}
+const GLYPH: Record<Kind, string> = {
+  support:
+    "M20 29.2 C11.6 23.6 10 19 11.5 15.6 C13.2 11.9 17.7 11.8 20 15.2 C22.3 11.8 26.8 11.9 28.5 15.6 C30 19 28.4 23.6 20 29.2 Z",
+  star: "M20 9.8 L23 16.1 L29.9 17 L24.9 21.8 L26.1 28.6 L20 25.3 L13.9 28.6 L15.1 21.8 L10.1 17 L17 16.1 Z",
+  website:
+    "M20 10 a10 10 0 1 0 0 20 a10 10 0 1 0 0 -20 Z M20 12.2 c1.5 1.7 2.5 4.4 2.6 6.7 h-5.2 c0.1 -2.3 1.1 -5 2.6 -6.7 Z M15.2 18.9 h-2.9 a7.9 7.9 0 0 1 4.3 -6 c-0.8 1.7 -1.3 3.9 -1.4 6 Z M24.8 18.9 c-0.1 -2.1 -0.6 -4.3 -1.4 -6 a7.9 7.9 0 0 1 4.3 6 Z M12.3 21.1 h2.9 c0.1 2.1 0.6 4.3 1.4 6 a7.9 7.9 0 0 1 -4.3 -6 Z M17.4 21.1 h5.2 c-0.1 2.3 -1.1 5 -2.6 6.7 c-1.5 -1.7 -2.5 -4.4 -2.6 -6.7 Z M24.8 21.1 h2.9 a7.9 7.9 0 0 1 -4.3 6 c0.8 -1.7 1.3 -3.9 1.4 -6 Z",
+};
 
 export function SupportIcon(props: { kind: Kind }) {
   const id = `sk-sup-${createUniqueId()}`;
-  if (props.kind === "website") {
-    return (
-      <span class="support-3d support-3d--website">
-        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-          <Tile id={id} from="#FFF8EE" mid="#F6E7D2" to="#E2C9A8" />
-          <Sparkle />
-        </svg>
-        <LogoMark size={22} motion="shine" class="support-3d-logo" />
-      </span>
-    );
-  }
-  if (props.kind === "star") {
-    return (
-      <span class="support-3d">
-        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-          <defs>
-            <linearGradient id={`${id}-gold`} x1="0" y1="0" x2="0.6" y2="1">
-              <stop offset="0" stop-color="#FFF3A6" />
-              <stop offset="0.45" stop-color="#FFC93C" />
-              <stop offset="1" stop-color="#C8860B" />
-            </linearGradient>
-          </defs>
-          <Tile id={id} from="#FFF8EE" mid="#F6E7D2" to="#E2C9A8" />
-          <path
-            d="M20 9.5 L23.1 15.9 L30.1 16.8 L25 21.6 L26.3 28.6 L20 25.2 L13.7 28.6 L15 21.6 L9.9 16.8 L16.9 15.9 Z"
-            fill={`url(#${id}-gold)`}
-            stroke="#8A5A00"
-            stroke-width="0.6"
-            stroke-linejoin="round"
-          />
-          <path d="M20 11.5 L22.2 16.4 L17.6 16.9 Z" fill="#fff" opacity="0.55" />
-          <Sparkle />
-        </svg>
-      </span>
-    );
-  }
+  const tile = TILE[props.kind];
   return (
-    <span class="support-3d">
+    <span class={`support-3d support-3d--${props.kind}`}>
       <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
         <defs>
-          <radialGradient id={`${id}-heart`} cx="0.35" cy="0.3" r="0.8">
-            <stop offset="0" stop-color="#FFE1E6" />
-            <stop offset="0.35" stop-color="#FF5A78" />
-            <stop offset="1" stop-color="#B3123A" />
-          </radialGradient>
+          <linearGradient id={`${id}-tile`} x1="0.15" y1="0" x2="0.85" y2="1">
+            <stop offset="0" stop-color={tile.from} />
+            <stop offset="0.5" stop-color={tile.mid} />
+            <stop offset="1" stop-color={tile.to} />
+          </linearGradient>
+          <linearGradient id={`${id}-gloss`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.55" />
+            <stop offset="1" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <filter id={`${id}-drop`} x="-30%" y="-30%" width="160%" height="175%">
+            <feDropShadow
+              dx="0"
+              dy="2.4"
+              stdDeviation="2"
+              flood-color={tile.glow}
+              flood-opacity="0.45"
+            />
+          </filter>
+          <filter id={`${id}-glyph`} x="-30%" y="-30%" width="160%" height="170%">
+            <feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="#000" flood-opacity="0.3" />
+          </filter>
         </defs>
-        <Tile id={id} from="#FFF8EE" mid="#F6E7D2" to="#E2C9A8" />
+        <rect
+          x="3"
+          y="3"
+          width="34"
+          height="34"
+          rx="10.5"
+          fill={`url(#${id}-tile)`}
+          filter={`url(#${id}-drop)`}
+        />
+        <rect
+          x="3.6"
+          y="3.6"
+          width="32.8"
+          height="32.8"
+          rx="10"
+          fill="none"
+          stroke="#fff"
+          stroke-opacity="0.4"
+          stroke-width="0.8"
+        />
         <path
-          class="support-heart"
-          d="M20 29 C11 23 9.5 18.5 11.2 15.2 C13 11.8 17.6 11.6 20 15 C22.4 11.6 27 11.8 28.8 15.2 C30.5 18.5 29 23 20 29 Z"
-          fill={`url(#${id}-heart)`}
-          stroke="#7A0C26"
-          stroke-width="0.5"
+          d="M5.5 14 Q5.5 5.5 13.5 5.5 H26.5 Q34.5 5.5 34.5 14 Q20 19.5 5.5 14 Z"
+          fill={`url(#${id}-gloss)`}
         />
-        <ellipse
-          cx="15.6"
-          cy="16.2"
-          rx="2.2"
-          ry="1.3"
+        <path
+          class={props.kind === "support" ? "support-heart" : undefined}
+          d={GLYPH[props.kind]}
           fill="#fff"
-          opacity="0.7"
-          transform="rotate(-30 15.6 16.2)"
+          fill-rule="evenodd"
+          filter={`url(#${id}-glyph)`}
         />
-        <Sparkle />
+        <path class="support-sparkle" d="M31 6 L32 9 L35 10 L32 11 L31 14 L30 11 L27 10 L30 9 Z" />
       </svg>
     </span>
   );

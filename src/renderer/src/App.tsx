@@ -60,6 +60,7 @@ import { SchedulesView } from "./components/SchedulesView";
 import { SharedFilesView } from "./components/SharedFilesView";
 import { AppNavigation, type CenterView, Sidebar } from "./components/Sidebar";
 import { SplashScreen } from "./components/SplashScreen";
+import { SupportTicker } from "./components/SupportTicker";
 import { TeamRunStrip } from "./components/TeamRunStrip";
 import { UpdateControl } from "./components/UpdateControl";
 import { WelcomeCard } from "./components/WelcomeCard";
@@ -1498,6 +1499,7 @@ export function App() {
             />
           }
         >
+          <SupportTicker />
           <div
             class="app-frame"
             classList={{
