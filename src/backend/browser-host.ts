@@ -434,6 +434,49 @@ export function keptSessionCookie(
 }
 
 /**
+ * Sites that share one sign-in: being signed in to one of them is kept in cookies of the others.
+ * Only well-known families are listed, so ad and tracker cookies of unrelated sites are still
+ * left to expire as before.
+ */
+const SIGN_IN_FAMILIES: ReadonlyArray<ReadonlySet<string>> = [
+  new Set([
+    "facebook.com",
+    "fb.com",
+    "instagram.com",
+    "messenger.com",
+    "meta.com",
+    "threads.net",
+    "threads.com",
+    "whatsapp.com",
+  ]),
+  new Set(["google.com", "google.co.in", "youtube.com", "gmail.com"]),
+  new Set(["microsoft.com", "live.com", "microsoftonline.com", "office.com", "outlook.com"]),
+  new Set(["x.com", "twitter.com"]),
+];
+
+/** True when a cookie of `cookieSite` belongs to the sign-in of a page on `openSite`. */
+export function sharesSignIn(cookieSite: string, openSite: string | null): boolean {
+  if (!cookieSite || !openSite) return false;
+  if (cookieSite === openSite) return true;
+  return SIGN_IN_FAMILIES.some((family) => family.has(cookieSite) && family.has(openSite));
+}
+
+/** True when the noted session cookie is still the one in the browser, unchanged. */
+export function stillCurrent(
+  noted: Pick<Electron.Cookie, "name" | "value" | "domain" | "path">,
+  now: ReadonlyArray<Pick<Electron.Cookie, "name" | "value" | "domain" | "path" | "session">>,
+): boolean {
+  return now.some(
+    (cookie) =>
+      cookie.session === true &&
+      cookie.name === noted.name &&
+      cookie.value === noted.value &&
+      (cookie.domain ?? "") === (noted.domain ?? "") &&
+      (cookie.path ?? "/") === (noted.path ?? "/"),
+  );
+}
+
+/**
  * Which one coworker receives each site's sign-in when the old shared browser is split: the
  * one with the most open pages of that site, then the most recorded uses, then the first seen.
  */
@@ -685,7 +728,15 @@ export class BrowserHost implements CoworkerBrowser {
         void (async () => {
           for (const cookie of cookies) {
             const kept = keptSessionCookie(cookie, Date.now());
-            if (kept) await target.cookies.set(kept).catch(() => undefined);
+            if (!kept) continue;
+            // The site may have changed or removed this cookie since it was noted (switching
+            // account, signing out). Only the value that is still there is kept; writing the
+            // noted one back would undo the site's change and sign the account out.
+            const now = await target.cookies
+              .get({ url: kept.url, name: cookie.name })
+              .catch(() => [] as Electron.Cookie[]);
+            if (!stillCurrent(cookie, now)) continue;
+            await target.cookies.set(kept).catch(() => undefined);
           }
           // On disk now, not on Chromium's own schedule: a killed app keeps its sign-ins.
           await target.cookies.flushStore().catch(() => undefined);
@@ -702,8 +753,11 @@ export class BrowserHost implements CoworkerBrowser {
         return;
       }
       const site = siteOfHost(cookie.domain ?? "");
+      // The site itself, or one that signs in through it: Instagram's sign-in lives partly in
+      // Facebook's cookies, so with only instagram.com open those were dropped at every restart
+      // and the accounts in Instagram's own switcher were signed out.
       const open = [...this.#tabs.values()].some(
-        (tab) => tab.ownerBotId === botId && siteOfUrl(currentTabUrl(tab)) === site,
+        (tab) => tab.ownerBotId === botId && sharesSignIn(site, siteOfUrl(currentTabUrl(tab))),
       );
       if (!open) return;
       pending.set(key, cookie);
