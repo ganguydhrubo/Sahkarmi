@@ -37,6 +37,8 @@ export const IPC_CHANNELS = {
   agentSearchMessages: "agent:search-messages",
   agentSendMessage: "agent:send-message",
   agentSetMessageReaction: "agent:set-message-reaction",
+  agentHideMessage: "agent:hide-message",
+  agentClearConversation: "agent:clear-conversation",
   agentChooseAttachments: "agent:choose-attachments",
   agentImportAttachments: "agent:import-attachments",
   agentDiscardDraftAttachment: "agent:discard-draft-attachment",
@@ -2073,6 +2075,10 @@ export interface AgentDesktopApi {
   branchConversation: (input: BranchConversationInput) => Promise<BotSummary>;
   sendMessage: (input: SendMessageInput) => Promise<QueuedMessageReceipt>;
   setMessageReaction: (input: SetMessageReactionInput) => Promise<void>;
+  /** Removes one message from what the chat shows. Optional: older preloads do not have it. */
+  hideMessage?: (input: { botId: string; messageId: string }) => Promise<void>;
+  /** Clears a coworker's whole chat and starts a fresh one. Rejects while it is working. */
+  clearConversation?: (botId: string) => Promise<void>;
   listQueue: (botId: string) => Promise<QueueSnapshot>;
   cancelQueuedMessage: (input: CancelQueuedMessageInput) => Promise<void>;
   /** Sends a task that was interrupted when Sahkarmi closed again, as a new message. */

@@ -1564,6 +1564,14 @@ export function App() {
                 onCreateBot={() => void createAgent()}
                 onEditBot={editBot}
                 onMarkUnread={markUnread}
+                onClearChat={
+                  window.sahkarmi.agent.clearConversation
+                    ? async (botId) => {
+                        await window.sahkarmi.agent.clearConversation?.(botId);
+                        clearReplyIndicators(botId);
+                      }
+                    : undefined
+                }
                 onSetBotMuted={(botId, muted) => void updateBot(botId, { notifications: !muted })}
                 onDeleteBot={deleteBot}
                 onSelectView={(next) => {

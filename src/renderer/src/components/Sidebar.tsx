@@ -142,6 +142,8 @@ interface SidebarProps {
   onEditBot: (botId: string) => void;
   /** Counts the chat as unread again, so the owner comes back to it. */
   onMarkUnread?: (botId: string) => void;
+  /** Clears the coworker's whole chat. Rejects (with the reason) while it is working. */
+  onClearChat?: (botId: string) => Promise<void>;
   /** Muted: no notification and no finished sound from this coworker. */
   onSetBotMuted?: (botId: string, muted: boolean) => void;
   onDeleteBot: (botId: string) => Promise<void>;
@@ -799,6 +801,9 @@ export function Sidebar(props: SidebarProps) {
     </>
   );
 
+  /** The coworker whose "Clear this chat" was pressed once and waits for the second press. */
+  const [clearAskId, setClearAskId] = createSignal<string | null>(null);
+
   const botRow = (bot: BotProfile, depth: number): JSX.Element => {
     const status = () => props.statuses[bot.id] ?? "idle";
     const aura = statusAura(status);
@@ -1353,6 +1358,32 @@ export function Sidebar(props: SidebarProps) {
                 </Show>
               </Show>
               <div class="bot-context-separator" />
+              <Show when={props.onClearChat}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="bot-context-danger"
+                  onClick={() => {
+                    const botId = menu().botId;
+                    // The first press asks; the second one clears.
+                    if (clearAskId() !== botId) {
+                      setClearAskId(botId);
+                      return;
+                    }
+                    setClearAskId(null);
+                    setContextMenu(null);
+                    void props
+                      .onClearChat?.(botId)
+                      .catch((error) =>
+                        window.alert(error instanceof Error ? error.message : String(error)),
+                      );
+                  }}
+                >
+                  <span>
+                    {clearAskId() === menu().botId ? t("menuClearChatSure") : t("menuClearChat")}
+                  </span>
+                </button>
+              </Show>
               <button
                 type="button"
                 role="menuitem"

@@ -175,6 +175,7 @@ import {
 } from "./desktop/desktop-tools";
 import type { GeminiAccountSource } from "./gemini-accounts";
 import { GeminiRotation, IdleWatch, pickPrewarmBots } from "./gemini-runtime";
+import { HiddenMessageStore } from "./hidden-messages";
 import { understandFirstPrompt } from "./home-brain";
 import type { ComposioClient } from "./integrations/composio-client";
 import { isActionSensitive } from "./integrations/composio-policy";
@@ -559,6 +560,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   >();
   /** Hand-over notes still to deliver, and the earlier chat kept on screen after an AI change. */
   readonly #aiSwitch: AiSwitchStore;
+  /** Messages the owner removed from a chat, and chats the owner cleared (shown-only filter). */
+  readonly #hidden: HiddenMessageStore;
   /**
    * Each coworker's latest task list. A chat re-read drops the plan from the screen copy, but a
    * move to another AI still needs it for the hand-over note.
@@ -730,6 +733,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#codexThreads = new CodexThreadLedger(store.userDataPath);
     this.#aiSwitch = new AiSwitchStore(store.userDataPath);
+    this.#hidden = new HiddenMessageStore(store.userDataPath);
     this.#repeatJobs = new RepeatJobStore(store.userDataPath);
     this.#mailbox = mailbox;
     this.#browser = browser;
@@ -2427,6 +2431,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#ownRuntime.delete(botId);
     this.#lastPlans.delete(botId);
     await this.#aiSwitch.forget(botId);
+    await this.#hidden.forget(botId);
     await this.#repeatJobs.forgetBot(botId);
     for (const [id, pending] of this.#secureInputs) {
       if (pending.request.botId === botId) {
@@ -2477,6 +2482,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   async initialize(): Promise<void> {
     await this.#loadDeliverables();
     await this.#aiSwitch.load();
+    await this.#hidden.load();
     await this.#repeatJobs.load();
     // Coworkers that were on a backup AI when Sahkarmi closed go back when their limit ends.
     for (const [botId, cover] of Object.entries(this.#aiSwitch.covers())) {
@@ -3142,6 +3148,77 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     if (answer && !this.#hasStartedWork(bot.id)) {
       await this.sendMessage({ botId: bot.id, text: answer, replyToMessageId: input.messageId });
     }
+  }
+
+  /**
+   * The owner removes one message from a chat. It is only left out of what is shown: the AI's
+   * own history is not touched, so the chat keeps working (and the AI may still remember it).
+   */
+  async hideMessage(input: { botId: string; messageId: string }): Promise<void> {
+    const bot = await this.#store.getOrCreate(input.botId);
+    let snapshot = this.#ensureSnapshot(bot.id, bot.threadId);
+    if (!snapshot.messages.some((message) => message.id === input.messageId)) {
+      await this.readConversation(bot.id);
+      snapshot = this.#ensureSnapshot(bot.id, bot.threadId);
+    }
+    const message = snapshot.messages.find((candidate) => candidate.id === input.messageId);
+    if (!message) throw new Error("The message is no longer available.");
+    if (message.status === "streaming") {
+      throw new Error("This message is still being written. Remove it when it is finished.");
+    }
+    await this.#hidden.hide(bot.id, message);
+    this.#syncMailboxMessages(snapshot);
+    snapshot.revision += 1;
+    this.#emitConversation(snapshot);
+  }
+
+  /**
+   * The owner clears a coworker's whole chat. The coworker starts a fresh chat with its AI (so it
+   * no longer carries the old talk), and everything said before now is left out of what is
+   * shown. Not while the coworker is working or has jobs waiting: those would lose their chat.
+   */
+  async clearConversation(botId: string): Promise<void> {
+    const bot = this.#store.list().find((candidate) => candidate.id === botId);
+    if (!bot) throw new Error("This coworker no longer exists.");
+    const waiting = this.#mailbox
+      .listQueue(botId)
+      .deliveries.some(
+        (item) =>
+          item.status === "queued" || item.status === "starting" || item.status === "running",
+      );
+    if (this.#hasStartedWork(botId) || waiting) {
+      throw new Error(
+        "This coworker is working or has jobs waiting. Stop them or wait until they finish, then clear the chat.",
+      );
+    }
+    const oldThreadId = bot.threadId;
+    await this.#hidden.clearChat(botId, new Date().toISOString());
+    await this.#aiSwitch.setPending(botId, null);
+    if (oldThreadId) {
+      await this.#store.clearThread(botId);
+      this.#threadToBot.delete(oldThreadId);
+      this.#loadedThreads.delete(oldThreadId);
+      this.#sentMemories.forget(oldThreadId);
+      this.#contextBudgets.delete(oldThreadId);
+    }
+    this.#freshReads.delete(botId);
+    this.#lastPlans.delete(botId);
+    // The row in the team list must not keep showing a line from the chat that is gone.
+    await this.#store.updatePreview(botId, "No messages yet");
+    const snapshot: ConversationSnapshot = {
+      botId,
+      threadId: null,
+      activeTurnId: null,
+      revision: (this.#snapshots.get(botId)?.revision ?? 0) + 1,
+      messages: [],
+    };
+    this.#snapshots.set(botId, snapshot);
+    this.emit(
+      "log",
+      `the owner cleared the chat of ${botId}${oldThreadId ? ` (was ${oldThreadId})` : ""}`,
+    );
+    this.#emitConversation(snapshot);
+    this.#emit({ type: "bots-changed", bots: this.#store.list() });
   }
 
   /** Any sign of life from a coworker's turn: text, a tool, a plan change. Feeds the watchdog. */
@@ -6279,6 +6356,12 @@ ${carryOver}`
       const reaction = reactions.get(message.id) ?? null;
       if ((message.reaction ?? null) !== reaction) changed = true;
       message.reaction = reaction;
+    }
+    // What the owner removed from this chat stays out, however the chat was put together.
+    const shown = this.#hidden.visible(snapshot.botId, snapshot.messages);
+    if (shown !== snapshot.messages) {
+      snapshot.messages.splice(0, snapshot.messages.length, ...shown);
+      changed = true;
     }
     sortConversationMessages(snapshot.messages);
     if (this.#applyDeliverables(snapshot)) changed = true;

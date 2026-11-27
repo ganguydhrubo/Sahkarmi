@@ -886,6 +886,19 @@ function registerIpcHandlers(
     const parsed = parseMessageReaction(input);
     return service.setMessageReaction(parsed);
   });
+  handleTrusted(IPC_CHANNELS.agentHideMessage, (input: unknown) => {
+    if (!isObject(input)) throw new Error("Invalid message.");
+    return service.hideMessage({
+      botId: requireString(input.botId, "botId"),
+      messageId: requireString(input.messageId, "messageId"),
+    });
+  });
+  handleTrusted(IPC_CHANNELS.agentClearConversation, async (botId: unknown) => {
+    const id = requireString(botId, "botId");
+    await service.clearConversation(id);
+    // Pins point at messages that are gone now.
+    await pinStore?.deleteBotData(id);
+  });
   handleTrusted(IPC_CHANNELS.agentChooseAttachments, async () => {
     const options: OpenDialogOptions = { properties: ["openFile", "multiSelections"] };
     const result = mainWindow

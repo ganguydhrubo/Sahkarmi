@@ -113,6 +113,8 @@ const sahkarmiApi: SahkarmiDesktopApi = {
     branchConversation: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentBranchConversation, input),
     sendMessage: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentSendMessage, input),
     setMessageReaction: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentSetMessageReaction, input),
+    hideMessage: (input) => ipcRenderer.invoke(IPC_CHANNELS.agentHideMessage, input),
+    clearConversation: (botId) => ipcRenderer.invoke(IPC_CHANNELS.agentClearConversation, botId),
     listQueue: (botId) => ipcRenderer.invoke(IPC_CHANNELS.agentListQueue, botId),
     cancelQueuedMessage: (input) =>
       ipcRenderer.invoke(IPC_CHANNELS.agentCancelQueuedMessage, input),
