@@ -5,6 +5,17 @@ All notable changes to Sahkarmi are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-11-27
+
+### Added
+
+- **Suggested next message**: after a coworker answers, the empty message box shows what you may
+  want to send next. Press Tab to use it. It appears only when a useful next step is clear, and
+  can be switched off in Settings > General.
+- **"I learned" with Undo**: when a coworker saves a new skill or a new team memory, its chat says
+  so in plain words, with an Undo button that removes it for good. It shows only what was really
+  stored.
+
 ## [0.36.0] - 2026-11-27
 
 ### Added

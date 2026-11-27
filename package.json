@@ -1,7 +1,7 @@
 {
   "name": "sahkarmi",
   "productName": "Sahkarmi",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "description": "Sahkarmi (Coworkers) — AI coworkers for every business. A local-first desktop app where each coworker has its own workspace, browser, memory and task queue.",
   "author": {
     "name": "Sahkarmi Team",
