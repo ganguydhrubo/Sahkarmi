@@ -232,8 +232,10 @@ async function main() {
     const platform = attr(tag, "data-platform") ?? attr(tag, "data-platform-tile") ?? "win";
     check(
       `direct ${platform} installer link: ${href.split("/").pop()}`,
-      href.startsWith("https://github.com/ganguydhrubo/sahakarmi/releases/download/") &&
-        EXPECTED[platform]?.test(href),
+      // The repo was renamed from "sahakarmi" to "Sahkarmi"; GitHub now gives links with the new name.
+      /^https:\/\/github\.com\/ganguydhrubo\/(sahakarmi|sahkarmi)\/releases\/download\//i.test(
+        href,
+      ) && EXPECTED[platform]?.test(href),
       href,
     );
   }
