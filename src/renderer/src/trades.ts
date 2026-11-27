@@ -579,6 +579,189 @@ export function starterJobs(
     }));
 }
 
+/** Where a power job does its work; shown as a small tag on the tile. */
+export type PowerWhere = "browser" | "pc" | "files";
+
+export interface PowerJob extends StarterJob {
+  where: PowerWhere;
+}
+
+/**
+ * Jobs only an app that works on the computer can do: it opens the browser, the files and the
+ * apps and does the work from start to finish, where a chat app could only write about it.
+ * The same for every line of work. Each one stops and asks before it sends, pays or posts.
+ */
+const POWER_JOBS: Array<JobSpec & { where: PowerWhere }> = [
+  {
+    ...job(
+      "power-leads",
+      "sales",
+      [
+        "Find 20 new customers",
+        "Open the browser, search Google Maps for businesses in my area that could become my customers, and put the name, phone, address and website of 20 of them in an Excel file.",
+      ],
+      [
+        "20 नए ग्राहक खोजें",
+        "ब्राउज़र खोलें, Google Maps पर मेरे इलाके के ऐसे कारोबार खोजें जो मेरे ग्राहक बन सकते हैं, और उनमें से 20 का नाम, फ़ोन, पता और वेबसाइट एक Excel फ़ाइल में डालें।",
+      ],
+      [
+        "২০ জন নতুন গ্রাহক খুঁজুন",
+        "ব্রাউজার খুলুন, Google Maps-এ আমার এলাকার এমন ব্যবসা খুঁজুন যারা আমার গ্রাহক হতে পারে, আর তাদের ২০টির নাম, ফোন, ঠিকানা ও ওয়েবসাইট একটি Excel ফাইলে দিন।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-prices",
+      "research",
+      [
+        "Compare prices online",
+        "Open the browser and check the price of the item I name on Amazon, Flipkart and two more sites. Give me a table with price, delivery and link, and say which is the best deal.",
+      ],
+      [
+        "ऑनलाइन दाम की तुलना",
+        "ब्राउज़र खोलें और मैं जो सामान बताऊँ उसका दाम Amazon, Flipkart और दो और साइटों पर देखें। दाम, डिलीवरी और लिंक की तालिका दें और बताएँ सबसे अच्छा सौदा कौन सा है।",
+      ],
+      [
+        "অনলাইনে দাম তুলনা",
+        "ব্রাউজার খুলুন এবং আমি যে জিনিসের নাম বলব তার দাম Amazon, Flipkart ও আরও দুটি সাইটে দেখুন। দাম, ডেলিভারি ও লিংক সহ একটি তালিকা দিন এবং বলুন কোনটি সবচেয়ে ভালো।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-inbox",
+      "support",
+      [
+        "Clear my inbox",
+        "Open my Gmail in the browser, read today's unread mails, tell me in a short list which ones need my reply, and write a draft reply for each. Do not send anything until I say yes.",
+      ],
+      [
+        "मेरा इनबॉक्स निपटाएँ",
+        "ब्राउज़र में मेरा Gmail खोलें, आज के बिना पढ़े मेल पढ़ें, छोटी सूची में बताएँ किनका जवाब मुझे देना है, और हर एक का जवाब ड्राफ़्ट में लिखें। मेरे हाँ कहने तक कुछ न भेजें।",
+      ],
+      [
+        "আমার ইনবক্স সামলান",
+        "ব্রাউজারে আমার Gmail খুলুন, আজকের না-পড়া মেলগুলো পড়ুন, ছোট তালিকায় বলুন কোনগুলোর উত্তর আমাকে দিতে হবে, আর প্রতিটির উত্তর ড্রাফটে লিখুন। আমি হ্যাঁ না বলা পর্যন্ত কিছু পাঠাবেন না।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-social",
+      "content",
+      [
+        "Post on my pages",
+        "Write today's post for my business, open Facebook, Instagram and LinkedIn in the browser, and get the post ready on each one. Show me before you press Post.",
+      ],
+      [
+        "मेरे पेजों पर पोस्ट करें",
+        "मेरे कारोबार के लिए आज की पोस्ट लिखें, ब्राउज़र में Facebook, Instagram और LinkedIn खोलें, और हर एक पर पोस्ट तैयार करें। Post दबाने से पहले मुझे दिखाएँ।",
+      ],
+      [
+        "আমার পেজে পোস্ট করুন",
+        "আমার ব্যবসার জন্য আজকের পোস্ট লিখুন, ব্রাউজারে Facebook, Instagram ও LinkedIn খুলুন, আর প্রতিটিতে পোস্ট তৈরি রাখুন। Post চাপার আগে আমাকে দেখান।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-bills",
+      "accounts",
+      [
+        "Bills into Excel",
+        "Read all the bills and receipts in the folder I name (PDFs and photos) and enter the date, party, amount and GST of each into one Excel sheet, with a total.",
+      ],
+      [
+        "बिल Excel में डालें",
+        "मैं जो फ़ोल्डर बताऊँ उसके सभी बिल और रसीदें (PDF और फ़ोटो) पढ़ें और हर एक की तारीख़, पार्टी, रक़म और GST एक Excel शीट में डालें, जोड़ के साथ।",
+      ],
+      [
+        "বিল Excel-এ তুলুন",
+        "আমি যে ফোল্ডারের নাম বলব তার সব বিল ও রসিদ (PDF ও ছবি) পড়ুন এবং প্রতিটির তারিখ, পার্টি, টাকা ও GST একটি Excel শিটে তুলুন, মোট সহ।",
+      ],
+    ),
+    where: "files",
+  },
+  {
+    ...job(
+      "power-competitors",
+      "research",
+      [
+        "Watch my competitors",
+        "Open the websites and social pages of three competitors I name, note their new offers and prices this week, and give me a one-page report.",
+      ],
+      [
+        "प्रतिस्पर्धियों पर नज़र",
+        "मैं जिन तीन प्रतिस्पर्धियों के नाम बताऊँ उनकी वेबसाइट और सोशल पेज खोलें, इस हफ़्ते के उनके नए ऑफ़र और दाम नोट करें, और एक पन्ने की रिपोर्ट दें।",
+      ],
+      [
+        "প্রতিযোগীদের ওপর নজর",
+        "আমি যে তিন প্রতিযোগীর নাম বলব তাদের ওয়েবসাইট ও সোশ্যাল পেজ খুলুন, এই সপ্তাহের নতুন অফার ও দাম লিখে রাখুন, আর এক পাতার রিপোর্ট দিন।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-form",
+      "ops",
+      [
+        "Fill an online form",
+        "Open the website I name and fill its form with the details I give. Stop before the final Submit and show me the filled form.",
+      ],
+      [
+        "ऑनलाइन फ़ॉर्म भरें",
+        "मैं जो वेबसाइट बताऊँ उसे खोलें और मेरी दी हुई जानकारी से उसका फ़ॉर्म भरें। आख़िरी Submit से पहले रुकें और भरा हुआ फ़ॉर्म मुझे दिखाएँ।",
+      ],
+      [
+        "অনলাইন ফর্ম পূরণ",
+        "আমি যে ওয়েবসাইটের নাম বলব সেটি খুলুন এবং আমার দেওয়া তথ্য দিয়ে ফর্মটি পূরণ করুন। শেষ Submit-এর আগে থামুন এবং পূরণ করা ফর্ম আমাকে দেখান।",
+      ],
+    ),
+    where: "browser",
+  },
+  {
+    ...job(
+      "power-files",
+      "ops",
+      [
+        "Tidy my Downloads folder",
+        "Look at my Downloads folder, sort the files into folders by kind and month, and show me the plan before you move anything.",
+      ],
+      [
+        "Downloads फ़ोल्डर सँवारें",
+        "मेरा Downloads फ़ोल्डर देखें, फ़ाइलों को क़िस्म और महीने के हिसाब से फ़ोल्डरों में छाँटें, और कुछ भी हटाने से पहले मुझे योजना दिखाएँ।",
+      ],
+      [
+        "Downloads ফোল্ডার গোছান",
+        "আমার Downloads ফোল্ডার দেখুন, ফাইলগুলো ধরন ও মাস অনুযায়ী ফোল্ডারে সাজান, আর কিছু সরানোর আগে আমাকে পরিকল্পনা দেখান।",
+      ],
+    ),
+    where: "pc",
+  },
+];
+
+/** The power jobs in the owner's language; the ones used most come first. */
+export function powerJobs(
+  language: LanguageCode,
+  usedCounts: Record<string, number> = {},
+): PowerJob[] {
+  const words = wordsLanguage(language);
+  return POWER_JOBS.map((spec, index) => ({ spec, index, used: usedCounts[spec.id] ?? 0 }))
+    .sort((left, right) => right.used - left.used || left.index - right.index)
+    .map(({ spec }) => ({
+      id: spec.id,
+      role: spec.role,
+      where: spec.where,
+      title: spec.text[words].title,
+      prompt: spec.text[words].prompt,
+    }));
+}
 const FIRST_JOB_KEY = "sahkarmi:first-job-done";
 
 /** True once the owner has started a job from Home; the first-job guide then stays away. */

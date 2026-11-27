@@ -12,6 +12,7 @@ import {
   type JobRole,
   markFirstJobDone,
   noteStarterUsed,
+  powerJobs,
   type StarterJob,
   starterJobs,
   starterUseCounts,
@@ -133,6 +134,8 @@ export function HomeView(props: {
   let box: HTMLTextAreaElement | undefined;
 
   const jobs = createMemo(() => starterJobs(trade() ?? "other", language(), useCounts()));
+  /** Work only Sahkarmi does: in the browser, on the PC, from the owner's files. */
+  const power = createMemo(() => powerJobs(language(), useCounts()));
 
   const fallbackBot = createMemo(() => {
     const byId = (id: string | null) => props.bots.find((bot) => bot.id === id);
@@ -614,6 +617,41 @@ export function HomeView(props: {
             </Show>
           </div>
         </Show>
+
+        <section class="home-starters home-power" aria-labelledby="home-power-title">
+          <div class="home-starters-head">
+            <h2 id="home-power-title">{t("homePowerTitle")}</h2>
+          </div>
+          <p class="home-power-hint">{t("homePowerHint")}</p>
+          <ul class="home-starter-grid">
+            <For each={power()}>
+              {(job) => (
+                <li>
+                  <button
+                    type="button"
+                    class="home-starter home-power-tile"
+                    classList={{ "home-starter-on": jobId() === job.id }}
+                    onClick={() => pick(job)}
+                  >
+                    <span class={`home-starter-mark home-starter-${job.role}`} aria-hidden="true" />
+                    <span class="home-power-text">
+                      <span class="home-starter-title">{job.title}</span>
+                      <span class={`home-power-where home-power-${job.where}`}>
+                        {t(
+                          job.where === "browser"
+                            ? "homePowerBrowser"
+                            : job.where === "pc"
+                              ? "homePowerPc"
+                              : "homePowerFiles",
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              )}
+            </For>
+          </ul>
+        </section>
 
         <section class="home-starters" aria-labelledby="home-starters-title">
           <div class="home-starters-head">
