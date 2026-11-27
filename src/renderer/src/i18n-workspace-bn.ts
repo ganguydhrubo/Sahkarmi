@@ -100,6 +100,7 @@ export const workspaceBn: WorkspaceDictionary = {
   noteSecureEntered: "🔒 আপনি {site}-এ গোপন তথ্য দিয়েছেন। এটি চ্যাটে যায়নি।",
   noteSecureDeclined: "আপনি {site}-এর গোপন তথ্যের অনুরোধ বন্ধ করেছেন।",
   voiceSpeakIn: "আমি বলব",
+  voiceMoreLanguages: "আরও ভাষা",
   voiceSpeakHint:
     "যে ভাষায় বলবেন সেটা বেছে নিন। প্রতিটা ভাষার নিজের ফ্রি ভয়েস মডেল এই PC-তে চলে; Hinglish হিন্দিকে ইংরেজি অক্ষরে লেখে।",
   voiceSetupTitle: "এই PC-তে ফ্রি ভয়েস টাইপিং",
@@ -510,7 +511,7 @@ export const workspaceBn: WorkspaceDictionary = {
   marketAgents: "সহকর্মী",
   marketSkills: "স্কিল",
   marketSearch: "খুঁজুন",
-  marketAgentsIntro: "ভারতীয় ব্যবসার জন্য তৈরি সহকর্মী। যোগ করলেই সে নিজের কাজ নিয়ে আপনার দলে চলে আসে।",
+  marketAgentsIntro: "সব ধরনের ব্যবসার জন্য তৈরি সহকর্মী। যোগ করলেই সে নিজের কাজ নিয়ে আপনার দলে চলে আসে।",
   marketSkillsIntro:
     "ধাপে ধাপে প্লেবুক, যা আপনার সহকর্মীরা মেনে চলে। ইনস্টল করলে এটি Shared/Skills-এ সেভ হয়, যেখানে প্রত্যেক সহকর্মী পড়তে পারে।",
   marketAdd: "যোগ করুন",

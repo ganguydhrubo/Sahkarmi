@@ -59,6 +59,7 @@ export const marketplaceEn = {
   capabilityDelegation: "Team work",
   capabilitySchedule: "Schedules",
   capabilityImages: "Images",
+  activityAuto: "Same as app language",
   activityEnglish: "English (plain)",
   queuePauseHint: "Pause the queue: the task running now finishes, the rest wait.",
   queueStopHint: "Stop the task that is running now.",

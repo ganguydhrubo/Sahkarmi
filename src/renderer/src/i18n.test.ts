@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { loadLanguage, t } from "./i18n";
+import { de } from "./i18n-world";
 import { setLanguage } from "./preferences";
 
 describe("language packs", () => {
@@ -14,10 +15,11 @@ describe("language packs", () => {
     expect(t("copyPlain")).toBe("सादा टेक्स्ट कॉपी करें");
   });
 
-  it("loads the other Indian languages on demand and falls back to English for missing keys", async () => {
-    await loadLanguage("mr");
-    setLanguage("mr");
-    expect(t("settings")).toBe("सेटिंग्ज");
+  it("loads a world language on demand and falls back to English for missing keys", async () => {
+    await loadLanguage("de");
+    setLanguage("de");
+    expect(de.settings).toBeTruthy();
+    expect(t("settings")).toBe(de.settings);
     expect(t("copyPlain")).toBe("Copy as plain text");
     await loadLanguage("bn");
     setLanguage("bn");

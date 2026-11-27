@@ -1,10 +1,11 @@
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from "solid-js";
-import type { DraftAttachment } from "../../../shared/ipc";
+import type { DraftAttachment, HomeUnderstanding } from "../../../shared/ipc";
 import { looksBig } from "../big-job";
 import type { BotProfile } from "../data";
 import { featureOn } from "../features";
+import { notePick, preferredPick } from "../home-picks";
 import { t } from "../i18n";
-import { language, setTrade, trade } from "../preferences";
+import { homeReader, language, setTrade, trade } from "../preferences";
 import { TRADES, type TradeId, tradeName } from "../trade-names";
 import {
   firstJobDone,
@@ -42,6 +43,22 @@ const ROLE_NAMES: Record<JobRole, RegExp> = {
 /** The coworker that shares out work: a CEO, a team lead, an orchestrator. */
 const LEAD_ROLE = /\blead\b|ceo|chief|orchestrat|manager/i;
 
+/** The app language in English ("Bengali"), for the AI that reads the job. */
+function languageInEnglish(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** The owner must stop typing this long before the AI reads the words. */
+const READ_AFTER_MS = 1_000;
+/** Shorter words say too little to be worth a read. */
+const READ_MIN_LETTERS = 12;
+/** A few more letters on words already read (an answer to a question) are not read again. */
+const REREAD_MIN_NEW_LETTERS = 8;
+
 function roleFor(text: string): JobRole | null {
   let best: JobRole | null = null;
   let bestAt = Number.POSITIVE_INFINITY;
@@ -65,6 +82,8 @@ export function HomeView(props: {
   /** The workspace's CEO, when there is one: jobs with no clear owner go to it. */
   ceoBotId: string | null;
   pendingApprovals: number;
+  /** Coworkers that are working right now; the AI preview prefers a free one. */
+  busyBotIds?: string[];
   onSend: (
     botId: string,
     text: string,
@@ -126,8 +145,89 @@ export function HomeView(props: {
   const byRole = createMemo(() => {
     const role = jobRole() ?? roleFor(text());
     if (!role) return null;
-    return props.bots.find((bot) => ROLE_NAMES[role].test(bot.role)) ?? null;
+    // The coworker the owner keeps choosing for this kind of work comes first.
+    const picked = preferredPick(role);
+    return (
+      props.bots.find((bot) => bot.id === picked) ??
+      props.bots.find((bot) => ROLE_NAMES[role].test(bot.role)) ??
+      null
+    );
   });
+
+  // The AI preview: a free AI reads the words before Start and says what it understood.
+  // It only helps; Start never waits for it, and any failure leaves Home as it was.
+  const [understanding, setUnderstanding] = createSignal<HomeUnderstanding | null>(null);
+  const [reading, setReading] = createSignal(false);
+  let readTimer: ReturnType<typeof setTimeout> | undefined;
+  let readToken = 0;
+  let lastRead = "";
+  createEffect(
+    on(text, (value) => {
+      clearTimeout(readTimer);
+      const ask = value.trim();
+      if (ask.length < READ_MIN_LETTERS) {
+        readToken += 1;
+        lastRead = "";
+        setReading(false);
+        setUnderstanding(null);
+        return;
+      }
+      readTimer = setTimeout(() => {
+        const read = window.sahkarmi?.home?.understand;
+        if (!read || homeReader() !== "free" || jobId() || text().trim() !== ask) return;
+        if (ask === lastRead) return;
+        if (
+          understanding() &&
+          ask.startsWith(lastRead) &&
+          ask.length - lastRead.length < REREAD_MIN_NEW_LETTERS
+        ) {
+          return;
+        }
+        lastRead = ask;
+        readToken += 1;
+        const token = readToken;
+        const busy = new Set(props.busyBotIds ?? []);
+        setReading(true);
+        void read({
+          text: ask,
+          language: languageInEnglish(language()),
+          team: props.bots.map((bot) => ({
+            id: bot.id,
+            name: bot.name,
+            role: bot.role,
+            busy: busy.has(bot.id),
+          })),
+        })
+          .then((result) => {
+            if (token !== readToken) return;
+            setReading(false);
+            if (result) setUnderstanding(result);
+          })
+          .catch(() => {
+            if (token === readToken) setReading(false);
+          });
+      }, READ_AFTER_MS);
+    }),
+  );
+  onCleanup(() => clearTimeout(readTimer));
+  const aiBot = createMemo(() => {
+    const id = understanding()?.coworkerIds[0];
+    return id ? props.bots.find((bot) => bot.id === id) : undefined;
+  });
+  /** How far the brain strip has come: 0 not started, 1 reading, 4 understood. */
+  const brainStep = () => (understanding() ? 4 : reading() ? 1 : 0);
+
+  /** A question was tapped: it goes into the box, ready for the owner's answer. */
+  function answer(question: string) {
+    setUnderstanding((current) =>
+      current
+        ? { ...current, questions: current.questions.filter((item) => item !== question) }
+        : current,
+    );
+    setText((current) => `${current.trimEnd()}\n${question} `);
+    box?.focus();
+    box?.setSelectionRange(box.value.length, box.value.length);
+  }
 
   // The Intelligence Core knows which coworker did this kind of work well before.
   let adviceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -155,7 +255,7 @@ export function HomeView(props: {
   const suggested = createMemo(() => {
     const learned = advice();
     const fromAdvice = learned ? props.bots.find((bot) => bot.id === learned.botId) : undefined;
-    return fromAdvice ?? byRole() ?? fallbackBot();
+    return aiBot() ?? fromAdvice ?? byRole() ?? fallbackBot();
   });
   const target = createMemo(
     () => props.bots.find((bot) => bot.id === chosen()) ?? suggested() ?? null,
@@ -163,11 +263,14 @@ export function HomeView(props: {
   const why = createMemo(() => {
     const bot = target();
     if (!bot || chosen()) return "";
+    if (aiBot()?.id === bot.id) return understanding()?.why ?? "";
     if (advice()?.botId === bot.id) return advice()?.why ?? "";
     if (byRole()?.id === bot.id) return t("homeWhyRole", { role: bot.role });
     const lead = bot.id === props.ceoBotId ? t("homeWhyCeo") : t("homeWhyLead");
     // Words the rules could not place: the coworker's AI reads them and decides.
-    return text().trim() && !jobId() ? `${lead} ${t("homeAiReads")}` : lead;
+    if (!text().trim() || jobId()) return lead;
+    // The CEO line says why it is the CEO; the general lead line already says the AI reads it.
+    return bot.id === props.ceoBotId ? `${lead} ${t("homeAiReads")}` : t("homeAiReads");
   });
 
   const recent = createMemo(() =>
@@ -182,6 +285,7 @@ export function HomeView(props: {
     setJobRole(job.role);
     setJobId(job.id);
     setChosen(null);
+    setUnderstanding(null);
     box?.focus();
   }
 
@@ -207,6 +311,9 @@ export function HomeView(props: {
     if ((!ask && files().length === 0) || !bot || sending()) return;
     setSending(true);
     setError("");
+    // The owner chose someone else than suggested: remember it for this kind of work.
+    const role = jobRole() ?? roleFor(ask);
+    if (role && chosen() === bot.id && suggested()?.id !== bot.id) notePick(role, bot.id);
     try {
       await props.onSend(
         bot.id,
@@ -371,6 +478,40 @@ export function HomeView(props: {
           </p>
         </Show>
 
+        <Show when={!autoTeam() && (understanding() || reading())}>
+          <div
+            class="home-understood"
+            classList={{ "home-understood-reading": reading() }}
+            role="status"
+          >
+            <Show when={understanding()} fallback={<p>{t("homeReading")}</p>}>
+              {(read) => (
+                <>
+                  <p>
+                    <strong>{t("homeUnderstood")}</strong> {read().understood}
+                  </p>
+                  <Show when={read().questions.length > 0}>
+                    <p class="home-questions">
+                      <span>{t("homeQuestionsTitle")}</span>
+                      <For each={read().questions}>
+                        {(question) => (
+                          <button
+                            type="button"
+                            class="chip-button"
+                            onClick={() => answer(question)}
+                          >
+                            {question}
+                          </button>
+                        )}
+                      </For>
+                    </p>
+                  </Show>
+                </>
+              )}
+            </Show>
+          </div>
+        </Show>
+
         <Show
           when={autoTeam() ? null : target()}
           fallback={
@@ -412,6 +553,31 @@ export function HomeView(props: {
               </Show>
             </div>
           )}
+        </Show>
+
+        <Show when={!autoTeam() && target()}>
+          <ol
+            class="home-brain"
+            classList={{ "home-brain-reading": text().trim().length > 0 && brainStep() === 0 }}
+            aria-label={t("homeBrainTitle")}
+          >
+            <li classList={{ "home-brain-on": brainStep() >= 1 }}>
+              <span aria-hidden="true">🧠</span>
+              {t("homeBrain1")}
+            </li>
+            <li classList={{ "home-brain-on": brainStep() >= 2 }}>
+              <span aria-hidden="true">💬</span>
+              {t("homeBrain2")}
+            </li>
+            <li classList={{ "home-brain-on": brainStep() >= 3 }}>
+              <span aria-hidden="true">👥</span>
+              {t("homeBrain3")}
+            </li>
+            <li classList={{ "home-brain-on": brainStep() >= 4 }}>
+              <span aria-hidden="true">✅</span>
+              {t("homeBrain4")}
+            </li>
+          </ol>
         </Show>
 
         <Show when={looksBig(text())}>

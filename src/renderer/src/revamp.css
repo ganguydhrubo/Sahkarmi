@@ -887,7 +887,7 @@
   left: calc(100% + 10px);
   display: none;
   width: 248px;
-  max-height: 70vh;
+  max-height: calc(100vh - 16px);
   overflow-y: auto;
   border: 1px solid var(--card-line);
   border-radius: 16px;
@@ -1596,4 +1596,1137 @@
   color: var(--indigo-accent);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* First open: the language wheel. Its own screen, so the choice is calm and obvious. */
+.language-wheel-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(100%, 520px);
+  border: 1px solid var(--card-line);
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  padding: 40px 36px 36px;
+}
+
+.language-wheel-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.language-wheel-name {
+  color: var(--text-primary);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.language-wheel-title {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-lg);
+}
+
+.language-wheel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.language-wheel {
+  position: relative;
+  flex: 1;
+  height: 280px;
+  overflow: hidden;
+  border-radius: 16px;
+  outline: none;
+}
+
+.language-wheel:focus-visible {
+  box-shadow: 0 0 0 3px var(--indigo-accent);
+}
+
+/* The highlight band stays in the middle; rows slide through it. */
+.language-wheel::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 56px;
+  transform: translateY(-50%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--indigo-accent) 10%, transparent);
+  pointer-events: none;
+}
+
+.language-wheel-item {
+  position: absolute;
+  top: calc(50% - 28px);
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  height: 56px;
+  line-height: 56px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    transform 0.28s ease,
+    opacity 0.28s ease,
+    color 0.28s ease;
+}
+
+.language-wheel-on {
+  color: var(--text-primary);
+}
+
+.language-wheel-tag {
+  min-width: 26px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+.language-wheel-label {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.language-wheel-english {
+  min-width: 26px;
+  font-size: 13px;
+}
+
+.language-wheel-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.language-wheel-arrow {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--sahkarmi-line-strong);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.language-wheel-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Orange only for the one button that moves on. */
+.language-wheel-continue {
+  width: min(100%, 360px);
+  min-height: 52px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.start-language-chosen {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.start-language-change {
+  border: 1.5px solid var(--sahkarmi-line-strong);
+  border-radius: 999px;
+  background: var(--card-bg);
+  padding: 6px 16px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .language-wheel-item {
+    transition: none;
+  }
+}
+
+/* Tap-to-answer choices under a coworker's latest reply. Navy outline: a choice, not the main action. */
+.quick-replies {
+  display: flex;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-reply {
+  min-height: 40px;
+  border: 1.5px solid var(--indigo-accent);
+  border-radius: 999px;
+  background: var(--card-bg);
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quick-reply:hover {
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+/* The logo: glossy 3D mark. "turn" spins slowly in 3D, "shine" sweeps a light across it. */
+.logo-mark {
+  overflow: visible;
+  filter: drop-shadow(0 3px 4px rgb(31 42 92 / 22%));
+}
+
+.logo-turn {
+  animation: logo-turn 9s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes logo-turn {
+  0%,
+  20% {
+    transform: perspective(600px) rotateY(0deg);
+  }
+  50%,
+  70% {
+    transform: perspective(600px) rotateY(180deg) scaleX(-1);
+  }
+  100% {
+    transform: perspective(600px) rotateY(360deg);
+  }
+}
+
+.logo-sweep {
+  transform: translateX(0);
+  opacity: 0;
+}
+
+.logo-shine .logo-sweep,
+.logo-turn .logo-sweep {
+  animation: logo-sweep 6s ease-in-out infinite;
+}
+
+@keyframes logo-sweep {
+  0%,
+  70% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(200px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-turn,
+  .logo-shine .logo-sweep,
+  .logo-turn .logo-sweep {
+    animation: none;
+  }
+}
+
+/* A working coworker's row says which step of its plan it is on. */
+.team-row-plan {
+  color: var(--indigo-accent);
+  font-weight: 600;
+}
+
+/* All / Unread tabs under the team search. */
+.sidebar-list-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sidebar-list-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--sahkarmi-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  padding: 4px 12px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm, 13px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidebar-list-tab[aria-selected="true"] {
+  border-color: var(--indigo-accent);
+  background: var(--indigo-accent);
+  color: var(--on-indigo);
+}
+
+.sidebar-list-tab-count {
+  min-width: 18px;
+  border-radius: 999px;
+  background: var(--primary);
+  padding: 0 5px;
+  color: var(--on-primary);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Support links in the empty rail: small glossy 3D-style tiles that float gently. */
+.rail-support {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding: 8px 0;
+}
+
+.rail-support-link {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.support-3d {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  animation: rail-float 4.5s ease-in-out infinite;
+  transition: transform 0.2s ease;
+}
+
+.support-3d svg {
+  grid-area: 1 / 1;
+}
+
+.support-3d-logo {
+  grid-area: 1 / 1;
+  margin-top: -2px;
+}
+
+.rail-support-link:nth-child(2) .support-3d {
+  animation-delay: -1.5s;
+}
+
+.rail-support-link:nth-child(3) .support-3d {
+  animation-delay: -3s;
+}
+
+.support-sparkle {
+  opacity: 0;
+  transform-origin: 31px 10px;
+  transform: scale(0.3);
+  transition:
+    opacity 0.2s ease,
+    transform 0.3s ease;
+}
+
+.rail-support-link:hover .support-3d {
+  transform: translateY(-3px) scale(1.1);
+  animation-play-state: paused;
+}
+
+.rail-support-link:hover .support-sparkle {
+  opacity: 1;
+  transform: scale(1) rotate(45deg);
+}
+
+.support-heart {
+  transform-origin: 20px 20px;
+  animation: support-beat 2.4s ease-in-out infinite;
+}
+
+@keyframes support-beat {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  80% {
+    transform: scale(0.97);
+  }
+}
+
+@keyframes rail-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-3d,
+  .support-heart {
+    animation: none;
+  }
+}
+
+/* About: world strip - "Your AI team" in every app language, scrolling slowly. */
+.about-hero-sub {
+  font-size: 0.6em;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.about-world {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 14px 0 12px;
+  border: 1px solid var(--border-subtle, rgb(31 42 92 / 10%));
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(232 119 46 / 12%), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, rgb(74 84 144 / 14%), transparent 55%),
+    var(--surface, #fff);
+  overflow: hidden;
+}
+
+.about-world-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.about-world-head strong {
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.about-world-globe {
+  display: inline-block;
+  font-size: 18px;
+  animation: about-world-spin 12s linear infinite;
+}
+
+.about-world-made {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(232 119 46 / 12%);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.about-world-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(#ff9933 0 33%, #fff 33% 66%, #138808 66%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 12%);
+}
+
+.about-world-track {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.about-world-row {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+  animation: about-world-scroll 60s linear infinite;
+}
+
+.about-world-track:hover .about-world-row {
+  animation-play-state: paused;
+}
+
+.about-world-row li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-raised, rgb(255 255 255 / 85%));
+  box-shadow: 0 1px 3px rgb(31 42 92 / 10%);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.about-world-tag {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgb(31 42 92 / 8%);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@keyframes about-world-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes about-world-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-world-row {
+    flex-wrap: wrap;
+    width: auto;
+    padding: 0 16px;
+    animation: none;
+  }
+
+  .about-world-row li[aria-hidden="true"] {
+    display: none;
+  }
+
+  .about-world-globe {
+    animation: none;
+  }
+}
+
+/* Team list rows (27 Nov): the CEO badge is readable, the job is its own line, and a long
+   status slides to show its end instead of being cut with "...". */
+.bot-row-heading .team-row-ceo {
+  flex: none;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffd878, #f0a81c);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    0 1px 2px rgb(140 90 0 / 30%);
+  color: #3b2600;
+}
+
+.team-row-job {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: rgb(var(--ink-rgb) / 0.62);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scroll-line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.scroll-line-text {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.scroll-line-moving .scroll-line-text {
+  animation: scroll-line-slide var(--scroll-time, 8s) ease-in-out infinite;
+}
+
+.team-row:hover .scroll-line-moving .scroll-line-text {
+  animation-duration: calc(var(--scroll-time, 8s) * 0.6);
+}
+
+.team-row-live {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+@keyframes scroll-line-slide {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  50%,
+  65% {
+    transform: translateX(var(--scroll-distance, 0));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-line-moving .scroll-line-text {
+    animation: none;
+  }
+
+  .scroll-line {
+    text-overflow: ellipsis;
+  }
+
+  .scroll-line-text {
+    display: inline;
+  }
+}
+
+/* Home: the four steps the coworker's AI takes with a job, so the "brain" is visible. */
+.home-brain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: -4px 0 14px;
+  padding: 0;
+  list-style: none;
+  counter-reset: brain;
+}
+
+.home-brain li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.1);
+  border-radius: 999px;
+  background: rgb(var(--ink-rgb) / 0.03);
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.home-brain-reading li {
+  animation: home-brain-step 4s ease-in-out infinite;
+}
+
+/* A step the AI preview has really done stays lit. */
+.home-brain li.home-brain-on {
+  border-color: rgb(var(--primary-rgb) / 0.5);
+  background: rgb(var(--primary-rgb) / 0.12);
+  color: var(--text-primary);
+}
+
+/* Home's AI preview: what the AI understood, and its questions as tap-to-answer chips. */
+.home-understood {
+  margin-bottom: 8px;
+  border: 1px solid rgb(var(--primary-rgb) / 0.28);
+  border-radius: 12px;
+  background: rgb(var(--primary-rgb) / 0.06);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  transition: opacity 0.2s ease;
+}
+
+.home-understood-reading {
+  opacity: 0.65;
+}
+
+.home-understood p {
+  margin: 0;
+}
+
+.home-understood strong {
+  color: var(--text-primary);
+}
+
+.home-questions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px !important;
+}
+
+.home-questions .chip-button {
+  max-width: 100%;
+  height: auto;
+  min-height: 30px;
+  white-space: normal;
+  text-align: start;
+}
+
+.home-brain-reading li:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.home-brain-reading li:nth-child(3) {
+  animation-delay: 2s;
+}
+
+.home-brain-reading li:nth-child(4) {
+  animation-delay: 3s;
+}
+
+@keyframes home-brain-step {
+  0%,
+  30%,
+  100% {
+    border-color: rgb(var(--ink-rgb) / 0.1);
+    background: rgb(var(--ink-rgb) / 0.03);
+    color: var(--text-secondary);
+  }
+  8%,
+  22% {
+    border-color: rgb(var(--primary-rgb) / 0.5);
+    background: rgb(var(--primary-rgb) / 0.12);
+    color: var(--text-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-brain-reading li {
+    animation: none;
+  }
+}
+
+/* Voice: "More languages" beside the quick chips (world languages on the on-PC Whisper model). */
+.voice-spoken-more select {
+  max-width: 150px;
+  padding: 3px 8px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.16);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--fs-xs, 12px);
+  cursor: pointer;
+}
+
+.voice-spoken-more select.voice-spoken-active {
+  border-color: var(--primary);
+  background: rgb(var(--primary-rgb) / 0.12);
+  font-weight: 600;
+}
+
+/* Coworker "alive" badge: what kind of work it is doing, on its avatar in the activity line. */
+.agent-activity-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.work-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 4px rgb(31 42 92 / 25%);
+  font-size: 11px;
+  line-height: 1;
+  animation: work-badge-in 0.25s ease-out;
+}
+
+.work-badge-coding .work-badge-glyph {
+  color: var(--primary);
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  animation: work-blink 1s steps(2, start) infinite;
+}
+
+.work-badge-thinking .work-badge-glyph {
+  animation: work-twinkle 1.6s ease-in-out infinite;
+}
+
+.work-badge-browsing .work-badge-glyph {
+  animation: work-spin 2.4s linear infinite;
+}
+
+.work-badge-reading .work-badge-glyph {
+  animation: work-flip 1.4s ease-in-out infinite;
+}
+
+.work-badge-writing .work-badge-glyph {
+  animation: work-write 0.9s ease-in-out infinite;
+}
+
+.work-badge-waiting .work-badge-glyph,
+.work-badge-handing .work-badge-glyph {
+  animation: work-pulse 1.8s ease-in-out infinite;
+}
+
+.work-badge-glyph {
+  display: inline-block;
+}
+
+@keyframes work-badge-in {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes work-blink {
+  to {
+    opacity: 0.35;
+  }
+}
+
+@keyframes work-twinkle {
+  50% {
+    transform: scale(1.25) rotate(20deg);
+  }
+}
+
+@keyframes work-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes work-flip {
+  50% {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes work-write {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(2px, 1px) rotate(-12deg);
+  }
+}
+
+@keyframes work-pulse {
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-badge,
+  .work-badge-glyph {
+    animation: none !important;
+  }
+}
+
+/* Who is doing what: the work badge on a sidebar row sits at the top, clear of the status dot. */
+.team-row .bot-row-avatar .work-badge {
+  top: -6px;
+  right: -7px;
+  bottom: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 2px;
+  font-size: 9px;
+}
+
+/* The CEO's chat: a thin strip of the coworkers working right now. */
+.team-run-strip {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgb(var(--ink-rgb) / 0.08);
+  padding: 6px 16px;
+  scrollbar-width: none;
+}
+
+.team-run-title {
+  flex: none;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm, 12px);
+  font-weight: 600;
+}
+
+.team-run-worker {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.1);
+  border-radius: 999px;
+  background: rgb(var(--ink-rgb) / 0.03);
+  padding: 3px 12px 3px 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: start;
+}
+
+.team-run-worker:hover,
+.team-run-worker:focus-visible {
+  border-color: rgb(var(--primary-rgb) / 0.5);
+  background: rgb(var(--primary-rgb) / 0.08);
+}
+
+.team-run-avatar {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.team-run-avatar .bot-avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.team-run-avatar .work-badge {
+  right: -5px;
+  bottom: -4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 2px;
+  font-size: 8px;
+}
+
+.team-run-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.team-run-copy strong {
+  font-size: var(--fs-sm, 12px);
+  font-weight: 600;
+}
+
+.team-run-copy small {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Browser Back / Forward / Reload: they were so pale and small that owners did not see them
+   (and turned white on hover in the light theme). Same buttons, now easy to see and to hit. */
+.browser-toolbar .browser-toolbar-button {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  color: rgb(var(--ink-rgb) / 0.82);
+}
+
+.browser-toolbar .browser-toolbar-button .browser-toolbar-icon,
+.browser-toolbar .browser-toolbar-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.browser-toolbar .browser-toolbar-button:hover:not(:disabled) {
+  background: rgb(var(--ink-rgb) / 0.1);
+  color: var(--text-primary);
+}
+
+.browser-toolbar .browser-toolbar-button:disabled {
+  color: rgb(var(--ink-rgb) / 0.34);
+  opacity: 1;
+}
+
+/* The sparkle is white on the coloured tiles. */
+.support-sparkle {
+  fill: #fff;
+}
+
+/* Right-to-left (Arabic, Hebrew): the rail is on the right, so the More menu opens to its left.
+   It used to open off the screen. */
+[dir="rtl"] .simple-more-menu {
+  right: calc(100% + 10px);
+  left: auto;
+}
+
+/* The quiet support strip under the title bar. It slides slowly, stops under the mouse and
+   stands still when the computer asks for less motion. */
+#root:has(> .support-ticker) {
+  display: flex;
+  flex-direction: column;
+}
+
+#root:has(> .support-ticker) > .app-frame {
+  min-height: 0;
+  flex: 1 1 auto;
+  height: auto;
+}
+
+.support-ticker {
+  display: flex;
+  height: 26px;
+  flex: 0 0 26px;
+  align-items: center;
+  border-bottom: 1px solid rgb(var(--ink-rgb) / 0.07);
+  background: linear-gradient(
+    90deg,
+    rgb(var(--primary-rgb) / 0.1),
+    rgb(var(--ink-rgb) / 0.03) 45%,
+    rgb(var(--primary-rgb) / 0.08)
+  );
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.support-ticker-window {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.support-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: support-ticker-slide 80s linear infinite;
+}
+
+.support-ticker:hover .support-ticker-track,
+.support-ticker:focus-within .support-ticker-track {
+  animation-play-state: paused;
+}
+
+.support-ticker-run {
+  display: flex;
+  flex: none;
+}
+
+.support-ticker-item {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  margin-inline-end: 56px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.support-ticker-item:hover,
+.support-ticker-item:focus-visible {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.support-ticker-mark {
+  color: rgb(var(--primary-rgb));
+  font-size: 11px;
+}
+
+.support-ticker-close {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.support-ticker-close:hover,
+.support-ticker-close:focus-visible {
+  opacity: 1;
+}
+
+@keyframes support-ticker-slide {
+  to {
+    transform: translateX(-25%);
+  }
+}
+
+[dir="rtl"] .support-ticker-track {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-ticker-track {
+    animation: none;
+  }
+}
+
+/* Five links in the rail now (Support, Star, Discord, Telegram, Website): a little smaller and
+   closer, and on a short window the words go so the icons always fit. */
+.rail-support {
+  gap: 3px;
+  padding: 4px 0;
+}
+
+.rail-support .support-3d,
+.rail-support .support-3d svg {
+  width: 34px;
+  height: 34px;
+}
+
+.rail-support-link {
+  gap: 0;
+  font-size: 10.5px;
+}
+
+@media (max-height: 860px) {
+  .rail-support-link > span:last-child {
+    display: none;
+  }
+
+  .rail-support {
+    gap: 5px;
+  }
+}
+
+@media (max-height: 700px) {
+  .rail-support .support-3d,
+  .rail-support .support-3d svg {
+    width: 28px;
+    height: 28px;
+  }
 }

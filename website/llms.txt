@@ -51,6 +51,7 @@ Key facts (checked against release 0.34.0 on 25 November 2026):
 ## Contact
 
 - Email: sahkarmi.site@gmail.com
-- WhatsApp: +91 82408 01921
+- Telegram: https://t.me/dhruboG
+- Discord: https://discord.com/invite/unk83wqPUD
 - Bug reports: https://github.com/ganguydhrubo/sahakarmi/issues
 - Security reports: private vulnerability reporting on the GitHub repository (see SECURITY.md)

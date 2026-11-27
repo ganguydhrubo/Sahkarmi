@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import type { ScheduleCadence, ScheduledTask, Weekday } from "../../../shared/ipc";
 import { t } from "../i18n";
-import { language } from "../preferences";
+import { language, speechLocale } from "../preferences";
 import { RunNoteLine } from "./RunNoteLine";
 
 type CadenceKind = ScheduleCadence["kind"];
@@ -48,7 +48,7 @@ function weekdayName(day: number, style: "long" | "short" = "long"): string {
 }
 
 export function localeTag(): string {
-  return language() === "hi" ? "hi-IN" : language() === "bn" ? "bn-IN" : "en-IN";
+  return speechLocale(language());
 }
 
 function localDate(date: Date): string {

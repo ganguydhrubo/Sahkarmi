@@ -6,10 +6,12 @@ import {
   app,
   type BrowserWindow,
   clipboard,
+  desktopCapturer,
   type Session,
   session,
   type WebContents,
   WebContentsView,
+  webContents,
 } from "electron";
 import type {
   BrowserBounds,
@@ -523,6 +525,8 @@ export class BrowserHost implements CoworkerBrowser {
   #activeTabId: string | null = null;
   /** The owner has taken over: coworkers' new tabs open behind the tab the owner is using. */
   #ownerHolding = false;
+  /** Pages the owner used during this takeover (plain pages until it is handed back). */
+  readonly #ownerViews = new Set<WebContentsView>();
   #visible = false;
   /** The coworker whose chat the owner is looking at; the panel shows only that coworker's pages. */
   #viewer: { botId: string | null; threadId: string | null } | undefined = undefined;
@@ -786,6 +790,35 @@ export class BrowserHost implements CoworkerBrowser {
   /** During a takeover the panel keeps showing the owner's tab, whatever coworkers open. */
   async setHumanControl(humanInControl: boolean): Promise<void> {
     this.#ownerHolding = humanInControl;
+    if (humanInControl) {
+      if (this.#attachedView) this.#giveToOwner(this.#attachedView);
+      return;
+    }
+    // Handed back: coworkers get their "always focused" page again.
+    for (const view of this.#ownerViews) {
+      if (!view.webContents.isDestroyed()) keepPageFocused(view.webContents);
+    }
+    this.#ownerViews.clear();
+  }
+
+  /**
+   * The owner works in this page with their own mouse and keyboard, so it must be a plain
+   * page: no DevTools connection and no pretended focus (they made clicking and typing hard
+   * and broke sign-in steps), and it holds the real keyboard focus.
+   */
+  #giveToOwner(view: WebContentsView): void {
+    const contents = view.webContents;
+    if (contents.isDestroyed()) return;
+    this.#ownerViews.add(view);
+    releasePageFocus(contents);
+    contents.focus();
+  }
+
+  /** True while the owner has taken over and this page is one they are using. */
+  #ownerUses(contents: WebContents | null | undefined): boolean {
+    if (!this.#ownerHolding || !contents) return false;
+    for (const view of this.#ownerViews) if (view.webContents === contents) return true;
+    return false;
   }
 
   /**
@@ -888,7 +921,9 @@ export class BrowserHost implements CoworkerBrowser {
     this.#mountView(view);
     this.#bindTabEvents(tab);
     // Only once a page is loaded: switched on before the first load, the setting never applies.
-    view.webContents.on("dom-ready", () => keepPageFocused(view.webContents));
+    view.webContents.on("dom-ready", () => {
+      if (!this.#ownerUses(view.webContents)) keepPageFocused(view.webContents);
+    });
     return view;
   }
 
@@ -1106,6 +1141,25 @@ export class BrowserHost implements CoworkerBrowser {
   }
 
   /**
+   * The owner typed an address in the address bar: it loads in the tab on screen, like any
+   * browser, so Back and Forward work. (It used to open a new tab every time, which left
+   * Back greyed out for ever.)
+   */
+  async openInTab(tabId: string, url: string): Promise<BrowserTab | null> {
+    const tab = this.#tabs.get(tabId);
+    // A coworker is working in this tab right now: the address opens in a new tab instead.
+    if (!tab || tab.busy > 0) return null;
+    const normalizedUrl = normalizeBrowserUrl(url);
+    tab.ownerTyped = true;
+    const view = this.#attachLiveView(tab);
+    this.#syncAttachedView();
+    await view.webContents.loadURL(normalizedUrl, browserLoadOptions()).catch(() => undefined);
+    this.#emitChanged();
+    await this.#persistState();
+    return toPublicTab(tab);
+  }
+
+  /**
    * Opens a page in a tab. A coworker opening a page it already has open gets that tab back,
    * loaded afresh, instead of a duplicate. `id` (a link's new tab) always makes a new tab.
    */
@@ -1211,7 +1265,9 @@ export class BrowserHost implements CoworkerBrowser {
       this.#viewer = { botId: input.botId ?? null, threadId: input.threadId ?? null };
     }
     this.#visible = input.visible;
-    if (input.bounds) this.#bounds = validateBounds(input.bounds);
+    if (input.bounds) {
+      this.#bounds = validateBounds(input.bounds, this.#window.webContents.getZoomFactor());
+    }
     this.#syncAttachedView();
     if (input.visible) this.#refreshShownTabIfStale();
   }
@@ -1557,10 +1613,26 @@ export class BrowserHost implements CoworkerBrowser {
         requestHeaders: browserRequestHeaders(details.requestHeaders, userAgent, details.url),
       });
     });
-    target.setPermissionRequestHandler((_webContents, _permission, callback) => {
-      callback(false);
+    // A page a coworker drives gets no permissions, as before. While the owner has taken over
+    // and is using the page themself, it behaves like a normal browser: microphone and camera
+    // for calls, notifications, full screen, copy and paste.
+    target.setPermissionRequestHandler((contents, permission, callback) => {
+      callback(this.#ownerUses(contents) && OWNER_PERMISSIONS.has(permission));
     });
-    target.setPermissionCheckHandler(() => false);
+    target.setPermissionCheckHandler(
+      (contents, permission) => this.#ownerUses(contents) && OWNER_PERMISSIONS.has(permission),
+    );
+    // Screen sharing in a call: only for the owner's own page, and the whole main screen.
+    target.setDisplayMediaRequestHandler((request, callback) => {
+      if (!this.#ownerUses(request.frame ? webContentsOfFrame(request.frame) : null)) {
+        callback({});
+        return;
+      }
+      desktopCapturer
+        .getSources({ types: ["screen"] })
+        .then((sources) => callback(sources[0] ? { video: sources[0] } : {}))
+        .catch(() => callback({}));
+    });
     target.on("will-download", (_event, item, contents) => {
       const safeName = basename(item.getFilename()).replace(/[^a-zA-Z0-9._ -]/g, "_");
       const downloadPath = uniqueDownloadPath(
@@ -1841,6 +1913,8 @@ export class BrowserHost implements CoworkerBrowser {
     view.setBounds(fitInWindow(this.#bounds, this.#window.getContentSize()));
     view.setVisible(true);
     view.webContents.invalidate();
+    // A tab the owner opens or switches to during a takeover is theirs too.
+    if (this.#ownerHolding && !this.#ownerViews.has(view)) this.#giveToOwner(view);
   }
 
   #mountView(view: WebContentsView): void {
@@ -2053,6 +2127,8 @@ export interface CoworkerBrowser extends BrowserToolTarget {
   activate(tabId: string): Promise<void>;
   /** The owner's Back, Forward and Reload buttons. */
   navigate?(tabId: string, action: BrowserNavigation): Promise<void>;
+  /** The owner typed an address: load it in this tab, keeping its Back history. Null: no such tab. */
+  openInTab?(tabId: string, url: string): Promise<BrowserTab | null>;
   setVisible(input: BrowserVisibilityInput): Promise<void>;
   handleDynamicTool(params: DynamicToolCallParams): Promise<DynamicToolResult>;
   describeTarget(tabId: string, ref: string | null): { label: string; url: string };
@@ -2555,8 +2631,17 @@ export function isPersistableBrowserUrl(value: string): boolean {
   }
 }
 
-export function validateBounds(bounds: BrowserBounds): BrowserBounds {
-  if (!Object.values(bounds).every(Number.isFinite)) throw new Error("Invalid browser bounds.");
+export function validateBounds(input: BrowserBounds, zoom = 1): BrowserBounds {
+  if (!Object.values(input).every(Number.isFinite)) throw new Error("Invalid browser bounds.");
+  // The page measures in CSS pixels; with the owner's UI size (Electron zoom) one CSS pixel is
+  // zoom window pixels, and the native page view is placed in window pixels.
+  const scale = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  const bounds = {
+    x: input.x * scale,
+    y: input.y * scale,
+    width: input.width * scale,
+    height: input.height * scale,
+  };
   // Layout sizes carry float noise (1236.0000122): rounding that up made the page a pixel wider
   // than the panel and the window, so its right edge was cut off.
   const x = Math.max(0, Math.floor(bounds.x + 0.01));
@@ -3097,6 +3182,50 @@ export function isInputPoint(value: unknown): value is { x: number; y: number; d
     typeof value.y === "number" &&
     Number.isFinite(value.y)
   );
+}
+
+/** What a page may use while the owner has taken over and is using it themself. */
+const OWNER_PERMISSIONS: ReadonlySet<string> = new Set([
+  "media",
+  "mediaKeySystem",
+  "notifications",
+  "fullscreen",
+  "pointerLock",
+  "keyboardLock",
+  "clipboard-read",
+  "clipboard-sanitized-write",
+  "display-capture",
+  "speaker-selection",
+  "geolocation",
+  "idle-detection",
+  "window-management",
+]);
+
+function webContentsOfFrame(frame: Electron.WebFrameMain): WebContents | null {
+  try {
+    return webContents.fromFrame(frame) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The opposite of keepPageFocused: a plain page again, for the owner's own hands. */
+function releasePageFocus(contents: WebContents): void {
+  try {
+    if (!contents.debugger.isAttached()) return;
+    void contents.debugger
+      .sendCommand("Emulation.setFocusEmulationEnabled", { enabled: false })
+      .catch(() => undefined)
+      .finally(() => {
+        try {
+          if (contents.debugger.isAttached()) contents.debugger.detach();
+        } catch {
+          // Already gone with the page.
+        }
+      });
+  } catch {
+    // DevTools is open on this page: nothing of ours to remove.
+  }
 }
 
 async function withDevToolsDebugger<T>(

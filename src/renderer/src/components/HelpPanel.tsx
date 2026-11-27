@@ -388,6 +388,26 @@ export function HelpPanel(props: HelpPanelProps) {
         <button type="button" class="button-primary" onClick={props.onStartTour}>
           {t("helpShowMeAround")}
         </button>
+        <button
+          type="button"
+          class="help-panel-link"
+          onClick={() =>
+            void window.sahkarmi.openUrl?.("https://t.me/dhruboG")?.catch(() => undefined)
+          }
+        >
+          {t("helpTelegram")}
+        </button>
+        <button
+          type="button"
+          class="help-panel-link"
+          onClick={() =>
+            void window.sahkarmi
+              .openUrl?.("https://discord.com/invite/unk83wqPUD")
+              ?.catch(() => undefined)
+          }
+        >
+          {t("helpDiscord")}
+        </button>
         <Show
           when={confirmReset()}
           fallback={

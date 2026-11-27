@@ -36,11 +36,43 @@ export function preferredDictationModels(code: string): string[] {
  * models that write it, best first. Hinglish writes Hindi in English letters; हिन्दी and বাংলা
  * write their own script, which the Hinglish model can never do.
  */
-export const SPOKEN_CHOICES: Array<{ code: string; label: string; models: string[] }> = [
+export const SPOKEN_CHOICES: Array<{
+  code: string;
+  label: string;
+  models: string[];
+  /** Set for languages written by the on-PC Whisper model: the language it is told to expect. */
+  whisper?: string;
+  /** Listed under "More languages" instead of as a quick chip. */
+  more?: boolean;
+}> = [
   { code: "hi-en", label: "Hinglish", models: ["hinglish-swift", "hinglish-apex"] },
   { code: "en", label: "English", models: ["english-fast", "whisper-turbo"] },
   { code: "hi", label: "हिन्दी", models: ["indic-hi"] },
   { code: "bn", label: "বাংলা", models: ["indic-bn"] },
+  ...(
+    [
+      ["es", "Español"],
+      ["fr", "Français"],
+      ["de", "Deutsch"],
+      ["ar", "العربية"],
+      ["pt", "Português"],
+      ["ru", "Русский"],
+      ["ja", "日本語"],
+      ["zh", "中文"],
+      ["ko", "한국어"],
+      ["it", "Italiano"],
+      ["tr", "Türkçe"],
+      ["nl", "Nederlands"],
+      ["pl", "Polski"],
+      ["he", "עברית"],
+    ] as const
+  ).map(([code, label]) => ({
+    code,
+    label,
+    models: ["whisper-turbo"],
+    whisper: code,
+    more: true,
+  })),
 ];
 
 const SPOKEN_KEY = "sahkarmi.voice.spoken";
@@ -120,7 +152,10 @@ export function VoiceRecorder(props: {
     const fromModel = spokenForModel(voiceState()?.settings.dictationModel);
     if (fromModel) return fromModel;
     const app = language();
-    return app === "bn" ? "bn" : "hi-en";
+    if (app === "bn") return "bn";
+    // A world app language: speak it, written by the on-PC Whisper model.
+    if (SPOKEN_CHOICES.some((choice) => choice.more && choice.code === app)) return app;
+    return "hi-en";
   });
   const offered = createMemo(() => {
     const models = voiceState()?.models.filter((model) => model.type === "dictation") ?? [];
@@ -150,6 +185,13 @@ export function VoiceRecorder(props: {
       window.localStorage.setItem(SPOKEN_KEY, code);
     } catch {
       // Storage blocked: the choice lasts until Sahkarmi closes.
+    }
+    const whisper = SPOKEN_CHOICES.find((choice) => choice.code === code)?.whisper;
+    if (whisper) {
+      // Whisper is told which language to expect, so it does not guess wrongly on short phrases.
+      await window.sahkarmi.voice
+        .setSettings({ dictationLanguage: whisper })
+        .catch((error) => props.onError(cleanVoiceError(error)));
     }
     const model = offered();
     if (model?.installed) {
@@ -441,7 +483,7 @@ export function VoiceRecorder(props: {
           <Show when={window.sahkarmi?.voice && voiceState()}>
             <fieldset class="voice-spoken" aria-label={t("voiceSpeakIn")}>
               <span class="voice-spoken-label">{t("voiceSpeakIn")}</span>
-              <For each={SPOKEN_CHOICES}>
+              <For each={SPOKEN_CHOICES.filter((choice) => !choice.more)}>
                 {(choice) => (
                   <button
                     type="button"
@@ -455,6 +497,30 @@ export function VoiceRecorder(props: {
                   </button>
                 )}
               </For>
+              <label class="voice-spoken-more">
+                <span class="sr-only">{t("voiceMoreLanguages")}</span>
+                <select
+                  classList={{
+                    "voice-spoken-active": SPOKEN_CHOICES.some(
+                      (choice) => choice.more && choice.code === spoken(),
+                    ),
+                  }}
+                  value={
+                    SPOKEN_CHOICES.some((choice) => choice.more && choice.code === spoken())
+                      ? spoken()
+                      : ""
+                  }
+                  onChange={(event) => {
+                    const code = event.currentTarget.value;
+                    if (code) void chooseSpoken(code);
+                  }}
+                >
+                  <option value="">{t("voiceMoreLanguages")}</option>
+                  <For each={SPOKEN_CHOICES.filter((choice) => choice.more)}>
+                    {(choice) => <option value={choice.code}>{choice.label}</option>}
+                  </For>
+                </select>
+              </label>
             </fieldset>
           </Show>
           <Show when={mode() === "setup"}>

@@ -11,6 +11,10 @@ const bot = {
 } as BotSummary;
 
 describe("notificationForAgentEvent", () => {
+  it("stays quiet for a schedule or routine that found nothing new", () => {
+    expect(notificationForAgentEvent({ ...completed("completed"), quiet: true }, [bot])).toBeNull();
+  });
+
   it("surfaces completed work and prompts for enabled agents", () => {
     expect(notificationForAgentEvent(completed("completed"), [bot])).toEqual({
       title: "Chief",
@@ -95,7 +99,7 @@ function approval(id: string): ApprovalRequest {
   } as ApprovalRequest;
 }
 
-function completed(status: string): AgentEvent {
+function completed(status: string): Extract<AgentEvent, { type: "turn-completed" }> {
   return {
     type: "turn-completed",
     botId: "chief",

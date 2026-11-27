@@ -57,6 +57,7 @@ import { desktopControlSupported } from "../backend/desktop/desktop-tools";
 import { EngineSettingsStore } from "../backend/engine-settings";
 import { FeatureRegistry } from "../backend/feature-registry";
 import { DEFAULT_GEMINI_ACCOUNT_ID, GeminiAccountStore } from "../backend/gemini-accounts";
+import { listHomeModels, openCodeHomeRunner, understandJob } from "../backend/home-understand";
 import { HostServer } from "../backend/host-server";
 import { COMPOSIO_SECRET, ComposioClient } from "../backend/integrations/composio-client";
 import { errorSignature } from "../backend/intelligence/error-signature";
@@ -345,9 +346,9 @@ const BROWSER_STATE_FILE = "sahkarmi-browser-state-v1.json";
 const BROWSER_PROFILE_DIR = "coworker-browser-profile";
 
 const EXTERNAL_DESTINATIONS: Record<ExternalDestination, string> = {
-  "agent-setup": "https://github.com/ganguydhrubo/sahakarmi/blob/main/docs/TROUBLESHOOTING.md",
-  feedback: "https://github.com/ganguydhrubo/sahakarmi/issues/new/choose",
-  message: "https://github.com/ganguydhrubo/sahakarmi/discussions",
+  "agent-setup": "https://github.com/ganguydhrubo/Sahkarmi/blob/main/docs/TROUBLESHOOTING.md",
+  feedback: "https://github.com/ganguydhrubo/Sahkarmi/issues/new/choose",
+  message: "https://github.com/ganguydhrubo/Sahkarmi/discussions",
   "tailscale-download": "https://tailscale.com/download",
 };
 
@@ -972,8 +973,12 @@ function registerIpcHandlers(
     service.respondToPrompt(parsePromptResponse(input)),
   );
 
-  handleTrusted(IPC_CHANNELS.browserOpen, (input: unknown) => {
+  handleTrusted(IPC_CHANNELS.browserOpen, async (input: unknown) => {
     const parsed = parseBrowserOpen(input);
+    if (parsed.tabId && browser.openInTab) {
+      const tab = await browser.openInTab(parsed.tabId, parsed.url);
+      if (tab) return tab;
+    }
     return browser.open(parsed.url, parsed.ownerThreadId ?? null, parsed.ownerBotId ?? null);
   });
   handleTrusted(IPC_CHANNELS.browserActivate, (tabId: unknown) =>
@@ -1674,6 +1679,14 @@ function createWindow(): BrowserWindow {
       webSecurity: true,
     },
   });
+
+  // The app's size is the Compact / Normal setting only. The zoom keys and pinch would stack a
+  // second zoom on top of it (and stay after a restart), so boxes broke with no way back.
+  window.webContents.on("before-input-event", (event, input) => {
+    if (input.type !== "keyDown" || input.alt || !(input.control || input.meta)) return;
+    if (["=", "+", "-", "_", "0"].includes(input.key)) event.preventDefault();
+  });
+  void window.webContents.setVisualZoomLevelLimits(1, 1).catch(() => undefined);
 
   if (icon && process.platform === "win32") {
     window.setIcon(icon);
@@ -2697,8 +2710,8 @@ if (!hasSingleInstanceLock) {
         openDownload: (version) =>
           shell.openExternal(
             process.platform === "win32"
-              ? `https://github.com/ganguydhrubo/sahakarmi/releases/download/v${version}/Sahkarmi-${version}-x64.exe`
-              : `https://github.com/ganguydhrubo/sahakarmi/releases/download/v${version}/Sahkarmi-${version}-arm64.dmg`,
+              ? `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v${version}/Sahkarmi-${version}-x64.exe`
+              : `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v${version}/Sahkarmi-${version}-arm64.dmg`,
           ),
       });
       service.on("event", forwardAgentEvent);
@@ -3485,6 +3498,42 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       defaultBotId: typeof input.defaultBotId === "string" ? input.defaultBotId : null,
     });
   });
+  // Home's AI preview. One read at a time: newer words stop the older read.
+  let homeRead: AbortController | null = null;
+  let homeModels: Promise<string[]> | null = null;
+  handleTrusted(IPC_CHANNELS.homeUnderstand, async (input: unknown) => {
+    homeRead?.abort();
+    homeRead = null;
+    if (!isObject(input) || typeof input.text !== "string" || !Array.isArray(input.team)) {
+      return null;
+    }
+    const team = input.team
+      .filter(isObject)
+      .map((member) => ({
+        id: typeof member.id === "string" ? member.id : "",
+        name: typeof member.name === "string" ? member.name.slice(0, 80) : "",
+        role: typeof member.role === "string" ? member.role.slice(0, 120) : "",
+        busy: member.busy === true,
+      }))
+      .filter((member) => member.id);
+    const stop = new AbortController();
+    homeRead = stop;
+    try {
+      const cli = await resolveOpenCodeCli();
+      homeModels ??= listHomeModels(cli.executable);
+      const models = await homeModels;
+      if (models.length === 0) homeModels = null;
+      return await understandJob(input.text, team, openCodeHomeRunner(cli.executable), {
+        models,
+        language: typeof input.language === "string" ? input.language.slice(0, 40) : "",
+        signal: stop.signal,
+      });
+    } catch {
+      return null;
+    } finally {
+      if (homeRead === stop) homeRead = null;
+    }
+  });
   handleTrusted(IPC_CHANNELS.intelligencePredictions, (workspaceId: unknown) =>
     intelligence.predictions(workspace(workspaceId)),
   );
@@ -3820,6 +3869,7 @@ function parseBrowserOpen(value: unknown): BrowserOpenInput {
   if (!isObject(value)) throw new Error("Invalid browser open request.");
   return {
     url: requireString(value.url, "url"),
+    tabId: typeof value.tabId === "string" && value.tabId ? value.tabId : null,
     ownerThreadId:
       value.ownerThreadId === null || value.ownerThreadId === undefined
         ? null

@@ -177,6 +177,7 @@ export const IPC_CHANNELS = {
   intelligencePerformance: "intelligence:performance",
   intelligenceOutcomes: "intelligence:outcomes",
   intelligenceRecommend: "intelligence:recommend",
+  homeUnderstand: "home:understand",
   intelligencePredictions: "intelligence:predictions",
   intelligenceAnalyzeRun: "intelligence:analyze-run",
   intelligenceDecisions: "intelligence:decisions",
@@ -1940,6 +1941,8 @@ export type AgentEvent =
       threadId: string;
       turnId: string;
       status: string;
+      /** A schedule or routine run that found nothing new: no notification. */
+      quiet?: boolean;
     }
   | {
       type: "prompt";
@@ -2025,6 +2028,8 @@ export interface BrowserBounds {
 
 export interface BrowserOpenInput {
   url: string;
+  /** The address bar: load the address in this tab (so Back works) instead of a new tab. */
+  tabId?: string | null;
   ownerThreadId?: string | null;
   ownerBotId?: string | null;
 }
@@ -2457,6 +2462,8 @@ export interface InterruptedTask {
 
 export interface SahkarmiDesktopApi {
   setTheme?: (theme: "system" | "light" | "dark") => Promise<void>;
+  /** The owner's UI size, as a real Electron zoom (CSS zoom broke menus and panels). */
+  setUiZoom?: (factor: number) => void;
   getAppInfo: () => Promise<AppInfo>;
   getSetupState: () => Promise<AppSetupState>;
   saveSetup: (input: SaveSetupInput) => Promise<AppSetupState>;
@@ -2494,6 +2501,8 @@ export interface SahkarmiDesktopApi {
   orchestrator: OrchestratorDesktopApi;
   /** Settings > Intelligence. Optional: older preloads do not have it. */
   intelligence?: IntelligenceDesktopApi;
+  /** Home's AI preview before Start. Optional: older preloads do not have it. */
+  home?: HomeDesktopApi;
   memory: MemoryDesktopApi;
   knowledge: KnowledgeDesktopApi;
   composio: ComposioDesktopApi;
@@ -3520,4 +3529,35 @@ export interface MemoryDesktopApi {
     },
   ) => Promise<AgentMemory>;
   delete: (id: string, workspaceId: string) => Promise<boolean>;
+}
+
+/** One coworker, as Home's AI preview sees them. */
+export interface HomeTeamMember {
+  id: string;
+  name: string;
+  role: string;
+  busy: boolean;
+}
+
+/** What the AI understood from the owner's words on Home, before Start is pressed. */
+export interface HomeUnderstanding {
+  /** The job in plain words, in the owner's language. */
+  understood: string;
+  /** Who should do it, best first. Only ids from the team. */
+  coworkerIds: string[];
+  why: string;
+  /** What cannot be guessed (at most 3). */
+  questions: string[];
+  /** Short steps (at most 4). */
+  plan: string[];
+}
+
+export interface HomeDesktopApi {
+  /** Null when the AI is slow, fails or was overtaken by newer words. Never rejects for those. */
+  understand: (input: {
+    text: string;
+    /** The app language, in English ("Bengali"), so the answer comes in it. */
+    language: string;
+    team: HomeTeamMember[];
+  }) => Promise<HomeUnderstanding | null>;
 }

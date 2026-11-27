@@ -277,6 +277,27 @@ describe("browser page bounds", () => {
     });
   });
 
+  it("turns CSS pixels into window pixels at the owner's UI size", () => {
+    expect(validateBounds({ x: 100, y: 50, width: 400, height: 300 }, 1.12)).toEqual({
+      x: 112,
+      y: 56,
+      width: 448,
+      height: 336,
+    });
+    expect(validateBounds({ x: 100, y: 50, width: 400, height: 300 }, 0.9)).toEqual({
+      x: 90,
+      y: 45,
+      width: 360,
+      height: 270,
+    });
+    expect(validateBounds({ x: 1, y: 2, width: 3, height: 4 }, Number.NaN)).toEqual({
+      x: 1,
+      y: 2,
+      width: 3,
+      height: 4,
+    });
+  });
+
   it("keeps the page inside the window", () => {
     expect(fitInWindow({ x: 856, y: 73, width: 381, height: 691 }, [1236, 763])).toEqual({
       x: 856,

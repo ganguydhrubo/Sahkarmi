@@ -15,6 +15,23 @@ export function desktopControlSupported(platform: NodeJS.Platform = process.plat
 const COORDINATE_HELP =
   'x and y are real screen pixels (the numbers desktop_read_ui and desktop_list_windows give). To use a position you see in the latest desktop screenshot instead, pass coordinateSpace "screenshot".';
 
+/**
+ * What a coworker is told about desktop control. Without these lines the models fall back on
+ * their own default ("I run in a sandbox, I cannot touch your apps") and refuse every request
+ * to work in WhatsApp, Excel, Tally or any other app on the owner's PC.
+ */
+export function desktopPromptLines(level: string): string[] {
+  if (level === "deny") {
+    return [
+      "Desktop control is switched off by the owner (Settings > Permissions > Control this PC). If asked to work in an app on this PC, say that it is switched off and where to turn it on; do not claim you are in a sandbox.",
+    ];
+  }
+  return [
+    `You can operate this Windows PC and ANY app open on it (WhatsApp Desktop, Excel, Tally, Word, File Explorer and so on) with the ${SAHKARMI_DESKTOP_NAMESPACE} tools (for Claude they are named mcp__${SAHKARMI_DESKTOP_NAMESPACE}__*): screenshot, list_windows, focus_window, read_ui, click, type, key, scroll, drag, launch_app. You are NOT limited to a sandbox: never tell the owner you cannot control their apps. Work like this: list_windows, focus_window, read_ui to find the exact control, then click or type, then screenshot to check.`,
+    "Sahkarmi asks the owner once before you first control the PC. After that, still call sahkarmi.request_approval and STOP before you press Send or Enter on a message, make a payment, post anything, or delete anything in a desktop app, exactly as for the browser.",
+  ];
+}
+
 export const DESKTOP_NAMESPACE_DESCRIPTION =
   "Control this Windows PC like a person at the keyboard: see the screen, find and focus windows, read an app's controls, click, type, press keys and open apps. Works with any desktop or web app. Prefer desktop_read_ui (exact control names and positions) over guessing from pixels. Passwords are never typed here; Sahkarmi's own window cannot be controlled. The owner sees in your chat that you are using the desktop.";
 
@@ -436,6 +453,86 @@ export function parseKeys(input: string): ParsedKeys {
     labels.push(parts.map((part) => part.toLowerCase()).join("+"));
   }
   return { chords, passwordSafe, label: labels.join(" ") };
+}
+
+/**
+ * A desktop step that may send, pay, post or delete something, so it is asked every time under
+ * the matching sensitive permission (never "auto"), whatever the one-time desktop approval said.
+ * Rules, in order:
+ *   - clicking a control whose name says send / pay / post / delete (and so on);
+ *   - typing text that contains a line break (it can submit what came before it);
+ *   - pressing Enter, or clicking at a bare screen point, after the coworker typed text that has
+ *     not been approved yet (the usual "type a message, then Enter or the Send arrow").
+ * Returns null for everything else (reading, moving, scrolling, a click with nothing typed).
+ */
+export interface SensitiveDesktopStep {
+  category: "external_messages" | "payments" | "publication" | "business_actions";
+  action: string;
+  reason: string;
+}
+
+const PAY_WORDS =
+  /\b(pay|payment|buy|purchase|checkout|check out|place order|order now|transfer|upi)\b/i;
+const POST_WORDS = /\b(post|publish|share|tweet|upload|go live|schedule post)\b/i;
+const DELETE_WORDS =
+  /\b(delete|remove|erase|clear all|unsubscribe|cancel order|cancel subscription)\b/i;
+const SEND_WORDS = /\b(send|reply|forward|submit|confirm|approve|accept|done)\b/i;
+
+function categoryForName(name: string): SensitiveDesktopStep["category"] | null {
+  if (PAY_WORDS.test(name)) return "payments";
+  if (POST_WORDS.test(name)) return "publication";
+  if (DELETE_WORDS.test(name)) return "business_actions";
+  if (SEND_WORDS.test(name)) return "external_messages";
+  return null;
+}
+
+function quoted(text: string): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  return clean.length > 200 ? `"${clean.slice(0, 200)}…"` : `"${clean}"`;
+}
+
+export function sensitiveDesktopStep(
+  call: DesktopCall,
+  typedSoFar: string,
+): SensitiveDesktopStep | null {
+  const typed = typedSoFar.trim();
+  const withText = typed ? ` The text typed before it: ${quoted(typed)}.` : "";
+  const elementName = typeof call.findElement?.name === "string" ? call.findElement.name : "";
+  if (call.tool === "click" && elementName) {
+    const category = categoryForName(elementName);
+    if (category) {
+      return {
+        category,
+        action: `${call.summary}${typed ? ` - sends ${quoted(typed)}` : ""}`,
+        reason: `This button may send, pay, post or delete something.${withText}`,
+      };
+    }
+  }
+  if (
+    call.tool === "type" &&
+    typeof call.request.text === "string" &&
+    /[\r\n]/.test(call.request.text)
+  ) {
+    const all = `${typed} ${call.request.text}`.trim();
+    return {
+      category: "external_messages",
+      action: `Type and submit ${quoted(all)}`,
+      reason: "The text has a line break, which can send or submit it in many apps.",
+    };
+  }
+  if (!typed) return null;
+  const chords = Array.isArray(call.request.chords) ? (call.request.chords as KeyStroke[][]) : [];
+  const pressesEnter =
+    call.tool === "key" && chords.some((chord) => chord.some((stroke) => stroke.vk === 0x0d));
+  const clicksPoint = call.tool === "click" && !elementName;
+  if (pressesEnter || clicksPoint) {
+    return {
+      category: "external_messages",
+      action: `${call.summary} - may send ${quoted(typed)}`,
+      reason: `After typing, this can send or submit the text.${withText}`,
+    };
+  }
+  return null;
 }
 
 const WIN_KEY = 0x5b;

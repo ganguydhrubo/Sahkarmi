@@ -6,12 +6,16 @@ import {
   type DesktopCall,
   parseDesktopCall,
   type ScreenshotTransform,
+  type SensitiveDesktopStep,
+  sensitiveDesktopStep,
 } from "./desktop-tools";
 
 export interface DesktopControlDeps {
   host: DesktopHostLike;
   /** The owner's current "Control this PC" level (Settings > Permissions). */
   level: () => PermissionLevel;
+  /** Settings > Permissions > Auto mode: the owner trusts coworkers, so sends are not asked. */
+  autoMode?: () => boolean;
   /** Asks the permission service (and through it the owner) once; see the gate below. */
   authorize: (input: {
     botId: string;
@@ -21,7 +25,7 @@ export interface DesktopControlDeps {
     action: string;
     reason: string;
     /** "shell" for a step that opens a command line (Win+R); otherwise desktop control. */
-    category?: "desktop_control" | "shell";
+    category?: "desktop_control" | "shell" | SensitiveDesktopStep["category"];
   }) => Promise<{ allowed: boolean; reason: string }>;
   /** A line in that coworker's chat, so the owner always sees who is using the desktop. */
   notify: (botId: string, message: string) => void;
@@ -39,6 +43,8 @@ const EXCLUSIVE_MS = 20_000;
 const NOTICE_AGAIN_MS = 30 * 60_000;
 export const DESKTOP_APPROVAL_ACTION = "Use this PC's screen, mouse and keyboard in any app";
 const SCREENSHOT_TIMEOUT_MS = 30_000;
+/** After the owner allows one send, that coworker may send again without a card for this long. */
+const SEND_TRUST_MS = 15 * 60_000;
 const LAUNCH_TIMEOUT_MS = 45_000;
 
 function text(message: string, success = true): DynamicToolResult {
@@ -64,6 +70,10 @@ export class DesktopControlService {
   readonly #approved = new Map<string, PermissionLevel>();
   readonly #lastStep = new Map<string, number>();
   readonly #transforms = new Map<string, ScreenshotTransform>();
+  /** Text each coworker typed since its last approved send: Enter or a click may send it. */
+  readonly #typed = new Map<string, string>();
+  /** When each coworker's last send was allowed (ease of use: no card for every message). */
+  readonly #sendTrustedAt = new Map<string, number>();
   #holder: { botId: string; at: number } | null = null;
 
   constructor(deps: DesktopControlDeps) {
@@ -82,6 +92,8 @@ export class DesktopControlService {
       if (chat.startsWith(`${botId}\n`)) this.#lastStep.delete(chat);
     }
     this.#transforms.delete(botId);
+    this.#typed.delete(botId);
+    this.#sendTrustedAt.delete(botId);
     if (this.#holder?.botId === botId) this.#holder = null;
   }
 
@@ -144,7 +156,30 @@ export class DesktopControlService {
       return "The owner has turned off desktop control (Settings > Permissions > Control this PC). Do the task another way, or ask the owner.";
     }
     const desktop = await this.#desktopGate(botId, provider, threadId, call, level);
-    if (desktop || !call.shellStep) return desktop;
+    if (desktop) return desktop;
+    // Send, pay, post or delete: asked every time under its own (never automatic) permission,
+    // whatever the one-time desktop approval said.
+    const risky = sensitiveDesktopStep(call, this.#typed.get(botId) ?? "");
+    const trustedAt = this.#sendTrustedAt.get(botId);
+    const trusted =
+      level === "auto" ||
+      this.#deps.autoMode?.() === true ||
+      (trustedAt !== undefined && this.#now() - trustedAt < SEND_TRUST_MS);
+    if (risky && trusted) this.#typed.delete(botId);
+    if (risky && !trusted) {
+      const verdict = await this.#deps.authorize({
+        botId,
+        provider,
+        threadId,
+        action: risky.action,
+        reason: risky.reason,
+        category: risky.category,
+      });
+      if (!verdict.allowed) return verdict.reason;
+      this.#typed.delete(botId);
+      this.#sendTrustedAt.set(botId, this.#now());
+    }
+    if (!call.shellStep) return null;
     // Typing into Run is running a command: it follows the Commands permission every time.
     const verdict = await this.#deps.authorize({
       botId,
@@ -233,6 +268,10 @@ export class DesktopControlService {
         return text(formatLaunch(await host.request(call.request, LAUNCH_TIMEOUT_MS)));
       case "type": {
         const reply = await host.request(call.request, 120_000);
+        const typed = String(call.request.text ?? "");
+        // A line break already went through the send check above; anything else may be sent later.
+        if (/[\r\n]/.test(typed)) this.#typed.delete(botId);
+        else this.#typed.set(botId, `${this.#typed.get(botId) ?? ""}${typed}`.slice(-500));
         const how = reply.method === "paste" ? " (pasted; your clipboard was put back)" : "";
         return text(`Typed ${Number(reply.typed) || 0} characters${how}.`);
       }

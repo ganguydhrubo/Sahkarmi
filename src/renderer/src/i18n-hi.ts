@@ -254,7 +254,6 @@ export const hi: Dictionary = {
   uiSizeLabel: "इंटरफ़ेस का आकार",
   uiSizeCompact: "छोटा",
   uiSizeNormal: "सामान्य",
-  uiSizeLarge: "बड़ा",
   sendKeyLabel: "संदेश भेजने की कुंजी",
   sendKeyEnter: "Enter (नई लाइन के लिए Shift+Enter)",
   sendKeyCtrlEnter: "Ctrl+Enter (नई लाइन के लिए Enter)",
@@ -290,7 +289,7 @@ export const hi: Dictionary = {
   updateAutomatic: "अपडेट अपने आप डाउनलोड होते हैं और ऐप बंद करने पर इंस्टॉल होते हैं।",
   updateActionFailed: "अपडेट नहीं हो सका। फिर कोशिश करें।",
   about: "परिचय",
-  aboutTagline: "हर भारतीय कारोबार के लिए मुफ़्त AI टीम",
+  aboutTagline: "हर कारोबार के लिए मुफ़्त AI टीम, आपका काम चाहे जो हो। भारत में बनी।",
   aboutFounder: "संस्थापक",
   aboutFounderLine:
     "सहकर्मी इसलिए बना रहे हैं ताकि एक आइडिया वाला अकेला इंसान भी अपनी भाषा में पूरी टीम की तरह काम कर सके।",

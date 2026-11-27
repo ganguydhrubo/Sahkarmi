@@ -24,6 +24,8 @@ export function notificationForAgentEvent(
     return { title: bot.name, body: "Needs your input.", botId: bot.id };
   }
   if (event.status !== "completed") return null;
+  // A schedule or routine that found nothing new stays quiet.
+  if (event.quiet) return null;
   return { title: bot.name, body: "Finished working.", botId: bot.id };
 }
 

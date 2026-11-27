@@ -37,11 +37,11 @@ export function SplashScreen() {
         <div class="splash-stage">
           <div class="splash-glow" />
           <div class="splash-mark">
-            <LogoMark size={148} class="splash-logo" />
+            <LogoMark size={148} class="splash-logo" motion="turn" />
           </div>
           <div class="splash-word">
             <span class="splash-name">Sahkarmi</span>
-            <span class="splash-native">सहकर्मी</span>
+            <span class="splash-native">Coworkers</span>
           </div>
         </div>
       </div>

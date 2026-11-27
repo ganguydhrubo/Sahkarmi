@@ -60,6 +60,7 @@ export const marketplaceHi: MarketplaceDictionary = {
   capabilityDelegation: "टीम वर्क",
   capabilitySchedule: "शेड्यूल",
   capabilityImages: "इमेज",
+  activityAuto: "ऐप की भाषा जैसी",
   activityEnglish: "अंग्रेज़ी (सीधी)",
   queuePauseHint: "क़तार रोकें: अभी चल रहा काम पूरा होगा, बाकी इंतज़ार करेंगे।",
   queueStopHint: "अभी चल रहा काम रोकें।",

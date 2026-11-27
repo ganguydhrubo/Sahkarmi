@@ -322,6 +322,7 @@ describe.sequential("ACP providers (bundled OpenCode)", { timeout: 15_000 }, () 
   it("moves a coworker to another connected free provider when OpenCode's free limit is used up", async () => {
     process.env.SAHKARMI_ACP_SILENT_TURN_MS = "20000";
     process.env.SAHKARMI_FREE_LIMIT_PROBE_MS = "150";
+    process.env.SAHKARMI_FREE_LIMIT_CONFIRM_MS = "100";
     // Google Antigravity is the same fake ACP agent here, connected with a key.
     process.env.SAHKARMI_ANTIGRAVITY_PATH = process.env.SAHKARMI_OPENCODE_PATH;
     process.env.GEMINI_API_KEY = "test-key";
@@ -367,6 +368,7 @@ describe.sequential("ACP providers (bundled OpenCode)", { timeout: 15_000 }, () 
       vi.unstubAllGlobals();
       delete process.env.SAHKARMI_ACP_SILENT_TURN_MS;
       delete process.env.SAHKARMI_FREE_LIMIT_PROBE_MS;
+      delete process.env.SAHKARMI_FREE_LIMIT_CONFIRM_MS;
     }
   });
 

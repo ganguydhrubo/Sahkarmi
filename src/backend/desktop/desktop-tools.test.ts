@@ -7,6 +7,7 @@ import {
   DESKTOP_TOOL_NAMES,
   DesktopArgumentError,
   desktopDynamicTools,
+  desktopPromptLines,
   parseDesktopCall,
   parseKeys,
   SAHKARMI_DESKTOP_NAMESPACE,
@@ -299,5 +300,22 @@ describe("validateLaunchTarget", () => {
     expect(step("ctrl+c win+x")).toContain("Win+X");
     expect(step("win+e")).toBeNull();
     expect(step("ctrl+r")).toBeNull();
+  });
+});
+
+describe("desktopPromptLines", () => {
+  it("tells the coworker it can operate any app, and never to claim a sandbox", () => {
+    const text = desktopPromptLines("ask").join("\n");
+    expect(text).toContain(SAHKARMI_DESKTOP_NAMESPACE);
+    expect(text).toContain(`mcp__${SAHKARMI_DESKTOP_NAMESPACE}__`);
+    expect(text).toMatch(/ANY app/);
+    expect(text).toMatch(/never tell the owner you cannot control/i);
+    expect(text).toMatch(/request_approval and STOP before you press Send/);
+  });
+
+  it("says where to turn it on when the owner switched it off", () => {
+    const text = desktopPromptLines("deny").join("\n");
+    expect(text).toMatch(/switched off/);
+    expect(text).not.toContain("list_windows");
   });
 });

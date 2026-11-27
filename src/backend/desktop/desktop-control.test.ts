@@ -319,3 +319,92 @@ describe("formatting", () => {
     expect(text).toContain("Cut short");
   });
 });
+
+describe("DesktopControlService send, pay and post checks", () => {
+  const categories = (authorize: ReturnType<typeof setup>["authorize"]) =>
+    authorize.mock.calls.map((args) => args[0].category ?? "desktop_control");
+
+  it("asks again before Enter sends what the coworker typed, showing the text", async () => {
+    const { service, authorize, requests } = setup({ level: "ask" });
+    await service.handleDynamicTool(call("type", { text: "Your order is ready" }), "claude");
+    const sent = await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(sent.success).toBe(true);
+    expect(categories(authorize)).toEqual(["desktop_control", "external_messages"]);
+    expect(authorize.mock.calls[1]?.[0].action).toContain('"Your order is ready"');
+    expect(requests.filter((request) => request.op === "key")).toHaveLength(1);
+  });
+
+  it("does not press Enter when the owner says no", async () => {
+    let calls = 0;
+    const { service, requests } = setup({ level: "ask", allow: () => ++calls === 1 });
+    await service.handleDynamicTool(call("type", { text: "Hello" }), "claude");
+    const refused = await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(refused.success).toBe(false);
+    expect(requests.some((request) => request.op === "key")).toBe(false);
+  });
+
+  it("asks before clicking Send, Pay, Post or Delete buttons, each under its own permission", async () => {
+    let clock = 0;
+    const { service, authorize } = setup({
+      level: "ask",
+      // 20 minutes between steps, past the 15-minute send trust.
+      now: () => (clock += 20 * 60_000),
+      replies: { find_element: { element: { x: 1, y: 1, width: 2, height: 2 } } },
+    });
+    for (const element of ["Send", "Pay now", "Publish", "Delete chat"]) {
+      await service.handleDynamicTool(call("click", { element, title: "App" }), "claude");
+    }
+    expect(categories(authorize)).toEqual([
+      "desktop_control",
+      "external_messages",
+      "payments",
+      "publication",
+      "business_actions",
+    ]);
+  });
+
+  it("asks before a bare click after typing (the Send arrow), but not for a plain click", async () => {
+    const { service, authorize } = setup({ level: "ask" });
+    await service.handleDynamicTool(call("click", { x: 5, y: 5 }), "claude");
+    expect(authorize).toHaveBeenCalledTimes(1);
+    await service.handleDynamicTool(call("type", { text: "See you at 5" }), "claude");
+    await service.handleDynamicTool(call("click", { x: 900, y: 700 }), "claude");
+    expect(categories(authorize)).toEqual(["desktop_control", "external_messages"]);
+    // Approved once: the typed text is cleared, so the next plain click is not asked.
+    await service.handleDynamicTool(call("click", { x: 5, y: 5 }), "claude");
+    expect(authorize).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks before typing text with a line break", async () => {
+    const { service, authorize } = setup({ level: "ask" });
+    await service.handleDynamicTool(call("type", { text: "Thanks!\n" }), "claude");
+    expect(categories(authorize)).toEqual(["desktop_control", "external_messages"]);
+  });
+});
+
+describe("DesktopControlService send checks stay easy to use", () => {
+  it("does not ask for sends when Control this PC is set to Auto", async () => {
+    const { service, authorize } = setup({ level: "auto" });
+    await service.handleDynamicTool(call("type", { text: "Hello" }), "claude");
+    await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(authorize.mock.calls.some((args) => args[0].category === "external_messages")).toBe(
+      false,
+    );
+  });
+
+  it("after one allowed send, sends again for 15 minutes without asking", async () => {
+    let clock = 1_000;
+    const { service, authorize } = setup({ level: "ask", now: () => clock });
+    await service.handleDynamicTool(call("type", { text: "Hi Ravi" }), "claude");
+    await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(authorize).toHaveBeenCalledTimes(2);
+    clock += 5 * 60_000;
+    await service.handleDynamicTool(call("type", { text: "Order is ready" }), "claude");
+    await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(authorize).toHaveBeenCalledTimes(2);
+    clock += 16 * 60_000;
+    await service.handleDynamicTool(call("type", { text: "Thanks" }), "claude");
+    await service.handleDynamicTool(call("key", { keys: "enter" }), "claude");
+    expect(authorize).toHaveBeenCalledTimes(3);
+  });
+});

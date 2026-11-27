@@ -151,6 +151,8 @@ describe("Sahkarmi connected desktop shell", () => {
     emitAgentEvent = undefined;
     emitAttachmentImport = undefined;
     window.localStorage.clear();
+    // A language was chosen before, so setup goes straight to its questions (no language wheel).
+    window.localStorage.setItem("sahkarmi:language", "en");
     reloadOnboardingForTests();
     Object.defineProperty(window, "sahkarmi", {
       configurable: true,
@@ -1350,12 +1352,12 @@ describe("Sahkarmi connected desktop shell", () => {
     });
     render(() => <App />);
     expect(await screen.findByText("History message 199")).toBeInTheDocument();
-    expect(screen.getByText("History message 120")).toBeInTheDocument();
-    expect(screen.queryByText("History message 119")).not.toBeInTheDocument();
+    expect(screen.getByText("History message 160")).toBeInTheDocument();
+    expect(screen.queryByText("History message 159")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show 80 earlier messages" }));
-    expect(await screen.findByText("History message 40")).toBeInTheDocument();
-    expect(screen.queryByText("History message 39")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show 40 earlier messages" }));
+    expect(await screen.findByText("History message 120")).toBeInTheDocument();
+    expect(screen.queryByText("History message 119")).not.toBeInTheDocument();
 
     // Search jumps to a message above the window: it is brought in.
     window.dispatchEvent(new CustomEvent(REVEAL_MESSAGE_EVENT, { detail: "history-3" }));

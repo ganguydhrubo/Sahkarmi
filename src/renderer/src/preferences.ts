@@ -6,29 +6,39 @@ export type LanguageCode =
   | "en"
   | "hi"
   | "bn"
-  | "mr"
-  | "te"
-  | "ta"
-  | "gu"
-  | "kn"
-  | "ml"
-  | "pa"
-  | "or"
-  | "as";
+  | "ar"
+  | "de"
+  | "es"
+  | "fr"
+  | "he"
+  | "it"
+  | "ja"
+  | "ko"
+  | "nl"
+  | "pl"
+  | "pt"
+  | "ru"
+  | "tr"
+  | "zh";
 
 export const SUPPORTED_LANGUAGES: LanguageCode[] = [
   "en",
   "hi",
   "bn",
-  "mr",
-  "te",
-  "ta",
-  "gu",
-  "kn",
-  "ml",
-  "pa",
-  "or",
-  "as",
+  "ar",
+  "de",
+  "es",
+  "fr",
+  "he",
+  "it",
+  "ja",
+  "ko",
+  "nl",
+  "pl",
+  "pt",
+  "ru",
+  "tr",
+  "zh",
 ];
 
 const THEME_KEY = "sahkarmi:theme";
@@ -40,14 +50,21 @@ const ACTIVITY_STYLE_KEY = "sahkarmi:activity-style";
  * With nothing chosen, activity follows the app language (English unless the app is not).
  */
 export type ActivityStyle = "masti" | "seedha" | "english";
+/** "auto" follows the app language: Hinglish only when the app is in Hindi, else plain English. */
+export type ActivityStyleChoice = ActivityStyle | "auto";
 const LANGUAGE_KEY = "sahkarmi:language";
 const UI_SIZE_KEY = "sahkarmi:ui-size";
 const SEND_KEY_KEY = "sahkarmi:send-key";
+const HOME_READER_KEY = "sahkarmi:home-reader";
 
-export type UiSize = "compact" | "normal" | "large";
+/** Large was removed (26 Nov 2026): text was cut in many places. A stored "large" opens as normal. */
+export type UiSize = "compact" | "normal";
 /** enter: Enter sends, Ctrl/Cmd+Enter adds a line · ctrl-enter: the other way round. */
 export type SendKey = "enter" | "ctrl-enter";
-const UI_ZOOM: Record<UiSize, string> = { compact: "0.9", normal: "", large: "1.12" };
+const UI_ZOOM: Record<UiSize, number> = { compact: 0.9, normal: 1 };
+
+/** free: a free AI reads the job on Home before Start · coworker: the coworker's own AI reads it after Start. */
+export type HomeReader = "free" | "coworker";
 
 function readStored(key: string): string | null {
   try {
@@ -66,11 +83,12 @@ function writeStored(key: string, value: string): void {
 }
 
 /**
- * The light, warm theme is what every owner sees until they choose otherwise. "system" is kept
- * only for an owner who picked it in Settings.
+ * Settings offers only System and Dark (owner's call, 27 Nov: "system and light are the same").
+ * System follows Windows, so a light Windows shows the warm paper look. An old stored "light"
+ * choice is read as System.
  */
 function parseTheme(value: string | null): ThemePreference {
-  return value === "dark" || value === "system" ? value : "light";
+  return value === "dark" ? "dark" : "system";
 }
 
 function parseLanguage(value: string | null): LanguageCode {
@@ -84,22 +102,31 @@ const [language, setLanguageSignal] = createSignal<LanguageCode>(
   parseLanguage(readStored(LANGUAGE_KEY)),
 );
 
-const [activityStyle, setActivityStyleSignal] = createSignal<ActivityStyle>(
-  parseActivityStyle(readStored(ACTIVITY_STYLE_KEY), language()),
+const [activityStyleChoice, setActivityStyleSignal] = createSignal<ActivityStyleChoice>(
+  parseActivityStyle(readStored(ACTIVITY_STYLE_KEY)),
 );
 
-function parseActivityStyle(value: string | null, appLanguage: LanguageCode): ActivityStyle {
-  if (value === "masti" || value === "seedha" || value === "english") return value;
-  return appLanguage === "en" ? "english" : "seedha";
+function parseActivityStyle(value: string | null): ActivityStyleChoice {
+  return value === "masti" || value === "seedha" || value === "english" ? value : "auto";
+}
+
+/** The style status lines really use. Bengali, Tamil and the rest read plain English, not Hinglish. */
+function activityStyle(): ActivityStyle {
+  const choice = activityStyleChoice();
+  if (choice !== "auto") return choice;
+  return language() === "hi" ? "seedha" : "english";
 }
 
 const [uiSize, setUiSizeSignal] = createSignal<UiSize>(parseUiSize(readStored(UI_SIZE_KEY)));
+const [homeReader, setHomeReaderSignal] = createSignal<HomeReader>(
+  readStored(HOME_READER_KEY) === "coworker" ? "coworker" : "free",
+);
 const [sendKey, setSendKeySignal] = createSignal<SendKey>(
   readStored(SEND_KEY_KEY) === "ctrl-enter" ? "ctrl-enter" : "enter",
 );
 
 function parseUiSize(value: string | null): UiSize {
-  return value === "compact" || value === "large" ? value : "normal";
+  return value === "compact" ? value : "normal";
 }
 
 /** The owner's line of work, asked on first open; null until they have chosen. */
@@ -115,7 +142,12 @@ export function setTrade(next: TradeId): void {
   writeStored(TRADE_KEY, next);
 }
 
-export { activityStyle, language, sendKey, theme, trade, uiSize };
+export { activityStyle, activityStyleChoice, homeReader, language, sendKey, theme, trade, uiSize };
+
+export function setHomeReader(next: HomeReader): void {
+  setHomeReaderSignal(next);
+  writeStored(HOME_READER_KEY, next);
+}
 
 export function setUiSize(next: UiSize): void {
   setUiSizeSignal(next);
@@ -128,11 +160,22 @@ export function setSendKey(next: SendKey): void {
   writeStored(SEND_KEY_KEY, next);
 }
 
+/**
+ * UI size is Electron's own page zoom, never CSS zoom: CSS zoom left media queries, popover
+ * positions, panel dragging and the canvas measuring in different pixels, so boxes broke.
+ */
 function applyUiSize(next: UiSize): void {
-  (document.documentElement.style as CSSStyleDeclaration & { zoom: string }).zoom = UI_ZOOM[next];
+  const style = document.documentElement.style as CSSStyleDeclaration & { zoom: string };
+  if (window.sahkarmi?.setUiZoom) {
+    style.zoom = "";
+    window.sahkarmi.setUiZoom(UI_ZOOM[next]);
+  } else {
+    // Tests and a plain browser have no Electron bridge.
+    style.zoom = next === "normal" ? "" : String(UI_ZOOM[next]);
+  }
 }
 
-export function setActivityStyle(next: ActivityStyle): void {
+export function setActivityStyle(next: ActivityStyleChoice): void {
   setActivityStyleSignal(next);
   writeStored(ACTIVITY_STYLE_KEY, next);
 }
@@ -144,10 +187,27 @@ export function setTheme(next: ThemePreference): void {
   void window.sahkarmi?.setTheme?.(next)?.catch(() => undefined);
 }
 
+/** Arabic and Hebrew read right to left. */
+export function isRtl(code: LanguageCode): boolean {
+  return code === "ar" || code === "he";
+}
+
+function applyLanguage(code: LanguageCode): void {
+  document.documentElement.lang = code;
+  document.documentElement.dir = isRtl(code) ? "rtl" : "ltr";
+}
+
+/** True once a language was saved: the first-open wheel is only for an owner who never chose. */
+export function hasChosenLanguage(): boolean {
+  return readStored(LANGUAGE_KEY) !== null;
+}
+
 export function setLanguage(next: LanguageCode): void {
   setLanguageSignal(next);
   writeStored(LANGUAGE_KEY, next);
-  document.documentElement.lang = next;
+  // A new app language is a clear wish: status lines follow it again instead of an old choice.
+  setActivityStyle("auto");
+  applyLanguage(next);
 }
 
 function applyTheme(next: ThemePreference): void {
@@ -159,35 +219,30 @@ export function applyStoredPreferences(): void {
   applyTheme(theme());
   applyUiSize(uiSize());
   void window.sahkarmi?.setTheme?.(theme())?.catch(() => undefined);
-  document.documentElement.lang = language();
+  applyLanguage(language());
 }
+
+const SPEECH_LOCALES: Record<LanguageCode, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  bn: "bn-IN",
+  ar: "ar-SA",
+  de: "de-DE",
+  es: "es-ES",
+  fr: "fr-FR",
+  he: "he-IL",
+  it: "it-IT",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  nl: "nl-NL",
+  pl: "pl-PL",
+  pt: "pt-BR",
+  ru: "ru-RU",
+  tr: "tr-TR",
+  zh: "zh-CN",
+};
 
 /** BCP-47 tag used for voice input and date formatting. */
 export function speechLocale(code: LanguageCode = language()): string {
-  switch (code) {
-    case "hi":
-      return "hi-IN";
-    case "bn":
-      return "bn-IN";
-    case "mr":
-      return "mr-IN";
-    case "te":
-      return "te-IN";
-    case "ta":
-      return "ta-IN";
-    case "gu":
-      return "gu-IN";
-    case "kn":
-      return "kn-IN";
-    case "ml":
-      return "ml-IN";
-    case "pa":
-      return "pa-IN";
-    case "or":
-      return "or-IN";
-    case "as":
-      return "as-IN";
-    default:
-      return "en-IN";
-  }
+  return SPEECH_LOCALES[code];
 }

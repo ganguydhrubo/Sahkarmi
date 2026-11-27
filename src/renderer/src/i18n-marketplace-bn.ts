@@ -60,6 +60,7 @@ export const marketplaceBn: MarketplaceDictionary = {
   capabilityDelegation: "টিমওয়ার্ক",
   capabilitySchedule: "সময়সূচি",
   capabilityImages: "ছবি",
+  activityAuto: "অ্যাপের ভাষার মতো",
   activityEnglish: "ইংরেজি (সরল)",
   queuePauseHint: "সারি থামান: এখন চলা কাজ শেষ হবে, বাকিগুলো অপেক্ষা করবে।",
   queueStopHint: "এখন চলা কাজটি থামান।",

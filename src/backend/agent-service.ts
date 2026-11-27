@@ -73,6 +73,8 @@ import {
   type SearchMessagesInput,
   type TurnPlan,
 } from "../shared/ipc";
+import { QUICK_REPLY_INSTRUCTION } from "../shared/quick-replies";
+import { isAutomaticRun, isQuietReply, QUIET_RUN_INSTRUCTION } from "../shared/quiet-runs";
 import type { AccessSubject } from "../shared/resource-access";
 import { createAcpAgentClient, resolveAcpAgentCli } from "./acp-agents";
 import {
@@ -166,7 +168,11 @@ import {
 import { CustomSkills, customSkillLines, UNTRUSTED_SKILL_NOTE } from "./custom-skills";
 import { DesktopControlService } from "./desktop/desktop-control";
 import type { DesktopHostLike } from "./desktop/desktop-host";
-import { desktopDynamicTools, SAHKARMI_DESKTOP_NAMESPACE } from "./desktop/desktop-tools";
+import {
+  desktopDynamicTools,
+  desktopPromptLines,
+  SAHKARMI_DESKTOP_NAMESPACE,
+} from "./desktop/desktop-tools";
 import type { GeminiAccountSource } from "./gemini-accounts";
 import { GeminiRotation, IdleWatch, pickPrewarmBots } from "./gemini-runtime";
 import { understandFirstPrompt } from "./home-brain";
@@ -925,6 +931,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#desktop = new DesktopControlService({
       host,
       level: () => this.#permissions?.get().levels.desktop_control ?? "ask",
+      autoMode: () => this.#permissions?.get().autoMode === true,
       authorize: ({ provider, threadId, action, reason, category }) =>
         this.#authorize(
           provider,
@@ -1311,6 +1318,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       } catch {
         /* The branch file was removed: the coworker simply starts fresh. */
       }
+    }
+    extra.push(QUIET_RUN_INSTRUCTION, QUICK_REPLY_INSTRUCTION);
+    if (this.#desktop) {
+      extra.push(...desktopPromptLines(this.#permissions?.get().levels.desktop_control ?? "ask"));
     }
     const bases = this.#knowledgeEnabled() ? (this.#knowledge?.basesForBot(bot) ?? []) : [];
     if (bases.length > 0) {
@@ -6818,7 +6829,12 @@ ${carryOver}`
     if (delivery && (status === "failed" || status === "interrupted")) {
       await this.#tellCeoOfFailure(botId, turnId, delivery, status);
     }
-    this.#emit({ type: "turn-completed", botId, threadId, turnId, status });
+    const quiet =
+      status === "completed" &&
+      Boolean(delivery) &&
+      isAutomaticRun(delivery?.delivery.origin, delivery?.delivery.text ?? "") &&
+      isQuietReply(latestAssistant?.text ?? "");
+    this.#emit({ type: "turn-completed", botId, threadId, turnId, status, quiet });
     this.#emitConversation(snapshot);
     await this.#applyPendingRuntime(botId);
     await this.#noticeInstructionsChange(botId);

@@ -341,7 +341,13 @@ export function ApprovalCard(props: {
             {t("approveOnce")}
           </button>
         </div>
-        <p class="approval-once-hint">{t("approvalOnceHint")}</p>
+        <p class="approval-once-hint">
+          {t(
+            props.approval.permissionCategory === "desktop_control"
+              ? "approvalDesktopHint"
+              : "approvalOnceHint",
+          )}
+        </p>
         <Show when={props.inline}>
           <p class="approval-keys">{t("approvalKeys")}</p>
         </Show>

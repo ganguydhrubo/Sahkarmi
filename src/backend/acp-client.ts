@@ -168,6 +168,10 @@ export const FREE_LIMIT_REACHED_HINT = "free limit is used up on this internet c
 const FREE_LIMIT_PROBE_MS = 8_000;
 const freeLimitProbeMs = (): number =>
   Number(process.env.SAHKARMI_FREE_LIMIT_PROBE_MS) || FREE_LIMIT_PROBE_MS;
+/** How much longer the turn must stay quiet after the server said "limit reached". */
+const FREE_LIMIT_CONFIRM_MS = 17_000;
+const freeLimitConfirmMs = (): number =>
+  Number(process.env.SAHKARMI_FREE_LIMIT_CONFIRM_MS) || FREE_LIMIT_CONFIRM_MS;
 const silentTurnMs = (): number =>
   Number(process.env.SAHKARMI_ACP_SILENT_TURN_MS) || SILENT_TURN_MS;
 
@@ -595,6 +599,11 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     const { usable, left } = this.#withoutBrokenServers(ownerServers);
     let mcpServers = [...ownServers, ...usable];
     let skippedNotice: string | null = left.length ? this.#skippedNotice(left) : null;
+    if (!skippedNotice && route.namespaces.size > 0 && ownServers.length === 0) {
+      // This AI takes no tool servers of the kind Sahkarmi offers: say so once in the chat,
+      // or the coworker just seems unable to browse, open files or message the team.
+      skippedNotice = `${this.#config.label} cannot use Sahkarmi's own tools (the browser, files, messages to other coworkers) in this chat. It can still talk and do its own work. For jobs that need those tools, choose another AI for this coworker in its settings.`;
+    }
     // With the owner's MCP servers a session open gets a time limit: a server that never starts
     // must not leave the coworker "starting" for ever.
     const openTimeout = ownerServers.length > 0 ? AcpAgentClient.SESSION_OPEN_MS : undefined;
@@ -897,13 +906,21 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     const modelValue = session.modelValue;
     if (!probe || !modelValue || !this.#isFreeModel(session, modelValue)) return;
     // Only worth asking when the answer arrives before the silence watch fires anyway.
-    if (freeLimitProbeMs() >= silentTurnMs()) return;
+    if (freeLimitProbeMs() + freeLimitConfirmMs() >= silentTurnMs()) return;
     turn.probeTimer = setTimeout(() => {
       void probe(modelValue).then(
         (limited) => {
-          if (limited && session.activeTurn === turn && turn.silenceTimer) {
-            this.#failFreeLimitTurn(session, turn);
-          }
+          if (!limited || session.activeTurn !== turn || !turn.silenceTimer) return;
+          // The server's "limit reached" is not proof: it also says so to direct calls while
+          // OpenCode itself still gets answers, and that stopped good turns that were only slow
+          // to start. So the turn fails as "limit used up" only if it stays silent a while
+          // longer; any sign of life clears this timer with the silence watch.
+          turn.probeTimer = setTimeout(() => {
+            if (session.activeTurn === turn && turn.silenceTimer) {
+              this.#failFreeLimitTurn(session, turn);
+            }
+          }, freeLimitConfirmMs());
+          turn.probeTimer.unref?.();
         },
         () => undefined,
       );
