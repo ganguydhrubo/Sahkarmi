@@ -1802,21 +1802,24 @@
 }
 
 .logo-turn {
-  animation: logo-turn 9s ease-in-out infinite;
+  animation: logo-turn 7s ease-in-out infinite;
   transform-style: preserve-3d;
 }
 
 @keyframes logo-turn {
+  /* A slow sway, never side-on: a full spin showed the flat mark as a thin line half the time. */
   0%,
-  20% {
-    transform: perspective(600px) rotateY(0deg);
-  }
-  50%,
-  70% {
-    transform: perspective(600px) rotateY(180deg) scaleX(-1);
-  }
   100% {
-    transform: perspective(600px) rotateY(360deg);
+    transform: perspective(520px) rotateY(-30deg) rotateX(7deg) scale(1);
+  }
+  25% {
+    transform: perspective(520px) rotateY(0deg) rotateX(0deg) scale(1.04);
+  }
+  50% {
+    transform: perspective(520px) rotateY(30deg) rotateX(-5deg) scale(1);
+  }
+  75% {
+    transform: perspective(520px) rotateY(0deg) rotateX(0deg) scale(1.04);
   }
 }
 
@@ -2956,4 +2959,406 @@
 .teach-error {
   width: 100%;
   color: var(--danger);
+}
+
+/* Short screens (a 1366 x 768 laptop): everything in the rail must stay in sight, Settings and
+   Help above all. The support icons go two in a row, and the rail's rows get a little shorter. */
+@media (max-height: 820px) {
+  .rail-support {
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+    gap: 6px 8px;
+  }
+
+  .rail-support .support-3d,
+  .rail-support .support-3d svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app-rail-bottom {
+    gap: 4px;
+  }
+}
+
+@media (max-height: 740px) {
+  .simple-rail-place {
+    min-height: 50px;
+    gap: 2px;
+    padding: 4px 2px;
+  }
+}
+
+/* One usage ring for all connected AIs: a small "+2" for the others, and each AI in the list. */
+.usage-ring {
+  position: relative;
+}
+
+.usage-ring-more {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 16px;
+  border-radius: 999px;
+  background: rgb(var(--primary-rgb));
+  padding: 1px 4px;
+  color: var(--on-primary);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.usage-ring-provider + .usage-ring-provider {
+  margin-top: 8px;
+  border-top: 1px solid rgb(var(--ink-rgb) / 0.1);
+  padding-top: 8px;
+}
+
+.usage-ring-provider strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ------------------------------------------------------------------------------------------
+   A calmer, tidier look for the rail and for the Settings list.
+   Rail: three clear groups (places, community, help and settings) with thin lines between
+   them. The five community links sit together in one small dock, icons only, names on hover.
+   ------------------------------------------------------------------------------------------ */
+.rail-support {
+  grid-template-columns: repeat(2, 30px);
+  justify-content: center;
+  gap: 8px;
+  margin: auto 8px 10px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.08);
+  border-radius: 18px;
+  background: rgb(var(--ink-rgb) / 0.03);
+  padding: 10px 6px;
+}
+
+.rail-support .support-3d,
+.rail-support .support-3d svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* Five gently bobbing icons read as clutter: they rest, and lift only under the pointer. */
+.rail-support .support-3d {
+  animation: none;
+}
+
+.rail-support-link {
+  position: relative;
+}
+
+/* The name stays for screen readers and shows as the button's tooltip. */
+.rail-support-link > span:last-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The odd one out sits in the middle of its own row. */
+.rail-support-link:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.app-rail-bottom {
+  margin: 0 8px;
+  border-top: 1px solid rgb(var(--ink-rgb) / 0.08);
+  padding-top: 10px;
+}
+
+@media (max-height: 820px) {
+  .rail-support {
+    gap: 6px 8px;
+    margin-bottom: 6px;
+    padding: 6px;
+  }
+
+  .rail-support .support-3d,
+  .rail-support .support-3d svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .app-rail-bottom {
+    padding-top: 6px;
+  }
+}
+
+/* Settings list: each group is a soft card, each place has a small coloured picture. */
+.settings-nav {
+  gap: 14px;
+}
+
+.settings-nav-group {
+  gap: 2px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.07);
+  border-radius: 16px;
+  background: var(--card-bg);
+  padding: 10px 8px 8px;
+  box-shadow: 0 1px 2px rgb(var(--ink-rgb) / 0.04);
+}
+
+.settings-nav-label {
+  padding: 0 8px 6px;
+}
+
+.center-view .settings-nav .settings-nav-group button {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 6px 8px;
+  text-align: start;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.center-view .settings-nav .settings-nav-group button:hover {
+  background: rgb(var(--ink-rgb) / 0.05);
+}
+
+.center-view .settings-nav .settings-nav-group button.settings-nav-active {
+  background: rgb(var(--primary-rgb) / 0.12);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.settings-nav-icon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--tile, #64748b);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+.settings-nav-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-nav-text {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+/* Settings content: cards with a little more air and a soft lift, so the page is not flat. */
+.center-view .settings-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgb(var(--ink-rgb) / 0.05);
+}
+
+/* The Community menu: opens upward beside its rail button; each link with its name and a line. */
+.rail-community-menu {
+  top: auto;
+  bottom: -8px;
+  width: 268px;
+}
+
+.rail-community-item {
+  min-height: 52px;
+}
+
+.rail-community-item .support-3d,
+.rail-community-item .support-3d svg {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  animation: none;
+}
+
+.rail-community-text {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  text-align: start;
+}
+
+.rail-community-text strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.rail-community-text small {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm, 12px);
+  line-height: 1.3;
+}
+
+/* Support is the one warm spot in the calm rail: easy to find, never loud. */
+.simple-rail-place.rail-support-place {
+  color: #c2410c;
+}
+
+.simple-rail-place.rail-support-place .rail-nav-icon {
+  box-sizing: content-box;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #ff8a5b, #f0476a);
+  padding: 7px;
+  fill: #fff;
+  stroke: #fff;
+  box-shadow: 0 4px 10px rgb(240 71 106 / 0.32);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.simple-rail-place.rail-support-place:hover .rail-nav-icon,
+.simple-rail-place.rail-support-place:focus-visible .rail-nav-icon {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgb(240 71 106 / 0.42);
+}
+
+:root[data-theme="dark"] .simple-rail-place.rail-support-place {
+  color: #fdba74;
+}
+
+.rail-community-menu {
+  width: 300px;
+  padding: 10px;
+}
+
+.rail-support-card {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: linear-gradient(150deg, rgb(255 138 91 / 0.16), rgb(240 71 106 / 0.12));
+  padding: 14px;
+}
+
+.rail-support-card strong {
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  line-height: 1.3;
+}
+
+.rail-support-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm, 12px);
+  line-height: 1.45;
+}
+
+.rail-support-cta {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ff8a5b, #f0476a);
+  padding: 0 16px;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgb(240 71 106 / 0.3);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rail-support-cta:hover,
+.rail-support-cta:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgb(240 71 106 / 0.4);
+}
+
+/* ------------------------------------------------------------------------------------------
+   Depth. Cards across the app sat flat on the page. They now rest on a soft shadow and lift a
+   little under the pointer, and the main action on a card is a filled button.
+   ------------------------------------------------------------------------------------------ */
+.marketplace-card,
+.home-starter,
+.home-ask,
+.home-recent ul {
+  box-shadow:
+    0 1px 2px rgb(var(--ink-rgb) / 0.05),
+    0 6px 18px rgb(var(--ink-rgb) / 0.05);
+}
+
+.marketplace-card,
+.home-starter {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.marketplace-card:hover,
+.home-starter:hover {
+  border-color: rgb(var(--primary-rgb) / 0.35);
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgb(var(--ink-rgb) / 0.06),
+    0 14px 30px rgb(var(--ink-rgb) / 0.1);
+}
+
+.marketplace-action.marketplace-action-primary {
+  border-color: transparent;
+  background: rgb(var(--primary-rgb));
+  color: var(--on-primary);
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgb(var(--primary-rgb) / 0.28);
+}
+
+.marketplace-action.marketplace-action-primary:hover {
+  filter: brightness(1.05);
+}
+
+.marketplace-tabs {
+  box-shadow: inset 0 1px 2px rgb(var(--ink-rgb) / 0.06);
+}
+
+.marketplace-tab-active {
+  box-shadow: 0 1px 3px rgb(var(--ink-rgb) / 0.12);
+}
+
+.marketplace-filter {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.marketplace-filter:hover {
+  border-color: rgb(var(--primary-rgb) / 0.45);
+  background: rgb(var(--primary-rgb) / 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketplace-card,
+  .home-starter,
+  .rail-support-cta,
+  .simple-rail-place.rail-support-place .rail-nav-icon {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* The brand mark in the rail: a little bigger, with a deeper shadow so it reads as a solid thing. */
+.simple-rail .app-rail-brand .logo-mark {
+  filter: drop-shadow(0 5px 7px rgb(31 42 92 / 30%));
 }

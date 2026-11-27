@@ -1,4 +1,4 @@
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import {
   type AgentProviderId,
   PROVIDER_LABELS,
@@ -14,13 +14,50 @@ const NAMES: Partial<Record<AgentProviderId, string>> = {
 };
 const REFRESH_MS = 60_000;
 
+export type UsageLevel = "ok" | "mid" | "high";
+
+/** How full one AI's limit is right now. A window past its reset time no longer counts. */
+export function usageOf(
+  provider: ProviderUsageSummary,
+  now = Date.now(),
+): { highest: number; level: UsageLevel } {
+  const live = provider.limits.filter(
+    (limit) => !limit.resetsAt || Date.parse(limit.resetsAt) >= now,
+  );
+  const highest = Math.max(0, ...live.map((limit) => limit.usedPercent ?? 0));
+  // The provider's own status counts too: Claude warns from 75 % of a window.
+  const level: UsageLevel =
+    highest >= 95 || live.some((limit) => limit.status === "limited")
+      ? "high"
+      : highest >= 80 || live.some((limit) => limit.status === "warning")
+        ? "mid"
+        : "ok";
+  return { highest, level };
+}
+
+const LEVEL_ORDER: Record<UsageLevel, number> = { high: 2, mid: 1, ok: 0 };
+
+/** The AI that needs the owner's eye first: the worst level, then the fullest. */
+export function mostUsedFirst(
+  providers: ProviderUsageSummary[],
+  now = Date.now(),
+): ProviderUsageSummary[] {
+  return [...providers].sort((left, right) => {
+    const a = usageOf(left, now);
+    const b = usageOf(right, now);
+    return LEVEL_ORDER[b.level] - LEVEL_ORDER[a.level] || b.highest - a.highest;
+  });
+}
+
 /**
- * Small rings in the sidebar showing how much of each provider's real usage limit is used.
- * Only providers that report a limit are shown; nothing is estimated.
+ * One small ring in the rail for all connected AIs. It shows the AI closest to its limit; a
+ * "+2" says how many more are connected. Pointing at it lists every AI with its real limits.
+ * However many AIs are connected, the rail keeps the same single ring. Nothing is estimated:
+ * only AIs that report a limit appear.
  */
 export function UsageRings(props: { onOpenUsage: () => void }) {
   const [providers, setProviders] = createSignal<ProviderUsageSummary[]>([]);
-  const [open, setOpen] = createSignal<AgentProviderId | null>(null);
+  const [open, setOpen] = createSignal(false);
 
   const load = async () => {
     try {
@@ -31,7 +68,7 @@ export function UsageRings(props: { onOpenUsage: () => void }) {
         ),
       );
     } catch {
-      // Usage is optional; the rings simply stay hidden.
+      // Usage is optional; the ring simply stays hidden.
     }
   };
 
@@ -41,72 +78,79 @@ export function UsageRings(props: { onOpenUsage: () => void }) {
     onCleanup(() => clearInterval(timer));
   });
 
+  const ordered = createMemo(() => mostUsedFirst(providers()));
+  const nameOf = (provider: ProviderUsageSummary) =>
+    NAMES[provider.provider] ?? PROVIDER_LABELS[provider.provider];
+
   return (
-    <Show when={providers().length > 0}>
-      <div class="usage-rings">
-        <For each={providers()}>
-          {(provider) => {
-            // A window past its reset time no longer describes now.
-            const live = () =>
-              provider.limits.filter(
-                (limit) => !limit.resetsAt || Date.parse(limit.resetsAt) >= Date.now(),
-              );
-            const highest = () => Math.max(0, ...live().map((limit) => limit.usedPercent ?? 0));
-            // The provider's own status counts too: Claude warns from 75 % of a window.
-            const level = () =>
-              highest() >= 95 || live().some((limit) => limit.status === "limited")
-                ? "high"
-                : highest() >= 80 || live().some((limit) => limit.status === "warning")
-                  ? "mid"
-                  : "ok";
-            return (
-              <div class="usage-ring-wrap">
-                <button
-                  type="button"
-                  class={`usage-ring usage-ring-${level()}`}
-                  aria-label={`${NAMES[provider.provider] ?? PROVIDER_LABELS[provider.provider]} ${Math.round(highest())}%`}
-                  onClick={props.onOpenUsage}
-                  onMouseEnter={() => setOpen(provider.provider)}
-                  onMouseLeave={() => setOpen(null)}
-                  onFocus={() => setOpen(provider.provider)}
-                  onBlur={() => setOpen(null)}
-                >
-                  <svg viewBox="0 0 36 36" aria-hidden="true">
-                    <circle cx="18" cy="18" r="15" class="usage-ring-track" />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15"
-                      class="usage-ring-value"
-                      stroke-dasharray={`${(Math.min(100, highest()) / 100) * 94.25} 94.25`}
-                    />
-                  </svg>
-                  <ProviderLogo provider={provider.provider} size={15} />
-                </button>
-                <Show when={open() === provider.provider}>
-                  <div class="usage-ring-popover" role="tooltip">
-                    <strong>
-                      {NAMES[provider.provider] ?? PROVIDER_LABELS[provider.provider]}
-                    </strong>
-                    <For each={provider.limits.filter((limit) => limit.usedPercent !== null)}>
-                      {(limit) => (
-                        <div class="usage-ring-limit">
-                          <span>{limit.label}</span>
-                          <meter min="0" max="100" value={limit.usedPercent ?? 0} />
-                          <b>{Math.round(limit.usedPercent ?? 0)}%</b>
-                          <Show when={limit.resetsAt}>
-                            {(resetsAt) => <small>{resetsIn(resetsAt())}</small>}
-                          </Show>
-                        </div>
-                      )}
-                    </For>
-                  </div>
+    <Show when={ordered()[0]}>
+      {(first) => {
+        const top = () => usageOf(first());
+        const others = () => ordered().length - 1;
+        return (
+          <div class="usage-rings">
+            <div class="usage-ring-wrap">
+              <button
+                type="button"
+                class={`usage-ring usage-ring-${top().level}`}
+                aria-label={ordered()
+                  .map(
+                    (provider) => `${nameOf(provider)} ${Math.round(usageOf(provider).highest)}%`,
+                  )
+                  .join(", ")}
+                onClick={props.onOpenUsage}
+                onMouseEnter={() => setOpen(true)}
+                onMouseLeave={() => setOpen(false)}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setOpen(false)}
+              >
+                <svg viewBox="0 0 36 36" aria-hidden="true">
+                  <circle cx="18" cy="18" r="15" class="usage-ring-track" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    class="usage-ring-value"
+                    stroke-dasharray={`${(Math.min(100, top().highest) / 100) * 94.25} 94.25`}
+                  />
+                </svg>
+                <ProviderLogo provider={first().provider} size={15} />
+                <Show when={others() > 0}>
+                  <span class="usage-ring-more" aria-hidden="true">
+                    +{others()}
+                  </span>
                 </Show>
-              </div>
-            );
-          }}
-        </For>
-      </div>
+              </button>
+              <Show when={open()}>
+                <div class="usage-ring-popover" role="tooltip">
+                  <For each={ordered()}>
+                    {(provider) => (
+                      <div class="usage-ring-provider">
+                        <strong>
+                          <ProviderLogo provider={provider.provider} size={13} />
+                          {nameOf(provider)}
+                        </strong>
+                        <For each={provider.limits.filter((limit) => limit.usedPercent !== null)}>
+                          {(limit) => (
+                            <div class="usage-ring-limit">
+                              <span>{limit.label}</span>
+                              <meter min="0" max="100" value={limit.usedPercent ?? 0} />
+                              <b>{Math.round(limit.usedPercent ?? 0)}%</b>
+                              <Show when={limit.resetsAt}>
+                                {(resetsAt) => <small>{resetsIn(resetsAt())}</small>}
+                              </Show>
+                            </div>
+                          )}
+                        </For>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </Show>
+            </div>
+          </div>
+        );
+      }}
     </Show>
   );
 }

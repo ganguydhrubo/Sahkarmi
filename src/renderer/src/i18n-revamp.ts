@@ -121,6 +121,34 @@ export const revampEn = {
   teachDiscard: "Discard",
   teachSaved: "Saved: {name}. Coworkers can now follow it; you can see it in Settings > Skills.",
   teachAnother: "Teach another",
+  helpGroupNew: "New and useful",
+  helpQPreview: "Does Sahkarmi understand my job before I press Start?",
+  helpAPreview:
+    "Yes. On Home, type the job and wait a moment. It shows what it understood, who will do it and what is missing. Tap a question to answer it. Start works at any time.",
+  helpQDoing: "How do I know what a coworker is doing?",
+  helpADoing:
+    "While it works, its row turns orange and says what it is doing, with a small moving badge on its picture. In the CEO's chat, a strip on top shows everyone who is working.",
+  helpQSide: "Can I ask something while a coworker is busy?",
+  helpASide:
+    'Yes. Press "Ask on the side" above the message box. A free AI answers from the chat, and the job is not disturbed.',
+  helpQTeach: "How do I teach a coworker a job in the browser?",
+  helpATeach:
+    'Open the browser, press "Take over", then "Teach a task". Do the job once, press "Stop and save" and give it a name. Passwords and codes are never noted.',
+  helpQTakeover: "How do I sign in or join a call in the browser?",
+  helpATakeover:
+    'Press "Take over". The page is then yours: click, type, and use the microphone and camera. Press "Hand back" when you finish.',
+  helpQClear: "How do I remove a message or clear a chat?",
+  helpAClear:
+    'On a message, open the three dots and choose "Remove from chat". To clear a whole chat, right-click the coworker and press "Clear this chat" twice.',
+  helpQQuiet: "How do I mute a coworker or mark a chat as unread?",
+  helpAQuiet:
+    "Right-click the coworker. Mute stops its sound and notifications. Mark as unread keeps the chat on your list. The finished sound is in Settings > General.",
+  helpQPhoneRun: "Can I start a routine from my phone?",
+  helpAPhoneRun:
+    "Yes, once Telegram is connected in Settings. Send /routines to see your routines and /run with the name to start one.",
+  helpQTalk: "How do I reach the Sahkarmi team?",
+  helpATalk:
+    "Use the Discord and Telegram icons on the left side of the app. We read every message.",
   sideAskNote:
     "A quick question while your coworker works. A free AI answers from this chat; the job is not disturbed and nothing here goes into the chat.",
   sideAskPlaceholder: "Ask a quick question…",
@@ -152,6 +180,16 @@ export const revampEn = {
   railDiscord: "Discord",
   railTelegram: "Telegram",
   helpDiscord: "Join our Discord community",
+  railCommunity: "Community",
+  railSupportTitle: "Sahkarmi is free. Help it stay strong.",
+  railSupportPitch:
+    "Everything in the app is open to everyone. If it saved you work, your support pays for the next part: more languages, fixes and new coworkers.",
+  railSupportCta: "Support Sahkarmi",
+  railDiscordHint: "Ask, share and meet other owners",
+  railTelegramHint: "Message us for help",
+  railStarHint: "Give a star on GitHub",
+  railSupportHint: "Help us keep it free",
+  railWebsiteHint: "Guides, videos and news",
   railSupportGroup: "Support Sahkarmi",
   aboutWorldTitle: "Your AI team, in 17 languages",
   startLanguageNext: "Continue",
@@ -370,6 +408,33 @@ export const revampHi: RevampDictionary = {
   teachDiscard: "हटाएँ",
   teachSaved: "सेव हो गया: {name}. अब सहकर्मी इसे कर सकते हैं; यह सेटिंग्स > स्किल्स में दिखता है.",
   teachAnother: "एक और सिखाएँ",
+  helpGroupNew: "नया और काम का",
+  helpQPreview: 'क्या Sahkarmi "शुरू करें" दबाने से पहले मेरा काम समझता है?',
+  helpAPreview:
+    'हाँ. होम पर काम लिखें और थोड़ा रुकें. वह बताता है कि उसने क्या समझा, कौन करेगा और क्या कमी है. किसी सवाल पर टैप करके जवाब दें. "शुरू करें" कभी भी काम करता है.',
+  helpQDoing: "कैसे पता चले कि सहकर्मी क्या कर रहा है?",
+  helpADoing:
+    "काम करते समय उसकी पंक्ति नारंगी हो जाती है और बताती है कि वह क्या कर रहा है, तस्वीर पर एक छोटा हिलता बैज भी दिखता है. CEO की चैट में ऊपर एक पट्टी दिखाती है कि कौन-कौन काम कर रहा है.",
+  helpQSide: "क्या सहकर्मी के व्यस्त रहते मैं कुछ पूछ सकता हूँ?",
+  helpASide:
+    'हाँ. संदेश बॉक्स के ऊपर "साथ में पूछें" दबाएँ. एक मुफ़्त AI चैट के आधार पर जवाब देता है, और काम नहीं रुकता.',
+  helpQTeach: "ब्राउज़र का काम सहकर्मी को कैसे सिखाएँ?",
+  helpATeach:
+    'ब्राउज़र खोलें, "ख़ुद चलाएँ" दबाएँ, फिर "काम सिखाएँ". काम एक बार करें, "रोकें और सेव करें" दबाएँ और नाम दें. पासवर्ड और कोड कभी नोट नहीं होते.',
+  helpQTakeover: "ब्राउज़र में साइन-इन या कॉल कैसे करूँ?",
+  helpATakeover:
+    '"ख़ुद चलाएँ" दबाएँ. अब पेज आपका है: क्लिक करें, टाइप करें, माइक और कैमरा इस्तेमाल करें. काम हो जाए तो "वापस सौंपें" दबाएँ.',
+  helpQClear: "संदेश कैसे हटाएँ या चैट कैसे साफ़ करें?",
+  helpAClear:
+    'संदेश पर तीन बिंदु खोलें और "चैट से हटाएँ" चुनें. पूरी चैट साफ़ करने के लिए सहकर्मी पर राइट-क्लिक करें और "यह चैट साफ़ करें" दो बार दबाएँ.',
+  helpQQuiet: "सहकर्मी को म्यूट या चैट को अपठित कैसे करूँ?",
+  helpAQuiet:
+    'सहकर्मी पर राइट-क्लिक करें. म्यूट से उसकी आवाज़ और सूचनाएँ बंद होती हैं. "अपठित करें" से चैट आपकी सूची में रहती है. काम पूरा होने की आवाज़ सेटिंग्स > सामान्य में है.',
+  helpQPhoneRun: "क्या मैं फ़ोन से रूटीन शुरू कर सकता हूँ?",
+  helpAPhoneRun:
+    "हाँ, जब सेटिंग्स में Telegram जुड़ा हो. अपनी रूटीन देखने के लिए /routines भेजें और शुरू करने के लिए /run के साथ नाम भेजें.",
+  helpQTalk: "Sahkarmi टीम से कैसे बात करूँ?",
+  helpATalk: "ऐप के बाईं ओर Discord और Telegram के आइकन दबाएँ. हम हर संदेश पढ़ते हैं.",
   sideAskNote:
     "सहकर्मी के काम करते समय एक छोटा सवाल. मुफ़्त AI इसी चैट के आधार पर जवाब देता है; काम नहीं रुकता और यहाँ का कुछ भी चैट में नहीं जाता.",
   sideAskPlaceholder: "एक छोटा सवाल पूछें…",
@@ -401,6 +466,16 @@ export const revampHi: RevampDictionary = {
   railDiscord: "Discord",
   railTelegram: "Telegram",
   helpDiscord: "हमारे Discord समूह से जुड़ें",
+  railCommunity: "समुदाय",
+  railSupportTitle: "Sahkarmi मुफ़्त है. इसे मज़बूत रखने में साथ दें.",
+  railSupportPitch:
+    "ऐप में सब कुछ सबके लिए खुला है. अगर इसने आपका काम बचाया, तो आपका साथ अगले हिस्से में लगता है: और भाषाएँ, सुधार और नए सहकर्मी.",
+  railSupportCta: "Sahkarmi का साथ दें",
+  railDiscordHint: "पूछें, बताएँ और दूसरे मालिकों से मिलें",
+  railTelegramHint: "मदद के लिए हमें लिखें",
+  railStarHint: "GitHub पर स्टार दें",
+  railSupportHint: "इसे मुफ़्त रखने में साथ दें",
+  railWebsiteHint: "गाइड, वीडियो और ख़बरें",
   railSupportGroup: "Sahkarmi को सपोर्ट करें",
   aboutWorldTitle: "आपकी AI टीम, 17 भाषाओं में",
   startLanguageNext: "आगे बढ़ें",
@@ -615,6 +690,32 @@ export const revampBn: RevampDictionary = {
   teachDiscard: "বাদ দিন",
   teachSaved: "সেভ হয়েছে: {name}. এখন সহকর্মীরা এটি করতে পারবে; সেটিংস > স্কিলস-এ দেখা যাবে.",
   teachAnother: "আরেকটি শেখান",
+  helpGroupNew: "নতুন ও কাজের",
+  helpQPreview: '"শুরু করুন" চাপার আগে কি Sahkarmi আমার কাজ বোঝে?',
+  helpAPreview:
+    'হ্যাঁ. হোমে কাজটা লিখে একটু থামুন. সে জানায় কী বুঝেছে, কে করবে আর কী বাকি. কোনো প্রশ্নে ট্যাপ করে উত্তর দিন. "শুরু করুন" যেকোনো সময় কাজ করে.',
+  helpQDoing: "সহকর্মী কী করছে কীভাবে বুঝব?",
+  helpADoing:
+    "কাজ করার সময় তার সারি কমলা হয়ে যায় আর লেখা থাকে সে কী করছে, ছবির ওপর একটা ছোট নড়াচড়া করা ব্যাজও থাকে. CEO-র চ্যাটে ওপরে একটা পট্টি দেখায় কে কে কাজ করছে.",
+  helpQSide: "সহকর্মী ব্যস্ত থাকলে কি কিছু জিজ্ঞেস করতে পারি?",
+  helpASide: 'হ্যাঁ. বার্তা বক্সের ওপরে "পাশে জিজ্ঞেস করুন" চাপুন. একটি ফ্রি AI চ্যাট দেখে উত্তর দেয়, কাজ থামে না.',
+  helpQTeach: "ব্রাউজারের কাজ সহকর্মীকে কীভাবে শেখাব?",
+  helpATeach:
+    'ব্রাউজার খুলুন, "নিজে চালান" চাপুন, তারপর "কাজ শেখান". কাজটা একবার করুন, "থামান ও সেভ করুন" চাপুন আর নাম দিন. পাসওয়ার্ড ও কোড কখনো লেখা হয় না.',
+  helpQTakeover: "ব্রাউজারে সাইন-ইন বা কল কীভাবে করব?",
+  helpATakeover:
+    '"নিজে চালান" চাপুন. পেজ তখন আপনার: ক্লিক করুন, টাইপ করুন, মাইক ও ক্যামেরা ব্যবহার করুন. শেষ হলে "ফিরিয়ে দিন" চাপুন.',
+  helpQClear: "বার্তা সরাব বা চ্যাট পরিষ্কার করব কীভাবে?",
+  helpAClear:
+    'বার্তার তিন বিন্দু খুলে "চ্যাট থেকে সরান" বাছুন. পুরো চ্যাট পরিষ্কার করতে সহকর্মীর ওপর রাইট-ক্লিক করে "এই চ্যাট পরিষ্কার করুন" দুবার চাপুন.',
+  helpQQuiet: "সহকর্মীকে মিউট বা চ্যাট অপঠিত করব কীভাবে?",
+  helpAQuiet:
+    'সহকর্মীর ওপর রাইট-ক্লিক করুন. মিউট করলে তার শব্দ ও নোটিফিকেশন বন্ধ হয়. "অপঠিত করুন" চ্যাটটা আপনার তালিকায় রাখে. কাজ শেষের শব্দ সেটিংস > সাধারণ-এ আছে.',
+  helpQPhoneRun: "ফোন থেকে কি রুটিন শুরু করতে পারি?",
+  helpAPhoneRun:
+    "হ্যাঁ, সেটিংসে Telegram যুক্ত থাকলে. রুটিন দেখতে /routines পাঠান, আর শুরু করতে /run-এর সঙ্গে নাম পাঠান.",
+  helpQTalk: "Sahkarmi টিমের সঙ্গে কীভাবে কথা বলব?",
+  helpATalk: "অ্যাপের বাঁ দিকে Discord আর Telegram আইকন চাপুন. আমরা প্রতিটি বার্তা পড়ি.",
   sideAskNote:
     "সহকর্মী কাজ করার সময় একটি ছোট প্রশ্ন. ফ্রি AI এই চ্যাট দেখে উত্তর দেয়; কাজ থামে না এবং এখানের কিছুই চ্যাটে যায় না.",
   sideAskPlaceholder: "একটি ছোট প্রশ্ন করুন…",
@@ -646,6 +747,16 @@ export const revampBn: RevampDictionary = {
   railDiscord: "Discord",
   railTelegram: "Telegram",
   helpDiscord: "আমাদের Discord দলে যোগ দিন",
+  railCommunity: "কমিউনিটি",
+  railSupportTitle: "Sahkarmi ফ্রি. একে শক্ত রাখতে পাশে থাকুন.",
+  railSupportPitch:
+    "অ্যাপের সবকিছু সবার জন্য খোলা. এটি আপনার কাজ বাঁচালে, আপনার সাহায্য পরের অংশ গড়তে লাগে: আরও ভাষা, সংশোধন আর নতুন সহকর্মী.",
+  railSupportCta: "Sahkarmi-কে সাহায্য করুন",
+  railDiscordHint: "জিজ্ঞেস করুন, জানান, অন্য মালিকদের সঙ্গে পরিচিত হন",
+  railTelegramHint: "সাহায্যের জন্য আমাদের লিখুন",
+  railStarHint: "GitHub-এ স্টার দিন",
+  railSupportHint: "এটি ফ্রি রাখতে পাশে থাকুন",
+  railWebsiteHint: "গাইড, ভিডিও ও খবর",
   railSupportGroup: "Sahkarmi-কে সাপোর্ট করুন",
   aboutWorldTitle: "আপনার AI টিম, ১৭টি ভাষায়",
   startLanguageNext: "এগিয়ে যান",
