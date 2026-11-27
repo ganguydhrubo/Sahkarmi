@@ -5,6 +5,40 @@ All notable changes to Sahkarmi are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-27
+
+### Added
+
+- **17 languages**: a language wheel on first start, with Hindi, Bengali and 14 world languages
+  (Arabic and Hebrew read right to left). English is the default.
+- **Home reads your job before Start**: after you stop typing, a free AI says "I understood: ...",
+  names the coworker who should do it and shows its questions as chips you tap to answer. Start
+  never waits for it. Choose who reads the job in Settings > Home.
+- **Who is doing what**: while the team works, each coworker's row says what it is doing and for
+  whom, with a small work badge; the CEO's chat shows a "Working now" strip.
+- **Coworkers control Windows desktop apps**, and ask before Send, Pay, Post or Delete.
+- **Browser, when you take over**: the page is now a normal page for your own mouse and keyboard,
+  and it can use the microphone, camera, screen sharing and notifications for calls and sign-ins.
+- **Discord and Telegram**: join the community or ask for help from the side rail, Help and About.
+- A quiet "Support us on GitHub" strip under the title bar; the × hides it for two weeks.
+- Voice typing in 14 more languages; starter team names in your language.
+
+### Changed
+
+- Themes are now System and Dark; sizes are Compact and Normal.
+- The name everywhere is "Sahkarmi (Coworkers)"; a new shiny logo and side-rail icons.
+- Long chats open fast: the last 40 messages first, older ones as you scroll up.
+- About is now international.
+
+### Fixed
+
+- Browser: Back and Forward work. A typed address now loads in the same tab (it used to open a
+  new tab each time), and the Back, Forward and Reload buttons are easy to see.
+- A slow free-model answer is no longer stopped with a wrong "free limit is used up" notice.
+- The chat now says so when an AI cannot use Sahkarmi's own tools.
+- The zoom keys no longer stack on top of the size setting.
+- The More menu opens inside the window in Arabic and Hebrew.
+
 ## [0.34.0] - 2026-11-18
 
 ### Added
