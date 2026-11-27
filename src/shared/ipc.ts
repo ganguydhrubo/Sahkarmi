@@ -1977,6 +1977,18 @@ export type AgentEvent =
   | { type: "error"; botId?: string; code: string; message: string }
   /** Something worth a line in the chat that is not a failure. */
   | { type: "notice"; botId: string; code: string; message: string }
+  /**
+   * A coworker really stored something for next time: a new skill or a new team memory. Sent
+   * only for a first save (never for an update), so undoing it cannot lose older work.
+   */
+  | {
+      type: "learned";
+      botId: string;
+      source: "skill" | "memory";
+      id: string;
+      workspaceId: string;
+      text: string;
+    }
   | { type: "knowledge-changed"; bases: KnowledgeBaseSummary[] }
   | { type: "knowledge-progress"; progress: KnowledgeProgress }
   | { type: "knowledge-semantic"; status: KnowledgeSemanticStatus };

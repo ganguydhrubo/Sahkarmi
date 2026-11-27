@@ -150,6 +150,8 @@ interface ConversationProps {
   onCreateAgent: () => void;
   onSelectAgent: (botId: string) => void;
   onUpdateBot: (botId: string, updates: Omit<UpdateBotInput, "botId">) => Promise<void>;
+  /** Takes back a skill or memory the coworker stored (the "I learned" line's Undo). */
+  onUndoLearned?: (messageId: string) => void;
   onDeleteBot?: (botId: string) => void;
   onSendMessage: (
     body: string,
@@ -707,6 +709,7 @@ function MessageBody(props: {
   onPreview: (attachment: AttachmentSummary) => void;
   onAttachmentAction: (attachment: AttachmentSummary, action: "open" | "reveal") => void;
   onResend?: (body: string) => void;
+  onUndoLearned?: (messageId: string) => void;
   /** Set only on the latest reply: a tap sends the choice as the owner's answer. */
   onQuickReply?: (choice: string) => void;
 }) {
@@ -832,6 +835,18 @@ function MessageBody(props: {
               onClick={() => props.onResend?.(props.message.body)}
             >
               {t("sendAgain")}
+            </button>
+          </Show>
+          <Show
+            when={props.message.learned && !props.message.learned.undone && props.onUndoLearned}
+          >
+            <button
+              type="button"
+              class="message-resend"
+              title={t("learnedUndoHint")}
+              onClick={() => props.onUndoLearned?.(props.message.id)}
+            >
+              {t("learnedUndo")}
             </button>
           </Show>
         </div>
@@ -3189,6 +3204,7 @@ export function Conversation(props: ConversationProps) {
                                 onPreview={(attachment) => void previewAttachment(attachment)}
                                 onAttachmentAction={attachmentAction}
                                 onResend={(body) => void props.onSendMessage(body, [], null)}
+                                onUndoLearned={props.onUndoLearned}
                                 onQuickReply={
                                   message.author === "bot" &&
                                   props.messages[props.messages.length - 1]?.id === message.id

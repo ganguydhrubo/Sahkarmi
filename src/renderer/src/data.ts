@@ -43,6 +43,8 @@ export interface BotMessage {
   reaction?: MessageReaction | null;
   items?: string[];
   tool?: ToolCallSummary;
+  /** A real thing the coworker stored for next time; the owner can undo it from the chat. */
+  learned?: { source: "skill" | "memory"; id: string; workspaceId: string; undone?: boolean };
   /** Document excerpts this message (or the owner message it answers) was grounded on. */
   citations?: KnowledgeCitation[];
 }
