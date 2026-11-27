@@ -57,7 +57,7 @@ import { featureOn } from "../features";
 import { t } from "../i18n";
 import { markdownToPlainText } from "../markdown";
 import { isSystemNote, routineDesignNote, routineNote, systemNoteText } from "../message-display";
-import { activityStyle, sendKey } from "../preferences";
+import { activityStyle, language, nextSuggestion, sendKey } from "../preferences";
 import { starterPrompts } from "../starter-prompts";
 import { speakingId, speakText, stopSpeaking } from "../voice-store";
 import { ActivityIndicator } from "./ActivityIndicator";
@@ -1392,6 +1392,56 @@ export function Conversation(props: ConversationProps) {
       })
       .catch(() => undefined);
   });
+  // The suggested next message: once the coworker has answered and the box is empty, a free AI
+  // proposes what the owner may want to send next. One ask per answer; Tab takes it.
+  const [suggestion, setSuggestion] = createSignal<{ forId: string; text: string } | null>(null);
+  let suggestedFor = "";
+  let suggestTimer: ReturnType<typeof setTimeout> | undefined;
+  let suggestToken = 0;
+  const lastAnswer = createMemo(() => {
+    const said = props.messages.filter(
+      (message) => (message.kind === "text" || !message.kind) && message.body.trim(),
+    );
+    const last = said[said.length - 1];
+    return last && last.author === "bot" && !last.streaming ? { last, said } : null;
+  });
+  const shownSuggestion = () => {
+    const current = suggestion();
+    return current && current.forId === lastAnswer()?.last.id && !agentActivity()
+      ? current.text
+      : null;
+  };
+  createEffect(() => {
+    const answer = lastAnswer();
+    const botId = props.bot?.id;
+    clearTimeout(suggestTimer);
+    if (!answer || !botId || agentActivity() || !nextSuggestion()) return;
+    const ask = window.sahkarmi.home?.suggestNext;
+    const key = `${botId}:${answer.last.id}`;
+    if (!ask || suggestedFor === key) return;
+    suggestTimer = setTimeout(() => {
+      // Only for the chat the owner is looking at, with nothing typed yet.
+      if (!document.hasFocus() || currentDraft().text.trim() || props.bot?.id !== botId) return;
+      suggestedFor = key;
+      suggestToken += 1;
+      const token = suggestToken;
+      void ask({
+        coworkerName: props.bot?.name ?? "",
+        coworkerRole: props.bot?.role ?? "",
+        recent: answer.said.slice(-8).map((message) => ({
+          from: message.author === "you" ? ("owner" as const) : ("coworker" as const),
+          text: message.body,
+        })),
+        language: new Intl.DisplayNames(["en"], { type: "language" }).of(language()) ?? "",
+      })
+        .then((text) => {
+          if (token === suggestToken && text) setSuggestion({ forId: answer.last.id, text });
+        })
+        .catch(() => undefined);
+    }, 1_200);
+  });
+  onCleanup(() => clearTimeout(suggestTimer));
+
   /** The owner removes one message from this chat; the coworker's AI is not disturbed. */
   async function removeMessage(messageId: string) {
     const botId = props.bot?.id;
@@ -3451,6 +3501,13 @@ export function Conversation(props: ConversationProps) {
                         : t("messagePlaceholder", { name: props.bot?.name ?? "" })
               }
               ariaLabel={t("messagePlaceholder", { name: props.bot?.name ?? "" })}
+              suggestion={shownSuggestion()}
+              onAcceptSuggestion={() => {
+                const text = shownSuggestion();
+                if (!text) return;
+                updateCurrentDraft({ text });
+                setSuggestion(null);
+              }}
               onValueChange={(text) => updateCurrentDraft({ text })}
               onSubmit={() => void submitMessage()}
               onEscape={() => {

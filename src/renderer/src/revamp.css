@@ -3425,3 +3425,24 @@
 :root[data-theme="dark"] .home-power-files {
   color: #5eead4;
 }
+
+/* The suggested next message in the empty message box, with the key that takes it. */
+.composer-suggestion {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-suggestion-key {
+  flex: none;
+  border: 1px solid rgb(var(--ink-rgb) / 0.2);
+  border-radius: 6px;
+  background: rgb(var(--ink-rgb) / 0.05);
+  padding: 0 6px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}

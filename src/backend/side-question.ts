@@ -28,12 +28,17 @@ const MAX_ANSWER = 1_500;
 const MODEL_TIMEOUT_MS = 25_000;
 const MAX_MODELS_TRIED = 2;
 
+/** A long message is shown shortened, and marked so, or the AI thinks the coworker stopped mid-way. */
+function shortened(text: string): string {
+  return text.length > MAX_MESSAGE ? `${text.slice(0, MAX_MESSAGE)} [… shortened here]` : text;
+}
+
 export function sideQuestionPrompt(input: SideQuestionInput): string {
   const recent = input.recent
     .slice(-MAX_RECENT)
     .map(
       (message) =>
-        `${message.from === "owner" ? "Owner" : input.coworkerName}: ${message.text.slice(0, MAX_MESSAGE)}`,
+        `${message.from === "owner" ? "Owner" : input.coworkerName}: ${shortened(message.text)}`,
     );
   return [
     "Reply with plain text only: no headings, no code fence. Do not use any tool.",
@@ -86,4 +91,66 @@ export async function answerSideQuestion(
     }
   }
   return null;
+}
+
+/** What the free AI is told about the chat when it suggests the owner's next message. */
+export interface NextMessageInput {
+  coworkerName: string;
+  coworkerRole: string;
+  recent: Array<{ from: "owner" | "coworker"; text: string }>;
+  language: string;
+}
+
+const MAX_SUGGESTION = 120;
+
+export function nextMessagePrompt(input: NextMessageInput): string {
+  const recent = input.recent
+    .slice(-MAX_RECENT)
+    .map(
+      (message) =>
+        `${message.from === "owner" ? "Owner" : input.coworkerName}: ${shortened(message.text)}`,
+    );
+  return [
+    "Reply with plain text only, on one line. Do not use any tool.",
+    `A small-business owner is talking to their AI coworker ${input.coworkerName}${input.coworkerRole ? ` (${input.coworkerRole})` : ""}. The coworker has just answered.`,
+    `Write the ONE message the owner would most likely want to send next, as the owner would type it: at most 12 words, no quotes, in the language the owner wrote in${input.language ? ` (when that is not clear, in ${input.language})` : ""}.`,
+    "It must be a useful next step for the work in the chat (approve, change something, ask for the next part), never small talk. If no useful next step is clear, reply with the single word NONE.",
+    "A message marked [… shortened here] is complete in the real chat; it was only shortened for you. Never say that something was cut off.",
+    `--- the chat so far ---\n${recent.join("\n")}`,
+  ].join("\n");
+}
+
+/** One short line the owner can accept, or null when the reply is not usable. */
+export function tidySuggestion(raw: string): string | null {
+  const text = tidyAnswer(raw);
+  if (!text) return null;
+  const line = (text.split("\n").find((part) => part.trim()) ?? "")
+    .trim()
+    .replace(/^["'“”‘’`]+|["'“”‘’`]+$/g, "")
+    .trim();
+  if (!line || /^none[.!]?$/i.test(line)) return null;
+  // A long answer is the AI talking, not a message to send.
+  if (line.length > MAX_SUGGESTION || line.split(/\s+/).length > 20) return null;
+  return line;
+}
+
+/** Null on any failure, when nothing useful is clear, or when overtaken. Never throws. */
+export async function suggestNextMessage(
+  input: NextMessageInput,
+  run: HomeRunner,
+  options: { models?: string[]; signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<string | null> {
+  if (!input.recent.some((message) => message.from === "coworker" && message.text.trim())) {
+    return null;
+  }
+  // One model only: a suggestion that comes late is worth nothing.
+  const model = (options.models?.length ? options.models : HOME_BACKUP_MODELS)[0];
+  if (!model || options.signal?.aborted) return null;
+  const timeout = AbortSignal.timeout(options.timeoutMs ?? MODEL_TIMEOUT_MS);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+  try {
+    return tidySuggestion(await run(model, nextMessagePrompt(input), signal));
+  } catch {
+    return null;
+  }
 }

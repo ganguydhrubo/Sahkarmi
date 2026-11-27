@@ -182,6 +182,7 @@ export const IPC_CHANNELS = {
   intelligenceRecommend: "intelligence:recommend",
   homeUnderstand: "home:understand",
   homeSideAnswer: "home:side-answer",
+  homeSuggestNext: "home:suggest-next",
   browserTeachStart: "browser:teach-start",
   browserTeachStop: "browser:teach-stop",
   browserTeachCount: "browser:teach-count",
@@ -3585,6 +3586,13 @@ export interface HomeDesktopApi {
    * own. Null when the AI is slow, fails or was overtaken by a newer question.
    */
   sideAnswer?: (input: SideQuestionRequest) => Promise<string | null>;
+  /** A short message the owner may want to send next (Tab accepts it). Null when unclear. */
+  suggestNext?: (input: {
+    coworkerName: string;
+    coworkerRole: string;
+    recent: Array<{ from: "owner" | "coworker"; text: string }>;
+    language: string;
+  }) => Promise<string | null>;
 }
 
 export interface SideQuestionRequest {

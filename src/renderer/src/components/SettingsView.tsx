@@ -17,6 +17,7 @@ import {
   homeReader,
   keepAwake,
   language,
+  nextSuggestion,
   type SendKey,
   sendKey,
   setActivityStyle,
@@ -24,6 +25,7 @@ import {
   setHomeReader,
   setKeepAwake,
   setLanguage,
+  setNextSuggestion,
   setSendKey,
   setUiSize,
   type UiSize,
@@ -444,6 +446,17 @@ export function SettingsView(props: SettingsViewProps) {
                   "homeReaderLabel",
                   "homeReaderHint",
                   segmented("homeReaderLabel", HOME_READERS, homeReader, setHomeReader),
+                  true,
+                )}
+                {row(
+                  "nextSuggestionLabel",
+                  "nextSuggestionHint",
+                  segmented(
+                    "nextSuggestionLabel",
+                    ON_OFF,
+                    () => (nextSuggestion() ? "on" : "off"),
+                    (value) => setNextSuggestion(value === "on"),
+                  ),
                   true,
                 )}
               </section>

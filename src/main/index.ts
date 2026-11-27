@@ -92,7 +92,7 @@ import { RunEventStore } from "../backend/run-events";
 import { parseCadence, ScheduleStore } from "../backend/schedule-store";
 import { SecretCodec, SecretStore } from "../backend/secret-store";
 import { SharedFiles } from "../backend/shared-files";
-import { answerSideQuestion } from "../backend/side-question";
+import { answerSideQuestion, suggestNextMessage } from "../backend/side-question";
 import { LearnedSkills, SkillLibrary } from "../backend/skill-library";
 import { StartupTimings } from "../backend/startup-timings";
 import { shareWithTailscale, tailscaleStatus, unshareTailscale } from "../backend/tailscale";
@@ -3612,6 +3612,45 @@ function registerIntelligenceIpc(intelligence: IntelligenceService): void {
       return null;
     } finally {
       if (sideRead === stop) sideRead = null;
+    }
+  });
+  // The suggested next message. One at a time: a newer chat state stops the older ask.
+  let suggestRead: AbortController | null = null;
+  handleTrusted(IPC_CHANNELS.homeSuggestNext, async (input: unknown) => {
+    suggestRead?.abort();
+    suggestRead = null;
+    if (!isObject(input) || !Array.isArray(input.recent)) return null;
+    const words = (value: unknown, max: number) =>
+      typeof value === "string" ? value.slice(0, max) : "";
+    const recent = input.recent
+      .filter(isObject)
+      .slice(-8)
+      .map((message) => ({
+        from: message.from === "owner" ? ("owner" as const) : ("coworker" as const),
+        text: words(message.text, 700),
+      }))
+      .filter((message) => message.text);
+    const stop = new AbortController();
+    suggestRead = stop;
+    try {
+      const cli = await resolveOpenCodeCli();
+      homeModels ??= listHomeModels(cli.executable);
+      const models = await homeModels;
+      if (models.length === 0) homeModels = null;
+      return await suggestNextMessage(
+        {
+          coworkerName: words(input.coworkerName, 80) || "the coworker",
+          coworkerRole: words(input.coworkerRole, 120),
+          recent,
+          language: words(input.language, 40),
+        },
+        openCodeHomeRunner(cli.executable),
+        { models, signal: stop.signal },
+      );
+    } catch {
+      return null;
+    } finally {
+      if (suggestRead === stop) suggestRead = null;
     }
   });
   handleTrusted(IPC_CHANNELS.intelligencePredictions, (workspaceId: unknown) =>
