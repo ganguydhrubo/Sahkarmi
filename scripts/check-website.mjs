@@ -218,14 +218,42 @@ async function main() {
   }
 
   // Download buttons must start the installer download, never open the GitHub Releases page.
-  const EXPECTED = { win: /-x64\.exe$/ };
+  const EXPECTED = { win: /-x64\.exe$/, "mac-arm64": /-arm64\.dmg$/, "mac-x64": /-x64\.dmg$/ };
   const downloadLinks = [...html.matchAll(/<a\b[^>]*>/g)]
     .map((m) => m[0])
     .filter((tag) => /\s(data-download|data-platform|data-platform-tile)[\s=>]/.test(tag));
   check("download links found", downloadLinks.length >= 4, String(downloadLinks.length));
+  check("no Linux download links while that build is paused", !/\.AppImage"/i.test(html));
+  // Mac (Apple Silicon and Intel): both tiles and the Homebrew line on the home, install and Mac
+  // pages, and every .dmg link, on every page, goes straight to the project's GitHub release files.
+  const BREW = "brew install --cask ganguydhrubo/sahkarmi/sahkarmi";
+  const DMG_HOME = "https://github.com/ganguydhrubo/Sahkarmi/releases/download/";
+  const dmgLinks = (text) =>
+    [...text.matchAll(/<a\b[^>]*>/g)]
+      .map((m) => attr(m[0], "href") ?? "")
+      .filter((href) => /\.dmg$/i.test(href));
+  const installHtml = (await load("/install.html")).text;
+  const macHtml = (await load("/ai-agent-for-mac.html")).text;
+  for (const [name, text] of [
+    ["index.html", html],
+    ["install.html", installHtml],
+    ["ai-agent-for-mac.html", macHtml],
+  ]) {
+    for (const platform of ["mac-arm64", "mac-x64"]) {
+      check(
+        `${name} has the ${platform} tile`,
+        new RegExp(`<a\\b[^>]*\\sdata-platform-tile="${platform}"[^>]*\\shref="[^"]+\\.dmg"`).test(
+          text,
+        ),
+      );
+    }
+    check(`${name} shows the Homebrew command`, text.includes(`<code>${BREW}</code>`));
+  }
+  const strayDmg = dmgLinks(html).filter((href) => !href.startsWith(DMG_HOME));
   check(
-    "no macOS or Linux download links while those builds are paused",
-    !/\.(dmg|AppImage)"/.test(html),
+    "index.html .dmg links point to the GitHub release files",
+    dmgLinks(html).length >= 4 && strayDmg.length === 0,
+    strayDmg.join(", "),
   );
   for (const tag of downloadLinks) {
     const href = attr(tag, "href") ?? "";
@@ -279,6 +307,7 @@ async function main() {
     "/use-cases.html",
     "/open-source-ai-agent.html",
     "/ai-agent-for-windows.html",
+    "/ai-agent-for-mac.html",
     "/alternatives.html",
     "/download.html",
     // The generated coworker pages (scripts/build-coworker-pages.ts) and video pages
@@ -309,6 +338,15 @@ async function main() {
       String(description?.length),
     );
     check(`${page} is in the sitemap`, sitemapForPages.includes(`<loc>${ORIGIN}${page}</loc>`));
+    const pageDmg = dmgLinks(secondary.text);
+    if (pageDmg.length > 0) {
+      const stray = pageDmg.filter((href) => !href.startsWith(DMG_HOME));
+      check(
+        `${page} .dmg links point to the GitHub release files`,
+        stray.length === 0,
+        stray.join(", "),
+      );
+    }
     for (const block of secondary.text.matchAll(
       /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g,
     )) {

@@ -54,6 +54,7 @@
     .btn { display: inline-flex; align-items: center; min-height: 48px; padding: 10px 22px; border-radius: 999px; background: var(--saffron); color: #0f1220; font-weight: 700; text-decoration: none; }
     table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; display: block; overflow-x: auto; }
     pre, code { overflow-wrap: anywhere; }
+    pre.wrap { white-space: pre-wrap; }
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
     th { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
     footer { border-top: 1px solid var(--line); margin-top: 64px; padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
@@ -78,6 +79,7 @@
     <ul class="toc">
       <li><a href="#requirements">Requirements</a></li>
       <li><a href="#windows">Windows</a></li>
+      <li><a href="#mac">Mac</a></li>
       <li><a href="#verify">Verify the download</a></li>
       <li><a href="#first-launch">First launch</a></li>
       <li><a href="#providers">AI providers</a></li>
@@ -92,7 +94,10 @@
       <thead><tr><th>Platform</th><th>File</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td>Windows 10 or 11, 64-bit (x64)</td><td><code>Sahkarmi-<span data-release-version>0.34.0</span>-x64.exe</code>, <span data-release-size="win">246 MB</span></td><td><span class="status tested">Built and tested</span> on Windows 11 by the project</td></tr>
+        <tr><td>macOS 12 (Monterey) or later, Apple Silicon (M1, M2, M3, M4)</td><td><code>Sahkarmi-&lt;version&gt;-arm64.dmg</code>, <span data-release-size="mac-arm64">300 MB</span></td><td><span class="status tested">Built and tested</span> by the project, from version 0.37.0</td></tr>
+        <tr><td>macOS 12 (Monterey) or later, Intel</td><td><code>Sahkarmi-&lt;version&gt;-x64.dmg</code>, <span data-release-size="mac-x64">300 MB</span></td><td><span class="status tested">Built and tested</span> by the project, from version 0.37.0</td></tr>
         <tr><td>Windows ARM and 32-bit systems</td><td>none</td><td><span class="status none">Not supported</span></td></tr>
+        <tr><td>Linux</td><td>none</td><td><span class="status none">Paused</span> You can <a href="#terminal">build from source</a>.</td></tr>
       </tbody>
     </table>
     <p>Memory: on the project's test PC (Windows 11, 16 GB RAM) the app used about 1 GB of RAM in total with the bundled free-model runtime running. Disk: allow about 1 GB for the app plus the runtime it downloads. The free models and any provider you connect need an internet connection; nothing runs offline.</p>
@@ -107,11 +112,31 @@
     <div class="box" data-winget="live" hidden><strong>winget:</strong> <code>winget install Sahkarmi.Sahkarmi</code> installs the latest version from the Windows Package Manager community repository, and <code>winget upgrade Sahkarmi.Sahkarmi</code> updates it. New releases are submitted there automatically.</div>
     <div class="box" data-winget="pending"><strong>winget:</strong> a manifest for <code>Sahkarmi.Sahkarmi</code> has been submitted to the Windows Package Manager community repository and is waiting for Microsoft's moderation. Until it is accepted, <code>winget install Sahkarmi.Sahkarmi</code> does not work; use the installer above.</div>
 
+    <h2 id="mac">Mac</h2>
+    <p>From version 0.37.0 Sahkarmi runs on Mac with macOS 12 (Monterey) or later. There are two files, one for each kind of chip. Not sure which chip you have? Open the Apple menu, then <strong>About This Mac</strong>. "Chip Apple M…" means Apple Silicon. "Processor … Intel" means Intel. The DMG file is about 300 MB, and the installed app takes about 870 MB. More about <a href="/ai-agent-for-mac.html">Sahkarmi for Mac</a>.</p>
+    <ol>
+      <li>Download the file for your chip: <a data-platform-tile="mac-arm64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-arm64.dmg">Apple Silicon (M1 to M4)</a> (<span data-release-size="mac-arm64">300 MB</span>) or <a data-platform-tile="mac-x64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-x64.dmg">Intel</a> (<span data-release-size="mac-x64">300 MB</span>). Both are also on <a href="https://github.com/ganguydhrubo/Sahkarmi/releases/latest" target="_blank" rel="noopener noreferrer">GitHub Releases</a>. You can <a href="#verify">verify the file's checksum</a> first.</li>
+      <li>Open the DMG file from your Downloads folder. A small window opens.</li>
+      <li>Drag <strong>Sahkarmi</strong> into the <strong>Applications</strong> folder in that window.</li>
+      <li>Open Sahkarmi from Applications. macOS shows "Verifying Sahkarmi…" for some seconds, and then a box titled <strong>"Sahkarmi" Not Opened</strong>. It says Apple could not verify that Sahkarmi is free of malware. This comes because the Mac app is not notarised by Apple yet. Click <strong>Done</strong>, not Move to Trash.</li>
+      <li>Open <strong>System Settings</strong>, then <strong>Privacy &amp; Security</strong>. Scroll down to Security. Next to the line about Sahkarmi, click <strong>Open Anyway</strong>, and confirm with your Mac password or Touch ID. On macOS 12 the same button is in System Preferences, Security &amp; Privacy, General.</li>
+      <li>Open Sahkarmi again and choose <strong>Open</strong>. This is needed one time only; after that Sahkarmi opens like any other app.</li>
+    </ol>
+    <h3>Install with Homebrew</h3>
+    <p>If you use <a href="https://brew.sh" target="_blank" rel="noopener noreferrer">Homebrew</a>, one line installs Sahkarmi. It works on both chips. Homebrew installs skip all of the first-open steps above: the app opens straight away.</p>
+<pre class="wrap"><code>brew install --cask ganguydhrubo/sahkarmi/sahkarmi</code></pre>
+    <p>Update later with <code>brew upgrade --cask sahkarmi</code>. Remove it with <code>brew uninstall --cask sahkarmi</code>.</p>
+    <div class="box"><strong>On Mac too.</strong> Coworkers can control Mac desktop apps, voice typing runs on the computer, and Sahkarmi can install MCP servers for you. For desktop control, macOS asks you once to allow Sahkarmi under Accessibility and Screen Recording (System Settings > Privacy & Security); Settings > Permissions in the app has a button for each. The Microsoft Store, winget and Scoop are for Windows only.</div>
+
     <h2 id="verify">Verify the download</h2>
     <p>Every release attaches <code>SHA256SUMS.txt</code> and <code>SHA256SUMS-windows.txt</code>, plus a build provenance attestation created by GitHub Actions. Compare the hash of your file with the one on the <a href="https://github.com/ganguydhrubo/sahakarmi/releases/latest" target="_blank" rel="noopener noreferrer">release page</a>.</p>
     <h3>Windows (PowerShell)</h3>
 <pre><code>Get-FileHash .\Sahkarmi-*-x64.exe -Algorithm SHA256</code></pre>
     <p>To check the provenance attestation with the GitHub CLI: <code>gh attestation verify Sahkarmi-&lt;version&gt;-x64.exe --repo ganguydhrubo/sahakarmi</code>.</p>
+    <h3>Mac (Terminal)</h3>
+    <p>The Mac files are listed in <code>SHA256SUMS-macos.txt</code> on the release page. They have checksums; the provenance attestation is for the Windows installer. For example, for the Apple Silicon file of version 0.37.0 (the Intel file ends with <code>-x64.dmg</code>):</p>
+<pre class="wrap"><code>shasum -a 256 ~/Downloads/Sahkarmi-0.37.0-arm64.dmg</code></pre>
+    <p>The result must be the same as the line for that file in <code>SHA256SUMS-macos.txt</code>.</p>
 
     <h2 id="first-launch">First launch</h2>
     <ol>
@@ -135,7 +160,7 @@
     <p>After signing in to a CLI in a terminal, click <strong>Check again</strong> or restart Sahkarmi.</p>
 
     <h2 id="terminal">Terminal install and building from source</h2>
-    <p>On Windows, the Microsoft Store and Scoop (and winget, see above) install with one command. There is no Homebrew, AUR or Flathub package, because the macOS and Linux builds are paused. To build from source (any platform with <a href="https://bun.sh" target="_blank" rel="noopener noreferrer">Bun</a> 1.3.11 and Node.js 22.12 or newer):</p>
+    <p>On Windows, the Microsoft Store and Scoop (and winget, see above) install with one command. On Mac, Homebrew does the same (see <a href="#mac">Mac</a>). There is no AUR or Flathub package, because the Linux build is paused. To build from source (any platform with <a href="https://bun.sh" target="_blank" rel="noopener noreferrer">Bun</a> 1.3.11 and Node.js 22.12 or newer):</p>
 <pre><code>git clone https://github.com/ganguydhrubo/sahakarmi.git
 cd sahakarmi
 bun install --frozen-lockfile
@@ -145,6 +170,7 @@ bun run dev              # starts the app from source</code></pre>
 
     <h2 id="update">Updating</h2>
     <p>The installed app checks GitHub Releases for updates shortly after launch and then periodically. Under Settings, <strong>Updates</strong>, you choose whether updates download automatically or ask each time, and you can check now. Updates install when you restart the app. On Windows the update is the same unsigned installer, so SmartScreen may ask again. Your coworkers, chats and settings are kept across updates.</p>
+    <p><strong>On Mac</strong> the app tells you when a new version is out and opens the download. Open the new DMG and drag Sahkarmi into Applications again, in place of the old one. If you installed with Homebrew, run <code>brew upgrade --cask sahkarmi</code>.</p>
 
     <h2 id="troubleshooting">Troubleshooting</h2>
     <h3>A coworker stays at "working" and never answers</h3>
@@ -155,8 +181,13 @@ bun run dev              # starts the app from source</code></pre>
     <p>The CLI was found but did not start. Run <code>claude --version</code> or <code>codex --version</code> in a new terminal to see the real error. If the CLI is installed in an unusual place, start Sahkarmi with <code>SAHKARMI_CLAUDE_PATH</code> or <code>SAHKARMI_CODEX_PATH</code> set to the executable's full path.</p>
     <h3>SmartScreen or Defender blocks the installer</h3>
     <p>Choose More info, then Run anyway. The installer is unsigned, not malicious; verify its checksum against the release page if in doubt. Do not disable Defender.</p>
+    <h3>macOS says Apple could not verify Sahkarmi</h3>
+    <p>Click Done, not Move to Trash. Then open System Settings, Privacy &amp; Security, scroll down to Security, click Open Anyway next to the line about Sahkarmi and confirm with your Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only. The Mac app is not notarised by Apple yet; that is the only reason for the message. Verify the checksum against the release page if in doubt. Do not turn Gatekeeper off. If you clicked Move to Trash by mistake, drag Sahkarmi from the DMG into Applications again.</p>
+    <h3>Sahkarmi does not open on my Mac at all</h3>
+    <p>Check that you took the right file: Apple Silicon (<code>-arm64.dmg</code>) or Intel (<code>-x64.dmg</code>). The Apple menu, About This Mac, shows which chip you have. Sahkarmi needs macOS 12 or later.</p>
     <h3>Where are the logs?</h3>
     <p><code>%APPDATA%\Sahkarmi\logs\sahkarmi.log</code>. Settings, Data &amp; privacy, <strong>Export diagnostics</strong> produces a redacted bundle with versions and capability states and no conversation content. Before sharing a log publicly, remove anything personal: it can contain the email address of a connected provider account.</p>
+    <p>On Mac the log is at <code>~/Library/Application Support/Sahkarmi/logs/sahkarmi.log</code>.</p>
     <h3 id="whatsapp-help">Need help installing Sahkarmi?</h3>
     <p>Message us on Telegram. Tell us your Windows version and what you see on the screen.</p>
     <p><a class="btn" href="https://t.me/dhruboG" target="_blank" rel="noopener noreferrer">Get help on Telegram</a></p>
@@ -167,6 +198,8 @@ bun run dev              # starts the app from source</code></pre>
     <h2 id="uninstall">Uninstall and remove data</h2>
     <h3>Windows</h3>
     <p>Settings, Apps, Installed apps, Sahkarmi, Uninstall (or run <code>Uninstall Sahkarmi.exe</code> in the install folder). Since 0.22.0 the uninstaller asks whether to delete your Sahkarmi data as well; the default is to keep it, and updates never delete it. To remove data by hand, delete <code>%APPDATA%\Sahkarmi</code> (coworkers, chats, settings, browser profile), <code>%LOCALAPPDATA%\sahkarmi-updater</code> (downloaded updates) and the <code>Sahkarmi</code> folder in your user profile (coworker workspaces, Shared files, Downloads).</p>
+    <h3>Mac</h3>
+    <p>Quit Sahkarmi, then drag Sahkarmi from Applications to the Bin. If you installed with Homebrew, run <code>brew uninstall --cask sahkarmi</code>. Your data stays in <code>~/Library/Application Support/Sahkarmi</code>. To remove your data too, delete that folder.</p>
     <p>Sahkarmi does not change your own <code>~/.codex</code> or <code>~/.claude</code> settings; those belong to the Codex and Claude CLIs. (Once, on the first start of 0.22.0, it moves its own coworkers' Claude chat history out of <code>~/.claude</code> into its own folder.) There is no Sahkarmi cloud account to close because none exists.</p>
 
     <p style="margin-top:40px"><a class="btn" href="/download.html">Back to downloads</a></p>

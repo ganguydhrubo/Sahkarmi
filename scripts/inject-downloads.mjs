@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Bakes direct installer links into website/index.html at deploy time, so every download
+// Bakes direct installer links into the website pages at deploy time, so every download
 // button starts the download immediately instead of opening the GitHub Releases page.
 //
 // For each platform it uses the newest release that actually has that installer attached,
@@ -13,9 +13,15 @@ import { fileURLToPath } from "node:url";
 
 const REPO = process.env.GITHUB_REPOSITORY || "ganguydhrubo/sahakarmi";
 const file = join(dirname(fileURLToPath(import.meta.url)), "..", "website", "index.html");
-// Windows only for now: the macOS and Linux builds are paused (release.yml, RELEASE_ALL_PLATFORMS).
-// When they return, add back  mac: /-arm64\.dmg$/i, linux: /\.AppImage$/i  and the site cards.
-const PATTERNS = { win: /-x64\.exe$/i };
+// Windows is required. The two Mac files (Apple Silicon and Intel DMG) are attached to a release by
+// mac-build.yml some time after the Windows installer, so a Mac file that is not there yet never
+// stops the deploy: the pages keep the Mac links they already carry. The Linux build is still
+// paused; when it returns, add  linux: /\.AppImage$/i  and its site card.
+const PATTERNS = {
+  win: /-x64\.exe$/i,
+  "mac-arm64": /-arm64\.dmg$/i,
+  "mac-x64": /-x64\.dmg$/i,
+};
 
 async function releases() {
   const headers = { accept: "application/vnd.github+json", "user-agent": "sahkarmi-site" };
@@ -47,9 +53,12 @@ function pick(list) {
   return found;
 }
 
+/** Makes an attribute such as data-platform="mac-arm64" safe to place inside a RegExp. */
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /** Replaces the href of every <a> carrying one of the given attributes. */
 function setHref(html, attribute, url) {
-  const escaped = attribute.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = escapeRegExp(attribute);
   const pattern = new RegExp(`(<a\\b[^>]*\\s${escaped}(?=[\\s>])[^>]*\\shref=")[^"]*(")`, "g");
   const found = pattern.test(html);
   pattern.lastIndex = 0;
@@ -91,10 +100,18 @@ if (!files.win) {
   console.warn("::warning::No Windows installer found in recent releases; keeping the fallback.");
   process.exit(0);
 }
+for (const platform of Object.keys(PATTERNS)) {
+  if (!files[platform]) {
+    console.warn(
+      `::warning::No ${platform} file in recent releases yet; its links stay as they are.`,
+    );
+  }
+}
 
 /** Replaces the text of every element carrying the attribute (used for version and sizes). */
 function setText(html, attribute, text) {
-  const pattern = new RegExp(`(<[a-z]+\\b[^>]*\\s${attribute}(?=[\\s>=])[^>]*>)[^<]*(</)`, "g");
+  const escaped = escapeRegExp(attribute);
+  const pattern = new RegExp(`(<[a-z]+\\b[^>]*\\s${escaped}(?=[\\s>=])[^>]*>)[^<]*(</)`, "g");
   return html.replace(pattern, `$1${text}$2`);
 }
 const megabytes = (size) => `${Math.round(size / 1_000_000)} MB`;
@@ -124,8 +141,8 @@ function applyWinget(html) {
     .replace(/(\sdata-winget="live")\s+hidden/g, "$1");
 }
 
-// Every page: the home and install pages must carry the links, other pages may (guides, use cases,
-// and the generated coworker pages in coworkers/).
+// Every page: the home and install pages must carry the links (Windows always, Mac once its file is
+// in a release), other pages may (guides, use cases, and the generated coworker pages in coworkers/).
 const pages = [
   ...readdirSync(dirname(file)),
   ...readdirSync(join(dirname(file), "coworkers")).map((name) => `coworkers/${name}`),
@@ -163,5 +180,5 @@ for (const name of pages) {
   writeFileSync(target, html);
 }
 for (const [platform, asset] of Object.entries(files)) {
-  console.log(`${platform.padEnd(6)} ${asset.tag}  ${megabytes(asset.size)}  ${asset.url}`);
+  console.log(`${platform.padEnd(9)} ${asset.tag}  ${megabytes(asset.size)}  ${asset.url}`);
 }
