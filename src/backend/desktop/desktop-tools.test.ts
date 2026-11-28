@@ -294,7 +294,7 @@ describe("validateLaunchTarget", () => {
     expect(() => validateLaunchTarget("C:\\Program Files\\App\\app.exe", undefined)).not.toThrow();
   });
 
-  it("marks Win+R and Win+X as opening a command line", () => {
+  it.runIf(process.platform === "win32")("marks Win+R and Win+X as opening a command line", () => {
     const step = (keys: string) => parseDesktopCall("key", { keys }, null).shellStep ?? null;
     expect(step("win+r")).toContain("Run box");
     expect(step("ctrl+c win+x")).toContain("Win+X");
