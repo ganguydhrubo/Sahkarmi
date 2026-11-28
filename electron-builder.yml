@@ -6,7 +6,7 @@ asar: true
 asarUnpack:
   - node_modules/@anthropic-ai/claude-agent-sdk-*/**
   # sqlite-vec is loaded by SQLite with the OS loader, which cannot read inside the asar.
-  - node_modules/sqlite-vec-windows-x64/**
+  - node_modules/sqlite-vec-*/**
 artifactName: ${productName}-${version}-${arch}.${ext}
 electronUpdaterCompatibility: ">=2.16"
 electronFuses:
@@ -63,13 +63,10 @@ mac:
   darkModeSupport: true
   extendInfo:
     NSMicrophoneUsageDescription: Sahkarmi records voice notes for your coworkers only when you press record.
+  # The chip (arm64 = Apple Silicon, x64 = Intel) comes from the command line, one build each.
   target:
-    - target: dmg
-      arch:
-        - arm64
-    - target: zip
-      arch:
-        - arm64
+    - dmg
+    - zip
 win:
   icon: build/icon.ico
   # Windows builds are intentionally unsigned until release signing is configured.

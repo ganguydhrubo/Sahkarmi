@@ -7,7 +7,14 @@ import { FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
 const FUSE_DISABLED = 48;
 const FUSE_ENABLED = 49;
 
-const appPath = resolve(process.argv[2] ?? "dist/mac-arm64/Sahkarmi.app");
+// Usage: bun scripts/verify-macos-package.ts [path to Sahkarmi.app] [arm64 | x64]
+// electron-builder puts the Apple Silicon app in dist/mac-arm64 and the Intel app in dist/mac.
+const expectedArch = process.argv[3] ?? process.arch;
+const fileArch = expectedArch === "x64" ? "x86_64" : "arm64";
+const appPath = resolve(
+  process.argv[2] ??
+    (expectedArch === "x64" ? "dist/mac/Sahkarmi.app" : "dist/mac-arm64/Sahkarmi.app"),
+);
 const contentsPath = resolve(appPath, "Contents");
 const executablePath = resolve(contentsPath, "MacOS/Sahkarmi");
 const resourcesPath = resolve(contentsPath, "Resources");
@@ -36,8 +43,18 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8")) as { vers
 expectEqual(plist.CFBundleShortVersionString, packageJson.version, "application version");
 
 const architecture = run("file", [executablePath]);
-if (!architecture.includes("arm64"))
-  throw new Error(`Expected an ARM64 executable: ${architecture}`);
+if (!architecture.includes(fileArch))
+  throw new Error(`Expected a ${fileArch} executable: ${architecture}`);
+
+// The bundled free AI must be built for the same chip, or it never starts.
+const openCodePath = resolve(resourcesPath, "bin/opencode");
+await access(openCodePath);
+const openCodeArch = run("file", [openCodePath]);
+if (!openCodeArch.includes(fileArch))
+  throw new Error(`Bundled OpenCode is not ${fileArch}: ${openCodeArch}`);
+const openCodeVersion = run(openCodePath, ["--version"]);
+if (!/\d+\.\d+\.\d+/.test(openCodeVersion))
+  throw new Error(`Bundled OpenCode did not answer --version: ${openCodeVersion}`);
 
 const fuses = await getCurrentFuseWire(executablePath);
 const expectedFuses: Array<[FuseV1Options, number]> = [
@@ -60,7 +77,7 @@ await verifyLaunch(executablePath);
 
 console.log(`Verified ${appPath}`);
 console.log(
-  `Sahkarmi ${String(packageJson.version)} · ARM64 · icon · licenses · ASAR integrity · hardened fuses · launch`,
+  `Sahkarmi ${String(packageJson.version)} · ${fileArch} · OpenCode ${openCodeVersion} · icon · licenses · ASAR integrity · hardened fuses · launch`,
 );
 
 function expectEqual(actual: unknown, expected: unknown, label: string): void {
