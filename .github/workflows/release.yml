@@ -60,12 +60,12 @@ jobs:
   macos:
     name: Build macOS ARM64 release
     needs: validate
-    # Paused: Windows-only launch (24 Oct 2026). Set the repository variable
-    # RELEASE_ALL_PLATFORMS=true to build and publish this platform again.
+    # Not used: the Mac files come from mac-build.yml, which the publish job starts (see the
+    # end of this file). This older job stays off; it made only an Apple Silicon build.
     if: ${{ vars.RELEASE_ALL_PLATFORMS == 'true' }}
     # Optional platform: a macOS failure must not block the Windows release.
     continue-on-error: true
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     environment: release
     env:
@@ -450,6 +450,13 @@ jobs:
       - name: Refresh website download links
         continue-on-error: true
         run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main -f "release_tag=$RELEASE_TAG"
+
+      # The Mac files (Apple Silicon and Intel) are built and install-tested on Mac machines by
+      # mac-build.yml and attached to this release about 30 minutes later. It runs apart from
+      # this workflow, so a Mac problem can never hold back or break the Windows release.
+      - name: Start the Mac build for this release
+        continue-on-error: true
+        run: gh workflow run mac-build.yml --repo "$GITHUB_REPOSITORY" --ref main -f "release_tag=$RELEASE_TAG"
 
       # Opens the winget-pkgs pull request for this version from the owner's fork, so
       # `winget install Sahkarmi.Sahkarmi` follows every release. Needs the WINGET_TOKEN secret

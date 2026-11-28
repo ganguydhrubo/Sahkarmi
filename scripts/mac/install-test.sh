@@ -74,7 +74,8 @@ fi
 cat "$out/gatekeeper.txt"
 
 note "6. First double-click while the download flag is still on: what the owner sees"
-open "$app" || true
+# "open" waits for as long as the macOS message stays on screen, so it runs on the side.
+(open "$app" >/dev/null 2>&1 &)
 sleep 15
 shot 01-first-open-with-download-flag
 if running; then
@@ -83,8 +84,10 @@ else
   echo "macOS held the app back and showed its message (see the screenshot)."
 fi
 stop_app
+# Close the macOS message and the waiting "open".
 pkill -x CoreServicesUIAgent 2>/dev/null || true
-sleep 2
+pkill -f "open $app" 2>/dev/null || true
+sleep 3
 
 note "7. The owner allows it (Open Anyway). The same thing in one command:"
 echo "xattr -dr com.apple.quarantine $app"
