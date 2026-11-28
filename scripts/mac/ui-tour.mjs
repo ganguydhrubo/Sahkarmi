@@ -322,6 +322,9 @@ for (const [label, name] of screens) {
     fail(`The ${label} screen threw: ${session.problems.slice(before).join(" | ")}`);
 }
 
+// Help opens as a panel over the chat list: close it so the answer below is in the picture.
+await session.evaluate(`document.querySelector(".help-panel-close")?.click()`);
+
 console.log("6. A real job for the free built-in AI");
 await session.click("Home", { exact: true });
 await session.waitForText("What do you want done today?", 20);

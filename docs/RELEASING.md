@@ -5,17 +5,47 @@
 1. Make sure `package.json` `version` and a matching `## [x.y.z]` section in `CHANGELOG.md` agree.
 2. Push a tag on `main`: `git tag vX.Y.Z && git push origin vX.Y.Z`
    (or GitHub → Releases → *Draft a new release* → new tag `vX.Y.Z` on `main` → *Publish*).
-3. The **Release desktop** workflow builds the macOS ARM64 DMG/ZIP, the Windows x64 installer and
-   the Linux x64 AppImage, then publishes them to GitHub Releases.
+3. The **Release desktop** workflow (`release.yml`) builds the Windows x64 installer and publishes
+   it to GitHub Releases. Its last step starts the **macOS build** workflow for the same tag.
 
-Without the Apple secrets below the macOS build is **unsigned**: users right-click → *Open* the first
-time. The Windows installer is unsigned too and shows a SmartScreen "More info → Run anyway" prompt.
+The Windows installer is unsigned and shows a SmartScreen "More info → Run anyway" prompt.
 
-## Signed macOS releases
+## Mac (since 0.37.0, 28 Nov 2026)
 
-Add these repository secrets (Settings → Secrets and variables → Actions) and the workflow signs and
-notarizes automatically: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
-`APPLE_TEAM_ID`.
+`mac-build.yml` makes two DMGs, **Apple Silicon** (`-arm64.dmg`) and **Intel** (`-x64.dmg`), each on
+a Mac machine of its own chip. Nobody on the team has a Mac, so the workflow is the tester:
+
+1. `checks`: lint, typecheck and all tests on both chips.
+2. `build`: DMG + ZIP, then `scripts/verify-macos-package.ts` (name, version, chip, bundled AI,
+   fuses, launch) and `codesign --verify`.
+3. `install-test` on macOS 15, macOS 26 and macOS 15 Intel (`scripts/mac/install-test.sh`): the DMG
+   is marked as a browser download, opened, the app is dragged to Applications, opened, used
+   (`scripts/mac/ui-tour.mjs`: language, welcome, Home, every main screen, one real job for the
+   free AI), closed and opened again. Pictures and the log are kept as run artifacts.
+4. `publish` (only when a release tag is given and everything above passed): attaches the DMGs,
+   ZIPs, `latest-mac.yml` (both chips) and `SHA256SUMS-macos.txt` to the release and redeploys the
+   website so its Mac buttons point at them.
+
+Run it by hand: Actions → macOS build → Run workflow → `release_tag` = `v0.37.0`
+(`gh workflow run mac-build.yml --ref main -f release_tag=vX.Y.Z`). A push to a `feat/mac-*` branch
+builds and tests without publishing. A Mac failure never blocks the Windows release; the Mac
+buttons then stay on the last release that has Mac files.
+
+**Signing.** There is no Apple Developer ID yet, so the app is *ad-hoc signed* and not notarised
+(`electron-builder.mac-unsigned.yml`). macOS holds back the first open of a downloaded copy; the
+owner allows it once in System Settings → Privacy & Security → *Open Anyway*. Such a build cannot
+replace itself, so the in-app update opens the new DMG in the browser instead.
+
+**Homebrew.** The tap `ganguydhrubo/homebrew-sahkarmi` checks twice an hour for a release with Mac
+files, installs the new cask on Mac machines, and only then saves it:
+`brew install --cask ganguydhrubo/sahkarmi/sahkarmi`.
+
+## Signed macOS releases (later)
+
+With an Apple Developer ID, add these repository secrets (Settings → Secrets and variables →
+Actions): `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+`APPLE_TEAM_ID`, and build with `electron-builder.yml` instead of the unsigned config. The rest of
+this file below describes that signed flow.
 
 ---
 

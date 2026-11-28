@@ -90,30 +90,34 @@ describe("Codex launch without a shell", () => {
     60_000,
   );
 
-  it("starts the native codex.exe behind an npm shim directly", async () => {
-    const root = await mkdtemp(join(tmpdir(), "sahkarmi npm shim "));
-    temporaryRoots.push(root);
-    const bin = join(
-      root,
-      "node_modules",
-      "@openai",
-      "codex",
-      "node_modules",
-      "@openai",
-      "codex-win32-x64",
-      "vendor",
-      "x86_64-pc-windows-msvc",
-      "bin",
-    );
-    await mkdir(bin, { recursive: true });
-    await writeFile(join(bin, "codex.exe"), "");
-    const shim = join(root, "codex.cmd");
+  // Looks for the Windows program of this computer's own chip, so it is a Windows test.
+  it.runIf(process.platform === "win32")(
+    "starts the native codex.exe behind an npm shim directly",
+    async () => {
+      const root = await mkdtemp(join(tmpdir(), "sahkarmi npm shim "));
+      temporaryRoots.push(root);
+      const bin = join(
+        root,
+        "node_modules",
+        "@openai",
+        "codex",
+        "node_modules",
+        "@openai",
+        "codex-win32-x64",
+        "vendor",
+        "x86_64-pc-windows-msvc",
+        "bin",
+      );
+      await mkdir(bin, { recursive: true });
+      await writeFile(join(bin, "codex.exe"), "");
+      const shim = join(root, "codex.cmd");
 
-    expect(npmNativeCodex(shim, "x64")?.executable).toBe(join(bin, "codex.exe"));
-    const launch = codexLaunch(shim, ["app-server"], "win32", {});
-    expect(launch).toMatchObject({ command: join(bin, "codex.exe"), args: ["app-server"] });
-    expect(launch.env.CODEX_MANAGED_BY_NPM).toBe("1");
-  });
+      expect(npmNativeCodex(shim, "x64")?.executable).toBe(join(bin, "codex.exe"));
+      const launch = codexLaunch(shim, ["app-server"], "win32", {});
+      expect(launch).toMatchObject({ command: join(bin, "codex.exe"), args: ["app-server"] });
+      expect(launch.env.CODEX_MANAGED_BY_NPM).toBe("1");
+    },
+  );
 
   it("quotes a script path for cmd.exe when no native exe is found", () => {
     const launch = codexLaunch("C:\\Tools dir\\codex.cmd", ["app-server"], "win32", {});

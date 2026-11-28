@@ -2614,6 +2614,11 @@
   font-size: 12px;
 }
 
+/* Mac: the red, yellow and green window buttons sit at the top left; the words start after them. */
+:root[data-platform="darwin"] .support-ticker {
+  padding-left: 76px;
+}
+
 .support-ticker-window {
   min-width: 0;
   flex: 1;

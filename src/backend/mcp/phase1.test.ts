@@ -78,7 +78,16 @@ describe("placeholders (MCP-1)", () => {
   });
 });
 
-describe("fresh Windows PATH (MCP-3)", () => {
+describe.runIf(!WINDOWS)("PATH lists off Windows", () => {
+  it("merges with a colon and keeps each folder once", () => {
+    expect(mergePathLists("/usr/bin:/bin", "/opt/homebrew/bin:/usr/bin", "/Users/me/bin")).toBe(
+      "/usr/bin:/bin:/opt/homebrew/bin:/Users/me/bin",
+    );
+  });
+});
+
+// The registry, the ";" separator and the Windows base names: Windows only.
+describe.runIf(WINDOWS)("fresh Windows PATH (MCP-3)", () => {
   it("merges machine, user and process PATH without repeats", () => {
     expect(mergePathLists("C:\\Windows;C:\\Tools\\", "C:\\Users\\me\\bin;c:\\tools", "D:\\x")).toBe(
       "C:\\Windows;C:\\Tools\\;C:\\Users\\me\\bin;D:\\x",

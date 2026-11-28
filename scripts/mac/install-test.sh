@@ -76,18 +76,22 @@ cat "$out/gatekeeper.txt"
 note "6. First double-click while the download flag is still on: what the owner sees"
 # "open" waits for as long as the macOS message stays on screen, so it runs on the side.
 (open "$app" >/dev/null 2>&1 &)
-sleep 15
+# macOS first shows "Verifying Sahkarmi…" (the app is large), then its message:
+# "Sahkarmi Not Opened. Apple could not verify …" with the buttons Done and Move to Trash.
+sleep 45
 shot 01-first-open-with-download-flag
-if running; then
-  echo "The app started although it is quarantined."
-else
-  echo "macOS held the app back and showed its message (see the screenshot)."
-fi
+echo "The picture 01-first-open-with-download-flag.png shows what macOS said."
 stop_app
-# Close the macOS message and the waiting "open".
+# Close the macOS message the safe way (Escape = Done, never Move to Trash) and the waiting "open".
+osascript -e 'tell application "System Events" to key code 53' 2>/dev/null || true
+sleep 1
 pkill -x CoreServicesUIAgent 2>/dev/null || true
 pkill -f "open $app" 2>/dev/null || true
 sleep 3
+if [[ ! -d "$app" ]]; then
+  echo "The app is gone from Applications after the macOS message." >&2
+  exit 1
+fi
 
 note "7. The owner allows it (Open Anyway). The same thing in one command:"
 echo "xattr -dr com.apple.quarantine $app"

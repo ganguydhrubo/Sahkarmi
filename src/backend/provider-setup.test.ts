@@ -243,27 +243,31 @@ describe("ProviderSetup", () => {
     }
   });
 
-  it("never starts a second install when Connect is clicked again during one", async () => {
-    process.env.SAHKARMI_COPILOT_PATH = join(root, "missing", "copilot.cmd");
-    const installer = new FakeLogin();
-    const spawnImpl = vi.fn(() => installer);
-    const setup = new ProviderSetup({
-      toolsDirectory: join(root, "tools"),
-      recheck: vi.fn(async () => undefined),
-      spawnImpl: spawnImpl as never,
-    });
-    try {
-      void setup.connect("copilot");
-      await vi.waitFor(() => expect(spawnImpl).toHaveBeenCalledTimes(1));
-      const again = await setup.connect("copilot");
-      expect(again.phase).toBe("installing");
-      expect(again.message).toContain("2–3 minutes");
-      expect(spawnImpl).toHaveBeenCalledTimes(1);
-    } finally {
-      installer.finish(1);
-      delete process.env.SAHKARMI_COPILOT_PATH;
-    }
-  });
+  // Sahkarmi installs these programs itself on Windows only; on a Mac it shows the command.
+  it.runIf(process.platform === "win32")(
+    "never starts a second install when Connect is clicked again during one",
+    async () => {
+      process.env.SAHKARMI_COPILOT_PATH = join(root, "missing", "copilot.cmd");
+      const installer = new FakeLogin();
+      const spawnImpl = vi.fn(() => installer);
+      const setup = new ProviderSetup({
+        toolsDirectory: join(root, "tools"),
+        recheck: vi.fn(async () => undefined),
+        spawnImpl: spawnImpl as never,
+      });
+      try {
+        void setup.connect("copilot");
+        await vi.waitFor(() => expect(spawnImpl).toHaveBeenCalledTimes(1));
+        const again = await setup.connect("copilot");
+        expect(again.phase).toBe("installing");
+        expect(again.message).toContain("2–3 minutes");
+        expect(spawnImpl).toHaveBeenCalledTimes(1);
+      } finally {
+        installer.finish(1);
+        delete process.env.SAHKARMI_COPILOT_PATH;
+      }
+    },
+  );
 
   it("downloads Codex, verifies its checksum and unpacks it into the tools folder", async () => {
     const triple = "x86_64-unknown-linux-musl";
