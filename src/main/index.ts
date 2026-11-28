@@ -53,7 +53,8 @@ import {
 import { attachContextMenu } from "../backend/context-menu";
 import { MAX_INSTRUCTIONS_CHARS } from "../backend/coworker-instructions";
 import { CustomSkills, parseSkillMarkdown } from "../backend/custom-skills";
-import { DesktopHost } from "../backend/desktop/desktop-host";
+import { DesktopHost, type DesktopHostLike } from "../backend/desktop/desktop-host";
+import { DesktopMacHost, type MacDesktopPermission } from "../backend/desktop/desktop-mac-host";
 import { desktopControlSupported } from "../backend/desktop/desktop-tools";
 import { EngineSettingsStore } from "../backend/engine-settings";
 import { FeatureRegistry } from "../backend/feature-registry";
@@ -2008,16 +2009,27 @@ let pinStore: PinStore | null = null;
 let aiAccounts: AiAccountStore | null = null;
 const SECRET_STORE_FILE = "secrets.enc.json";
 let voiceService: VoiceService | null = null;
-let desktopHost: DesktopHost | null = null;
+let desktopHost: DesktopHostLike | null = null;
 
-/**
- * The on-computer voice models run through a Windows-only engine. On a Mac (and Linux) none is
- * offered, so nothing large is downloaded that could never start; voice notes still record.
- */
-const VOICE_MODELS_WORK_HERE = process.platform === "win32";
+/** Where each macOS permission is switched on (Privacy & Security panes). */
+const MAC_PRIVACY_PANES: Record<MacDesktopPermission, string> = {
+  accessibility: "Privacy_Accessibility",
+  screen: "Privacy_ScreenCapture",
+  automation: "Privacy_Automation",
+};
 
-function voiceStateForThisComputer(state: VoiceState): VoiceState {
-  return VOICE_MODELS_WORK_HERE ? state : { ...state, models: [] };
+/** A desktop step was refused by macOS: show its own prompt once, then the right Settings pane. */
+const macPaneOpenedAt = new Map<MacDesktopPermission, number>();
+function macDesktopPermissionMissing(permission: MacDesktopPermission): void {
+  // Once a minute at most, so a coworker retrying does not keep opening Settings.
+  if (Date.now() - (macPaneOpenedAt.get(permission) ?? 0) < 60_000) return;
+  macPaneOpenedAt.set(permission, Date.now());
+  if (permission === "accessibility") systemPreferences.isTrustedAccessibilityClient(true);
+  void shell
+    .openExternal(
+      `x-apple.systempreferences:com.apple.preference.security?${MAC_PRIVACY_PANES[permission]}`,
+    )
+    .catch(() => {});
 }
 
 /** Two minutes of 16 kHz audio is the longest clip one dictation request may carry. */
@@ -2031,13 +2043,9 @@ function registerVoiceHandlers(voice: VoiceService, ready: Promise<unknown>): vo
     }
     return value;
   };
-  handleTrusted(IPC_CHANNELS.voiceGetState, () => voiceStateForThisComputer(voice.getState()));
-  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => {
-    if (!VOICE_MODELS_WORK_HERE) {
-      throw new Error("Voice typing models work on Windows only for now. Voice notes work here.");
-    }
-    return voice.install(modelId(value));
-  });
+  // The service itself offers no models where this computer has no voice engine (Linux).
+  handleTrusted(IPC_CHANNELS.voiceGetState, () => voice.getState());
+  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => voice.install(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceCancel, (value: unknown) => voice.cancel(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceRemove, (value: unknown) => voice.remove(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceSetSettings, (value: unknown) => {
@@ -2486,10 +2494,17 @@ if (!hasSingleInstanceLock) {
       service.setApiIntegrations(apis);
       if (desktopControlSupported()) {
         // Started on a coworker's first desktop step; Sahkarmi's own windows stay off limits.
-        desktopHost = new DesktopHost({
-          scriptDir: join(app.getPath("userData"), "desktop"),
-          protectedPids: [process.pid],
-        });
+        desktopHost =
+          process.platform === "darwin"
+            ? new DesktopMacHost({
+                scriptDir: join(app.getPath("userData"), "desktop"),
+                protectedPids: [process.pid],
+                onPermissionMissing: macDesktopPermissionMissing,
+              })
+            : new DesktopHost({
+                scriptDir: join(app.getPath("userData"), "desktop"),
+                protectedPids: [process.pid],
+              });
         service.setDesktopHost(desktopHost);
       }
       const mcpServers = new McpServerStore(app.getPath("userData"), undefined, secretCodec);
@@ -2866,9 +2881,9 @@ if (!hasSingleInstanceLock) {
           appLog.write("error", "voice settings unreadable; using defaults", String(error));
         }),
       );
-      voiceService.on("state", (state) => {
+      voiceService.on("state", (state: VoiceState) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, voiceStateForThisComputer(state));
+          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, state);
         }
       });
       registerVoiceHandlers(voiceService, voiceReady);
@@ -3166,7 +3181,12 @@ function readMacPermissions(): MacPermissionsState {
 async function requestMacPermission(permission: MacPermissionId): Promise<MacPermissionsState> {
   if (process.platform !== "darwin") return readMacPermissions();
   if (permission === "accessibility") {
-    systemPreferences.isTrustedAccessibilityClient(true);
+    if (!systemPreferences.isTrustedAccessibilityClient(true)) {
+      // The prompt shows only once; after that the switch is in Settings.
+      await shell.openExternal(
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+      );
+    }
     return readMacPermissions();
   }
 

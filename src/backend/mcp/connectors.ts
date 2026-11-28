@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
@@ -13,7 +14,10 @@ import {
   CONNECTOR_PRESETS,
   type ConnectorPreset,
   type ConnectorRequirement,
+  connectorOnPlatform,
+  connectorsFor,
 } from "../../shared/mcp-presets";
+import { downloadPage } from "./checks";
 import { lookupCommand } from "./windows-env";
 
 /**
@@ -67,7 +71,11 @@ export function connectorInput(
   values: Record<string, string>,
   context: ConnectorContext,
   name = preset.serverName,
+  platform: NodeJS.Platform = process.platform,
 ): McpServerInput {
+  if (!connectorOnPlatform(preset, platform)) {
+    throw new Error(`${preset.title} works on Windows only.`);
+  }
   const env = Object.fromEntries(
     Object.entries(preset.env).map(([key, value]) => [key, fill(value, preset, context)]),
   );
@@ -126,12 +134,25 @@ export async function writeConnectorFiles(
 }
 
 const CHROME_PATHS = [
-  ["ProgramFiles", "Google\\Chrome\\Application\\chrome.exe"],
-  ["ProgramFiles(x86)", "Google\\Chrome\\Application\\chrome.exe"],
-  ["LOCALAPPDATA", "Google\\Chrome\\Application\\chrome.exe"],
+  ["ProgramFiles", join("Google", "Chrome", "Application", "chrome.exe")],
+  ["ProgramFiles(x86)", join("Google", "Chrome", "Application", "chrome.exe")],
+  ["LOCALAPPDATA", join("Google", "Chrome", "Application", "chrome.exe")],
 ] as const;
 
-export function chromeInstalled(env: NodeJS.ProcessEnv = process.env): boolean {
+/** Chrome inside its app on a Mac, under /Applications or the owner's own Applications folder. */
+const MAC_CHROME = join("Google Chrome.app", "Contents", "MacOS", "Google Chrome");
+
+/** Whether Google Chrome is installed in one of its usual places on this system. */
+export function chromeInstalled(
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+  home: string = env.HOME ?? homedir(),
+): boolean {
+  if (platform === "darwin") {
+    return [join("/Applications", MAC_CHROME), join(home, "Applications", MAC_CHROME)].some(
+      (file) => existsSync(file),
+    );
+  }
   return CHROME_PATHS.some(([variable, rest]) => {
     const base = env[variable];
     return Boolean(base) && existsSync(join(base as string, rest));
@@ -145,10 +166,9 @@ export interface ConnectorProbe {
   chrome: boolean;
 }
 
-const LINKS: Record<Exclude<ConnectorRequirement, "program">, string> = {
+const LINKS: Record<Exclude<ConnectorRequirement, "program" | "git">, string> = {
   node: "https://nodejs.org/en/download",
   uv: "https://docs.astral.sh/uv/getting-started/installation/",
-  git: "https://git-scm.com/download/win",
   chrome: "https://www.google.com/chrome/",
 };
 
@@ -156,6 +176,7 @@ const LINKS: Record<Exclude<ConnectorRequirement, "program">, string> = {
 export function connectorMissing(
   preset: ConnectorPreset,
   probe: ConnectorProbe,
+  platform: NodeJS.Platform = process.platform,
 ): McpConnectorMissing[] {
   const missing: McpConnectorMissing[] = [];
   for (const requirement of preset.requirements) {
@@ -176,7 +197,7 @@ export function connectorMissing(
     } else if (requirement === "uv") {
       if (!probe.has("uvx")) missing.push({ requirement, link: LINKS.uv });
     } else if (requirement === "git") {
-      if (!probe.has("git")) missing.push({ requirement, link: LINKS.git });
+      if (!probe.has("git")) missing.push({ requirement, link: downloadPage("git", platform) });
     } else if (requirement === "chrome" && !probe.chrome) {
       missing.push({ requirement, link: LINKS.chrome });
     }
@@ -187,9 +208,11 @@ export function connectorMissing(
 export function connectorChecks(
   probe: ConnectorProbe,
   addedAs: (id: string) => string | null,
+  platform: NodeJS.Platform = process.platform,
 ): McpConnectorCheck[] {
-  return CONNECTOR_PRESETS.map((preset) => {
-    const missing = connectorMissing(preset, probe);
+  // Only the connectors this system can run are checked (and shown).
+  return connectorsFor(platform).map((preset) => {
+    const missing = connectorMissing(preset, probe, platform);
     return { id: preset.id, ready: missing.length === 0, missing, addedAs: addedAs(preset.id) };
   });
 }

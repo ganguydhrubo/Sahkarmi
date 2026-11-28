@@ -16,8 +16,8 @@ import {
 } from "./desktop-tools";
 
 describe("desktop tool definitions", () => {
-  it("offers the namespace on Windows only", () => {
-    expect(desktopDynamicTools("darwin")).toEqual([]);
+  it("offers the namespace on Windows and Mac only", () => {
+    expect(desktopDynamicTools("darwin")).toHaveLength(1);
     expect(desktopDynamicTools("linux")).toEqual([]);
     const [namespace] = desktopDynamicTools("win32") as Array<{ name: string; tools: unknown[] }>;
     expect(namespace?.name).toBe(SAHKARMI_DESKTOP_NAMESPACE);
@@ -294,7 +294,7 @@ describe("validateLaunchTarget", () => {
     expect(() => validateLaunchTarget("C:\\Program Files\\App\\app.exe", undefined)).not.toThrow();
   });
 
-  it("marks Win+R and Win+X as opening a command line", () => {
+  it.runIf(process.platform === "win32")("marks Win+R and Win+X as opening a command line", () => {
     const step = (keys: string) => parseDesktopCall("key", { keys }, null).shellStep ?? null;
     expect(step("win+r")).toContain("Run box");
     expect(step("ctrl+c win+x")).toContain("Win+X");

@@ -420,11 +420,21 @@ export function t(key: MessageKey, values: Record<string, string> = {}): string 
   const code = language();
   const dict = packs()[code];
   if (!dict) void loadLanguage(code);
-  const template = dict?.[key] ?? en[key] ?? "";
+  const mac =
+    typeof document !== "undefined" && document.documentElement.dataset.platform === "darwin";
+  const template = (mac ? macTwin(dict, key) : undefined) ?? dict?.[key] ?? en[key] ?? "";
   const text = template.replace(/\{(\w+)\}/g, (_match, name: string) => values[name] ?? "");
-  return typeof document !== "undefined" && document.documentElement.dataset.platform === "darwin"
-    ? macWording(text)
-    : text;
+  return mac ? macWording(text) : text;
+}
+
+/**
+ * A sentence that names Windows (its PATH, the Microsoft Store, a 260-character limit) cannot be
+ * fixed by swapping one word, so it has a Mac twin under "<key>_mac". The twin of the chosen
+ * language is used; English's twin when that language has no words for the key at all.
+ */
+function macTwin(dict: Pack | undefined, key: MessageKey): string | undefined {
+  const twin = `${key}_mac` as MessageKey;
+  return dict?.[twin] ?? (dict?.[key] === undefined ? en[twin] : undefined);
 }
 
 /**

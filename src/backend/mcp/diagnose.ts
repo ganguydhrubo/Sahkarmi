@@ -38,7 +38,8 @@ const RULES: Rule[] = [
   {
     code: "build-tools",
     test: (_e, text) =>
-      /Microsoft Visual C\+\+ 14\.0 or greater is required|linker `link\.exe` not found|gyp ERR!|error: can't find Rust compiler|CUDA_HOME/i.test(
+      // The last three are a Mac without Apple's command line developer tools.
+      /Microsoft Visual C\+\+ 14\.0 or greater is required|linker `link\.exe` not found|gyp ERR!|error: can't find Rust compiler|CUDA_HOME|xcrun: error|No Xcode or CLT version detected|no developer tools were found/i.test(
         text,
       ),
   },
@@ -54,9 +55,12 @@ const RULES: Rule[] = [
     code: "command-not-found",
     fix: "recheck",
     test: (e, text) =>
-      /\bENOENT\b|is not recognized as an internal or external command|The system cannot find the file specified/i.test(
+      // "env: node: No such file or directory" and exit code 127 are how a Mac says the same.
+      /\bENOENT\b|is not recognized as an internal or external command|The system cannot find the file specified|\benv: [^\s:]+: No such file or directory|: command not found/i.test(
         `${e.error}\n${text}`,
-      ) || e.exitCode === 9009,
+      ) ||
+      e.exitCode === 9009 ||
+      e.exitCode === 127,
   },
   {
     code: "long-path",

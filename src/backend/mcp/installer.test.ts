@@ -68,6 +68,10 @@ class FakeTools extends ToolsManager {
   python: { path: string; version: [number, number] } | null = null;
   uv: string | null = null;
   node: { node: string; npmCli: string } | null = null;
+  /** These tests describe the Windows plans, on every runner. */
+  constructor(userData: string) {
+    super(userData, undefined, { platform: "win32", arch: "x64" });
+  }
   override findUv() {
     return this.uv;
   }
@@ -81,7 +85,7 @@ class FakeTools extends ToolsManager {
     return "0.9.9";
   }
   override async latestNodeLts() {
-    return { version: "22.1.0", file: "", zip: "", shasums: "" };
+    return { version: "22.1.0", file: "", archive: "", shasums: "" };
   }
 }
 
@@ -108,6 +112,8 @@ function installer(userData: string, tools: FakeTools) {
       tools,
       shortPath: async () => null,
       longPaths: async () => true,
+      platform: "win32",
+      arch: "x64",
     }),
   };
 }
@@ -164,6 +170,7 @@ describe("install folder", () => {
     const root = await installRoot(odd, {
       longPaths: async () => true,
       shortPath: async () => null,
+      platform: "win32",
       systemDrive: drive,
       username: "Jürgen",
     });
@@ -172,6 +179,7 @@ describe("install folder", () => {
       await installRoot(odd, {
         longPaths: async () => true,
         shortPath: async () => "C:\\Users\\JRGEN~1\\mcp",
+        platform: "win32",
       }),
     ).toBe("C:\\Users\\JRGEN~1\\mcp");
   });
@@ -185,6 +193,7 @@ describe("install folder without Windows long paths", () => {
     const root = await installRoot(long, {
       longPaths: async () => false,
       shortPath: async () => null,
+      platform: "win32",
       systemDrive: drive,
       username: "averyveryverylongname",
     });
@@ -333,12 +342,15 @@ describe("guided install plans", () => {
 });
 
 describe("CLI skill text", () => {
-  const text = cliSkillText({
-    repo: "harry0703/MoneyPrinterTurbo",
-    packageName: "mpt",
-    version: "1.3.9",
-    executable: "C:\\Sahkarmi-mcp\\MoneyPrinterTurbo\\.venv\\Scripts\\mpt.exe",
-  });
+  const text = cliSkillText(
+    {
+      repo: "harry0703/MoneyPrinterTurbo",
+      packageName: "mpt",
+      version: "1.3.9",
+      executable: "C:\\Sahkarmi-mcp\\MoneyPrinterTurbo\\.venv\\Scripts\\mpt.exe",
+    },
+    "win32",
+  );
 
   it("calls the program by full path and says where videos go and which free keys it needs", () => {
     expect(text).toMatch(/^---\nname: MoneyPrinterTurbo videos\ndescription: /);
@@ -355,7 +367,7 @@ describe("CLI skill text", () => {
   });
 
   it("shows commands the way the owner could type them", () => {
-    expect(displayCommand("C:\\a b\\uv.exe", ["pip", "install", "x==1"])).toBe(
+    expect(displayCommand("C:\\a b\\uv.exe", ["pip", "install", "x==1"], "win32")).toBe(
       '"C:\\a b\\uv.exe" pip install x==1',
     );
   });

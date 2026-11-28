@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { delimiter, extname, isAbsolute, join } from "node:path";
+import { isRunnableFile, isWindows } from "./platform-paths";
 
 /**
  * Windows PATH as it is now, not as it was when Sahkarmi started (MCP-3). Installing uv, Python or
@@ -192,15 +193,17 @@ export interface CommandLookup {
   storeStub: boolean;
 }
 
-/** Like `where`: a full path that exists, or the first PATH match with a PATHEXT ending. */
+/**
+ * Like `where` (Windows) or `which` (Mac): a full path that can be started, or the first PATH
+ * match. Windows tries PATHEXT's endings (npx is npx.cmd); a Mac has no endings and the file must
+ * have the "may run" permission.
+ */
 export function lookupCommand(
   command: string,
   env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
 ): CommandLookup {
   if (!command) return { path: null, storeStub: false };
-  const endings = extname(command)
-    ? [""]
-    : ["", ...(env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean)];
   const candidates =
     isAbsolute(command) || /[\\/]/.test(command)
       ? [command]
@@ -208,6 +211,13 @@ export function lookupCommand(
           .split(delimiter)
           .filter(Boolean)
           .map((directory) => join(directory, command));
+  if (!isWindows(platform)) {
+    const found = candidates.find((candidate) => isRunnableFile(candidate, platform));
+    return { path: found ?? null, storeStub: false };
+  }
+  const endings = extname(command)
+    ? [""]
+    : ["", ...(env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean)];
   let storeStub = false;
   for (const candidate of candidates) {
     for (const ending of endings) {

@@ -3,7 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { VoiceState } from "../../shared/ipc";
-import { downloadSize, INDIC_LANGUAGES, VOICE_ENGINE, VOICE_MODELS } from "./voice-catalog";
+import {
+  downloadSize,
+  INDIC_LANGUAGES,
+  MAC_ENGINE_FILES,
+  MAC_VOICE_ENGINE,
+  SHERPA_VERSION,
+  VOICE_ENGINE,
+  VOICE_MODELS,
+} from "./voice-catalog";
 import { VOICE_HOST_SCRIPT } from "./voice-host-script";
 import { speakableText, spokenLanguage, tidyDictation, VoiceService } from "./voice-service";
 
@@ -25,6 +33,8 @@ describe("voice catalog", () => {
     const files = [
       VOICE_ENGINE.native,
       VOICE_ENGINE.binding,
+      MAC_VOICE_ENGINE.arm64,
+      MAC_VOICE_ENGINE.x64,
       ...VOICE_MODELS.flatMap((model) => [
         ...(model.files ?? []),
         ...(model.archive ? [model.archive] : []),
@@ -36,6 +46,19 @@ describe("voice catalog", () => {
       expect(file.sha256).toMatch(/^[0-9a-f]{64}$/);
       expect(file.size).toBeGreaterThan(0);
     }
+  });
+
+  it("pins a Mac engine for each chip from the same release as Windows", () => {
+    for (const arch of ["arm64", "x64"] as const) {
+      const engine = MAC_VOICE_ENGINE[arch];
+      expect(engine.url).toContain(`/v${SHERPA_VERSION}/`);
+      expect(engine.url.endsWith(`${engine.folder}.tar.bz2`)).toBe(true);
+      expect(engine.folder).toContain(`osx-${arch}`);
+    }
+    expect(VOICE_ENGINE.native.url).toContain(`/v${SHERPA_VERSION}/`);
+    expect(MAC_VOICE_ENGINE.arm64.sha256).not.toBe(MAC_VOICE_ENGINE.x64.sha256);
+    expect(MAC_ENGINE_FILES).toContain("bin/sherpa-onnx-offline");
+    expect(MAC_ENGINE_FILES).toContain("bin/sherpa-onnx-offline-tts");
   });
 
   it("covers all 22 scheduled Indian languages with unique ids", () => {
@@ -84,9 +107,12 @@ describe("dictation text", () => {
   });
 });
 
+/** The tests below must give the same result on any computer, so the platform is always named. */
+const WINDOWS = { platform: "win32", arch: "x64" } as const;
+
 describe("VoiceService", () => {
   it("starts with safe defaults and nothing installed", async () => {
-    const service = new VoiceService({ userDataPath: await tempFolder() });
+    const service = new VoiceService({ userDataPath: await tempFolder(), ...WINDOWS });
     await service.initialize();
     const state = service.getState();
     expect(state.engineInstalled).toBe(false);
@@ -97,12 +123,13 @@ describe("VoiceService", () => {
       readAloud: false,
       speed: 1,
     });
+    expect(state.models).toHaveLength(VOICE_MODELS.length);
     expect(state.models.every((model) => !model.installed && model.phase === "idle")).toBe(true);
   });
 
   it("cleans saved settings it cannot trust", async () => {
     const folder = await tempFolder();
-    const service = new VoiceService({ userDataPath: folder });
+    const service = new VoiceService({ userDataPath: folder, ...WINDOWS });
     await service.initialize();
     await writeFile(
       join(folder, "voice", "settings.json"),
@@ -114,7 +141,7 @@ describe("VoiceService", () => {
         speed: 9,
       }),
     );
-    const reloaded = new VoiceService({ userDataPath: folder });
+    const reloaded = new VoiceService({ userDataPath: folder, ...WINDOWS });
     await reloaded.initialize();
     expect(reloaded.getState().settings).toEqual({
       dictationModel: null,
@@ -126,7 +153,7 @@ describe("VoiceService", () => {
   });
 
   it("refuses to use a model that is not downloaded", async () => {
-    const service = new VoiceService({ userDataPath: await tempFolder() });
+    const service = new VoiceService({ userDataPath: await tempFolder(), ...WINDOWS });
     await service.initialize();
     await expect(service.setSettings({ dictationModel: "indic-hi" })).rejects.toThrow(/Download/);
     await expect(service.transcribe(new Float32Array(16_000))).rejects.toThrow(/Download/);
@@ -135,7 +162,7 @@ describe("VoiceService", () => {
 
   it("saves the read-aloud choice", async () => {
     const folder = await tempFolder();
-    const service = new VoiceService({ userDataPath: folder });
+    const service = new VoiceService({ userDataPath: folder, ...WINDOWS });
     await service.initialize();
     await service.setSettings({ readAloud: true, speakers: { hi: 9 } });
     const saved = JSON.parse(await readFile(join(folder, "voice", "settings.json"), "utf8"));
@@ -146,7 +173,15 @@ describe("VoiceService", () => {
   it("rejects a damaged download and leaves nothing half-installed", async () => {
     const folder = await tempFolder();
     const fetchImpl = (async () => new Response("not the real file")) as unknown as typeof fetch;
-    const service = new VoiceService({ userDataPath: folder, fetchImpl });
+    const fetched: string[] = [];
+    const service = new VoiceService({
+      userDataPath: folder,
+      ...WINDOWS,
+      fetchImpl: ((url: string) => {
+        fetched.push(String(url));
+        return fetchImpl(url);
+      }) as unknown as typeof fetch,
+    });
     await service.initialize();
     const finished = new Promise<void>((resolve) =>
       service.on("state", (state: VoiceState) => {
@@ -159,5 +194,7 @@ describe("VoiceService", () => {
     expect(hindi?.installed).toBe(false);
     expect(hindi?.message).toMatch(/damaged/);
     expect(service.getState().engineInstalled).toBe(false);
+    // Windows still asks for the Windows engine first, and nothing else after it fails.
+    expect(fetched).toEqual([VOICE_ENGINE.native.url]);
   });
 });
