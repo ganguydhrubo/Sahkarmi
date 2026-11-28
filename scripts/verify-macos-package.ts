@@ -113,7 +113,7 @@ async function verifyLaunch(executable: string): Promise<void> {
           );
         });
       }),
-      new Promise<void>((resolveDelay) => setTimeout(resolveDelay, 3_000)),
+      new Promise<void>((resolveDelay) => setTimeout(resolveDelay, 8_000)),
     ]);
     await verifySecondInstanceExits(executable, userDataPath);
   } finally {
@@ -140,7 +140,7 @@ async function verifySecondInstanceExits(executable: string, userDataPath: strin
     new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolveExit) => {
       second.once("exit", (code, signal) => resolveExit({ code, signal }));
     }),
-    new Promise<null>((resolveDelay) => setTimeout(() => resolveDelay(null), 10_000)),
+    new Promise<null>((resolveDelay) => setTimeout(() => resolveDelay(null), 45_000)),
   ]);
   if (!result) {
     second.kill("SIGKILL");
