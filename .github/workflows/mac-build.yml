@@ -41,7 +41,7 @@ jobs:
       matrix:
         include:
           - label: Apple Silicon
-            os: macos-14
+            os: macos-15
           - label: Intel
             os: macos-15-intel
     runs-on: ${{ matrix.os }}
@@ -87,7 +87,7 @@ jobs:
         include:
           - arch: arm64
             label: Apple Silicon
-            os: macos-14
+            os: macos-15
             app_dir: dist/mac-arm64
           - arch: x64
             label: Intel
@@ -193,8 +193,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            arch: arm64
           - os: macos-15
             arch: arm64
           - os: macos-26
