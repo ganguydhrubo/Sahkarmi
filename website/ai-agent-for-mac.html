@@ -110,7 +110,7 @@
           "name": "Can Sahkarmi control the apps on my Mac?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Not yet. On a Mac, coworkers work in their own built-in browser and in your files, and use all the AI features. Controlling desktop apps is on Windows only for now."
+            "text": "Yes, from version 0.37.0. Coworkers can see the screen, read an app's buttons and fields, click, type and use shortcuts in Mac apps such as TextEdit, Numbers, Excel or WhatsApp. macOS asks you once to allow Sahkarmi under Accessibility and Screen Recording (System Settings > Privacy & Security); Settings > Permissions in the app has a button for each. Sending, posting, paying and deleting still wait for your approval, and coworkers never type into password fields."
           }
         },
         {
@@ -150,7 +150,7 @@
       <li><a href="#homebrew">Homebrew</a></li>
       <li><a href="#first-open">First open</a></li>
       <li><a href="#updates">Updates</a></li>
-      <li><a href="#limits">Not on Mac yet</a></li>
+      <li><a href="#limits">What works on Mac</a></li>
       <li><a href="#control">You stay in control</a></li>
       <li><a href="#faq">Questions</a></li>
     </ul>
@@ -200,11 +200,12 @@
     <h2 id="updates">Updates</h2>
     <p>The app tells you when a new version is out and opens the download. Open the new DMG file and drag Sahkarmi into Applications again, in place of the old one. Your coworkers, chats and settings are kept. With Homebrew, run <code>brew upgrade --cask sahkarmi</code>.</p>
 
-    <h2 id="limits">Not on Mac yet</h2>
+    <h2 id="limits">What works on Mac</h2>
     <ul>
-      <li><strong>Control of desktop apps.</strong> On a Mac, coworkers use the built-in browser, files and all AI features. They cannot click and type in other Mac apps yet; that is on <a href="/ai-agent-for-windows.html">Windows</a> only for now.</li>
-      <li><strong>Voice typing models on the computer.</strong> These are not in the Mac app yet. Voice notes work.</li>
-      <li><strong>Microsoft Store, winget and Scoop.</strong> These are Windows ways to install. On Mac, use the DMG file or Homebrew.</li>
+      <li><strong>Control of desktop apps.</strong> Coworkers can see the screen, read an app's controls, click, type and use Command shortcuts in your Mac apps. macOS asks you once to allow Sahkarmi under Accessibility and Screen Recording (System Settings > Privacy & Security); Settings > Permissions in the app has a button for each.</li>
+      <li><strong>Voice typing and read-aloud on the computer.</strong> The same free voice models as on Windows run on your Mac, Apple Silicon and Intel.</li>
+      <li><strong>Install MCP servers for me.</strong> After you approve the card, Sahkarmi installs a server into its own folder and fetches uv or Node.js for your Mac with checked SHA-256 sums.</li>
+      <li><strong>Not on Mac:</strong> the Tally connector, and the Microsoft Store, winget and Scoop, which are Windows ways to install. On Mac, use the DMG file or Homebrew.</li>
     </ul>
 
     <h2 id="control">You stay in control</h2>
@@ -220,7 +221,7 @@
     <details><summary>Does Sahkarmi work on Apple Silicon and Intel Macs?</summary><p>Yes, both. There is one DMG file for Apple Silicon Macs (M1, M2, M3, M4) and one for Intel Macs. The Homebrew command is the same for both.</p></details>
     <details><summary>How do I install Sahkarmi on a Mac with Homebrew?</summary><p>Open Terminal and run: brew install --cask ganguydhrubo/sahkarmi/sahkarmi. The app opens straight away. To update later, run: brew upgrade --cask sahkarmi. To remove it, run: brew uninstall --cask sahkarmi.</p></details>
     <details><summary>Why does macOS say it could not verify Sahkarmi?</summary><p>Because the Mac app is not notarised by Apple yet. On the first open, click Done, not Move to Trash. Then open System Settings, Privacy &amp; Security, scroll down to Security, click Open Anyway and confirm with your Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only, and Homebrew installs skip it.</p></details>
-    <details><summary>Can Sahkarmi control the apps on my Mac?</summary><p>Not yet. On a Mac, coworkers work in their own built-in browser and in your files, and use all the AI features. Controlling desktop apps is on Windows only for now.</p></details>
+    <details><summary>Can Sahkarmi control the apps on my Mac?</summary><p>Yes, from version 0.37.0. Coworkers can see the screen, read an app's buttons and fields, click, type and use shortcuts in Mac apps such as TextEdit, Numbers, Excel or WhatsApp. macOS asks you once to allow Sahkarmi under Accessibility and Screen Recording (System Settings > Privacy & Security); Settings > Permissions in the app has a button for each. Sending, posting, paying and deleting still wait for your approval, and coworkers never type into password fields.</p></details>
     <details><summary>Do my files leave my Mac?</summary><p>Your files stay in folders on your computer. Sahkarmi has no cloud account of its own; the parts of a file a task needs go only to the AI provider you choose, as part of that task.</p></details>
 
 <div class="cta"><p>Sahkarmi is free and open source (Apache 2.0). No account, no card. macOS 12 or later, Apple Silicon and Intel.</p><a class="btn" href="#get">Download Sahkarmi for Mac</a></div>

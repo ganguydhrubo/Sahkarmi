@@ -30,7 +30,7 @@ Key facts (checked against release 0.34.0 on 25 November 2026):
 - Homebrew (one line, both chips): `brew install --cask ganguydhrubo/sahkarmi/sahkarmi`. Update: `brew upgrade --cask sahkarmi`. Remove: `brew uninstall --cask sahkarmi`.
 - The Mac app is not notarised by Apple yet. After a DMG download, macOS stops the first open with a box titled "Sahkarmi" Not Opened ("Apple could not verify..."). Click Done, not Move to Trash. Then open System Settings, Privacy & Security, scroll down to Security, click Open Anyway and confirm with the Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only. Homebrew installs skip all of this.
 - Updates on Mac: the app says when a new version is out and opens the download; drag the new app into Applications. With Homebrew: `brew upgrade --cask sahkarmi`.
-- Windows only for now: coworkers controlling desktop apps (on Mac they use the built-in browser, files and all AI features), the voice typing models that run on the computer (voice notes work on Mac), and the Microsoft Store, winget and Scoop installs.
+- On Mac as on Windows: coworkers controlling desktop apps (macOS asks once for Accessibility and Screen Recording), voice typing that runs on the computer, and guided MCP server installs. Windows only: the Tally connector and the Microsoft Store, winget and Scoop installs.
 - Checksums for the Mac files: `SHA256SUMS-macos.txt` on the release page. Verify with `shasum -a 256 ~/Downloads/Sahkarmi-0.37.0-arm64.dmg`.
 
 ## Official links
@@ -43,7 +43,7 @@ Key facts (checked against release 0.34.0 on 25 November 2026):
 - [All AI coworkers](https://sahkarmi.site/coworkers/): one page for each of the 175 ready-made Marketplace coworkers (what it covers, what it needs, its steps, outputs, checks, approvals and limits), grouped into 15 teams such as finance, sales, marketing, HR, e-commerce and software
 - [Use cases](https://sahkarmi.site/use-cases.html): workflows by profession (finance, marketing, sales, research, development, writing, design, operations) with the ready-made coworkers for each
 - [AI agent for Windows](https://sahkarmi.site/ai-agent-for-windows.html): install options (Microsoft Store, installer, Scoop, winget status), requirements, what it does in Windows, first steps
-- [AI agent for Mac](https://sahkarmi.site/ai-agent-for-mac.html): Sahkarmi for Mac on Apple Silicon and Intel, DMG downloads, the Homebrew command, first-open steps, updates, what is not on Mac yet
+- [AI agent for Mac](https://sahkarmi.site/ai-agent-for-mac.html): Sahkarmi for Mac on Apple Silicon and Intel, DMG downloads, the Homebrew command, first-open steps, updates, what works on Mac
 - [Alternatives](https://sahkarmi.site/alternatives.html): comparison with ChatGPT agent, Claude computer use, Manus, Browser Use, UI-TARS Desktop, Bytebot and UFO, checked 5 November 2026
 - [Open-source AI agent](https://sahkarmi.site/open-source-ai-agent.html): what is open, the licence, how to verify a release, and how Sahkarmi compares with other kinds of AI agents
 - [Install guide](https://sahkarmi.site/install.html): Windows steps, checksum verification, provider setup, updates, troubleshooting, uninstall

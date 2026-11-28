@@ -15,8 +15,14 @@ All notable changes to Sahkarmi are documented here. The project follows
   real Mac machines before they are published. The Mac app is not notarised by Apple yet, so
   macOS asks once to allow it (System Settings > Privacy & Security > Open Anyway); Homebrew does
   that step for you. On a Mac the app finds the tools from your Terminal (Homebrew, npm, uv),
-  uses Command shortcuts and reads free memory the Mac way. Not on Mac yet: coworkers
-  controlling desktop apps, the on-computer voice typing models and the guided MCP install.
+  uses Command shortcuts and reads free memory the Mac way. Also on Mac: coworkers control
+  desktop apps (macOS asks once for Accessibility and Screen Recording; Settings > Permissions
+  has a button for each), voice typing and read-aloud run on the computer, and "MCP servers:
+  install for me" fetches the Mac builds of uv and Node.js. All three are proven on GitHub's Mac
+  machines (Apple Silicon on macOS 15 and 26, Intel on macOS 15) before publishing. The Mac app
+  also points the Kokoro English voice at its file as re-uploaded on 26 October 2026 (the old
+  checksum no longer matched, so its download stopped with "damaged"); Windows gets that fix
+  with its next version.
 
 - **Suggested next message**: after a coworker answers, the empty message box shows what you may
   want to send next. Press Tab to use it. It appears only when a useful next step is clear, and
