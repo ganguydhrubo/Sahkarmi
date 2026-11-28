@@ -2010,16 +2010,6 @@ const SECRET_STORE_FILE = "secrets.enc.json";
 let voiceService: VoiceService | null = null;
 let desktopHost: DesktopHost | null = null;
 
-/**
- * The on-computer voice models run through a Windows-only engine. On a Mac (and Linux) none is
- * offered, so nothing large is downloaded that could never start; voice notes still record.
- */
-const VOICE_MODELS_WORK_HERE = process.platform === "win32";
-
-function voiceStateForThisComputer(state: VoiceState): VoiceState {
-  return VOICE_MODELS_WORK_HERE ? state : { ...state, models: [] };
-}
-
 /** Two minutes of 16 kHz audio is the longest clip one dictation request may carry. */
 const MAX_DICTATION_SAMPLES = 16_000 * 120;
 
@@ -2031,13 +2021,9 @@ function registerVoiceHandlers(voice: VoiceService, ready: Promise<unknown>): vo
     }
     return value;
   };
-  handleTrusted(IPC_CHANNELS.voiceGetState, () => voiceStateForThisComputer(voice.getState()));
-  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => {
-    if (!VOICE_MODELS_WORK_HERE) {
-      throw new Error("Voice typing models work on Windows only for now. Voice notes work here.");
-    }
-    return voice.install(modelId(value));
-  });
+  // The service itself offers no models where this computer has no voice engine (Linux).
+  handleTrusted(IPC_CHANNELS.voiceGetState, () => voice.getState());
+  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => voice.install(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceCancel, (value: unknown) => voice.cancel(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceRemove, (value: unknown) => voice.remove(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceSetSettings, (value: unknown) => {
@@ -2866,9 +2852,9 @@ if (!hasSingleInstanceLock) {
           appLog.write("error", "voice settings unreadable; using defaults", String(error));
         }),
       );
-      voiceService.on("state", (state) => {
+      voiceService.on("state", (state: VoiceState) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, voiceStateForThisComputer(state));
+          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, state);
         }
       });
       registerVoiceHandlers(voiceService, voiceReady);

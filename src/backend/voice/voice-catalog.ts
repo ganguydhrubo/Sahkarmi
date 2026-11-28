@@ -86,7 +86,7 @@ const RASA_LANGUAGES = [
 ];
 const SHERPA_RELEASES = "https://github.com/k2-fsa/sherpa-onnx/releases/download";
 
-/** The engine: native libraries plus the .NET binding the voice host loads. */
+/** The Windows engine: native libraries plus the .NET binding the voice host loads. */
 export const VOICE_ENGINE = {
   native: {
     url: `${SHERPA_RELEASES}/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MT-Release.tar.bz2`,
@@ -102,6 +102,32 @@ export const VOICE_ENGINE = {
     entry: "lib/net45/sherpa-onnx.dll",
   },
 } as const;
+
+/**
+ * The Mac engine: the same release as command-line programs, one download per chip (arm64 is
+ * Apple Silicon, x64 is Intel). The programs ask for macOS 11 (arm64) or 10.15 (x64) and newer.
+ */
+export const MAC_VOICE_ENGINE: Record<"arm64" | "x64", VoiceArchive> = {
+  arm64: {
+    url: `${SHERPA_RELEASES}/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-osx-arm64-shared.tar.bz2`,
+    sha256: "ca352a87d313fb1cce311c7b5ddc2e48df3ff899fb2c43ce8076071f029d1d3f",
+    size: 20_225_744,
+    folder: `sherpa-onnx-v${SHERPA_VERSION}-osx-arm64-shared`,
+  },
+  x64: {
+    url: `${SHERPA_RELEASES}/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-osx-x64-shared.tar.bz2`,
+    sha256: "6d67041ee4e8a683dd8f0789ba83d1bbb4ba6ab64c129f483fb77ff8b4a74e28",
+    size: 22_786_593,
+    folder: `sherpa-onnx-v${SHERPA_VERSION}-osx-x64-shared`,
+  },
+};
+
+/** The only files the app unpacks from the Mac archive: two programs and the library they load. */
+export const MAC_ENGINE_FILES = [
+  "bin/sherpa-onnx-offline",
+  "bin/sherpa-onnx-offline-tts",
+  "lib/libonnxruntime.dylib",
+] as const;
 
 export const INDIC_TOKENS: VoiceFile = {
   path: "tokens.txt",

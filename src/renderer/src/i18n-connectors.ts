@@ -25,6 +25,8 @@ export const connectorsEn = {
   mcpcInstallHint: "Sahkarmi does not install it for you: install it, then press Re-check.",
   mcpcGetIt: "Where to get it",
   mcpcSetup: "Open the setup page",
+  // Mac twin: t() picks "<key>_mac" on a Mac.
+  mcpcNeedsGit_mac: "Needs Git.",
 };
 
 type ConnectorsDictionary = Record<keyof typeof connectorsEn, string>;
@@ -54,6 +56,7 @@ export const connectorsHi: ConnectorsDictionary = {
   mcpcInstallHint: "सहकर्मी इसे आपके लिए इंस्टॉल नहीं करता: इसे इंस्टॉल करें, फिर फिर से जाँचें दबाएँ।",
   mcpcGetIt: "कहाँ से लें",
   mcpcSetup: "सेटअप पेज खोलें",
+  mcpcNeedsGit_mac: "Git चाहिए।",
 };
 
 export const connectorsBn: ConnectorsDictionary = {
@@ -82,4 +85,5 @@ export const connectorsBn: ConnectorsDictionary = {
   mcpcInstallHint: "সহকর্মী এটি আপনার জন্য ইনস্টল করে না: ইনস্টল করুন, তারপর আবার পরীক্ষা চাপুন।",
   mcpcGetIt: "কোথায় পাবেন",
   mcpcSetup: "সেটআপ পেজ খুলুন",
+  mcpcNeedsGit_mac: "Git লাগবে।",
 };

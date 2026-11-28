@@ -17,6 +17,7 @@ import { cliSkillName, cliSkillText } from "./cli-skill";
 import { diagnose } from "./diagnose";
 import { killProcessTree } from "./handshake";
 import { installRoot, type ShortPath, serverFolderName } from "./paths";
+import { isWindows, quoteWord, venvPython, venvScript } from "./platform-paths";
 import { type HttpFetch, minimumPython, ToolsManager } from "./tools-manager";
 import { lookupCommand } from "./windows-env";
 
@@ -84,49 +85,13 @@ export interface InstallerHooks {
   env: () => Record<string, string>;
 }
 
-/** Shows a command the way the owner could type it. */
-export function displayCommand(command: string, args: string[]): string {
-  const quote = (word: string) =>
-    /[\s"&|<>^]/.test(word) || word === "" ? `"${word.replace(/"/g, '\\"')}"` : word;
-  return [command, ...args].map(quote).join(" ");
-}
-
-function view(step: Step): McpInstallStepView {
-  switch (step.kind) {
-    case "download-uv":
-      return {
-        kind: "download-uv",
-        command: `https://github.com/astral-sh/uv/releases/download/${step.version}/uv-x86_64-pc-windows-msvc.zip (SHA-256 checked)`,
-      };
-    case "download-node":
-      return {
-        kind: "download-node",
-        command: `https://nodejs.org/dist/v${step.version}/node-v${step.version}-win-x64.zip (SHA-256 checked)`,
-      };
-    case "exec":
-      return { kind: step.view, command: displayCommand(step.command, step.args) };
-    case "clone":
-      return {
-        kind: "clone",
-        command: step.git
-          ? `git clone https://github.com/${step.owner}/${step.repo} "${step.target}" && git checkout ${step.commit}`
-          : `https://codeload.github.com/${step.owner}/${step.repo}/zip/${step.commit} → "${step.target}"`,
-      };
-    case "skill":
-      return { kind: "skill", command: "Settings › Skills" };
-    case "save":
-      return {
-        kind: "save",
-        command:
-          step.server.transport === "http"
-            ? (step.server.url ?? "")
-            : displayCommand(step.server.command ?? "", step.server.args ?? []),
-      };
-    case "test":
-      return { kind: "test", command: "initialize + tools/list" };
-    case "recheck":
-      return { kind: "verify", command: "PATH" };
-  }
+/** Shows a command the way the owner could type it in this system's own terminal. */
+export function displayCommand(
+  command: string,
+  args: string[],
+  platform: NodeJS.Platform = process.platform,
+): string {
+  return [command, ...args].map((word) => quoteWord(word, platform)).join(" ");
 }
 
 /**
@@ -156,20 +121,79 @@ export class McpInstaller {
       /** Fixed install folder (dev scripts); normally chosen by installRoot. */
       root?: string;
       longPaths?: () => Promise<boolean>;
+      /** The system and chip to install for (tests); the real ones by default. */
+      platform?: NodeJS.Platform;
+      arch?: string;
+      /** The owner's home folder, for the Mac install folder (tests). */
+      home?: string;
     } = {},
   ) {
     this.#userData = userDataPath;
     this.#hooks = hooks;
     this.#fetch = options.fetch ?? (fetch as unknown as HttpFetch);
-    this.tools = options.tools ?? new ToolsManager(userDataPath, this.#fetch);
+    this.tools =
+      options.tools ??
+      new ToolsManager(userDataPath, this.#fetch, {
+        ...(options.platform ? { platform: options.platform } : {}),
+        ...(options.arch ? { arch: options.arch } : {}),
+      });
     this.#extraEnv = options.extraEnv ?? {};
     this.#shortPath = options.shortPath;
     this.#fixedRoot = options.root;
     this.#longPaths = options.longPaths;
+    this.#home = options.home;
   }
 
   readonly #fixedRoot: string | undefined;
   readonly #longPaths: (() => Promise<boolean>) | undefined;
+  readonly #home: string | undefined;
+
+  /** The system the installs are for: always the one the tools are for. */
+  get #platform(): NodeJS.Platform {
+    return this.tools.platform;
+  }
+
+  /** What the approval card shows for one step: the exact download or command. */
+  #view(step: Step): McpInstallStepView {
+    switch (step.kind) {
+      case "download-uv":
+        return {
+          kind: "download-uv",
+          command: `${this.tools.uvUrls(step.version).archive} (SHA-256 checked)`,
+        };
+      case "download-node":
+        return {
+          kind: "download-node",
+          command: `${this.tools.nodeUrls(step.version).archive} (SHA-256 checked)`,
+        };
+      case "exec":
+        return {
+          kind: step.view,
+          command: displayCommand(step.command, step.args, this.#platform),
+        };
+      case "clone":
+        return {
+          kind: "clone",
+          command: step.git
+            ? `git clone https://github.com/${step.owner}/${step.repo} "${step.target}" && git checkout ${step.commit}`
+            : `https://codeload.github.com/${step.owner}/${step.repo}/zip/${step.commit} → "${step.target}"`,
+        };
+      case "skill":
+        return { kind: "skill", command: "Settings › Skills" };
+      case "save":
+        return {
+          kind: "save",
+          command:
+            step.server.transport === "http"
+              ? (step.server.url ?? "")
+              : displayCommand(step.server.command ?? "", step.server.args ?? [], this.#platform),
+        };
+      case "test":
+        return { kind: "test", command: "initialize + tools/list" };
+      case "recheck":
+        return { kind: "verify", command: "PATH" };
+    }
+  }
 
   async #root(): Promise<string> {
     if (this.#fixedRoot) {
@@ -177,8 +201,10 @@ export class McpInstaller {
       return this.#fixedRoot;
     }
     return installRoot(this.#userData, {
+      platform: this.#platform,
       ...(this.#shortPath ? { shortPath: this.#shortPath } : {}),
       ...(this.#longPaths ? { longPaths: this.#longPaths } : {}),
+      ...(this.#home ? { home: this.#home } : {}),
     });
   }
 
@@ -210,7 +236,7 @@ export class McpInstaller {
   ): Promise<{ steps: Step[]; pip: (spec: string) => Step; sizeMb: number }> {
     const env = this.#hooks.env();
     const minimum = minimumPython(requires);
-    const venvPython = join(venv, "Scripts", "python.exe");
+    const python = venvPython(venv, this.#platform);
     const real = await this.tools.findPython(env, minimum);
     if (real) {
       return {
@@ -218,7 +244,7 @@ export class McpInstaller {
         pip: (spec) => ({
           kind: "exec",
           view: "pip",
-          command: venvPython,
+          command: python,
           args: ["-m", "pip", "install", spec],
         }),
         sizeMb: 0,
@@ -230,7 +256,7 @@ export class McpInstaller {
     if (!uv) {
       const version = await this.tools.latestUvVersion();
       steps.push({ kind: "download-uv", version });
-      uv = join(this.tools.uvDirectory(version), "uv.exe");
+      uv = this.tools.uvExecutable(version);
       sizeMb += 15;
     }
     const wanted = minimum[1] > 11 ? `${minimum[0]}.${minimum[1]}` : "3.11";
@@ -253,7 +279,7 @@ export class McpInstaller {
         kind: "exec",
         view: "pip",
         command: uvPath,
-        args: ["pip", "install", "--python", venvPython, spec],
+        args: ["pip", "install", "--python", python, spec],
       }),
       sizeMb,
     };
@@ -267,7 +293,7 @@ export class McpInstaller {
     return {
       steps: [{ kind: "download-node", version: latest.version }],
       node,
-      npmCli: join(dirname(node), "node_modules", "npm", "bin", "npm-cli.js"),
+      npmCli: this.tools.npmCliFor(node),
       sizeMb: 30,
     };
   }
@@ -351,7 +377,7 @@ export class McpInstaller {
           kind: "save",
           server: {
             ...base,
-            command: join(venv, "Scripts", `${install.script}.exe`),
+            command: venvScript(venv, install.script, this.#platform),
             args: extras,
           },
           source: `Installed from ${source}`,
@@ -377,13 +403,13 @@ export class McpInstaller {
           install.script && SCRIPT.test(install.script)
             ? {
                 ...base,
-                command: join(venv, "Scripts", `${install.script}.exe`),
+                command: venvScript(venv, install.script, this.#platform),
                 args: [],
                 cwd: project,
               }
             : {
                 ...base,
-                command: join(venv, "Scripts", "python.exe"),
+                command: venvPython(venv, this.#platform),
                 args: [join(project, ...(install.entry ?? "server.py").split("/"))],
                 cwd: project,
               };
@@ -427,13 +453,15 @@ export class McpInstaller {
         });
         sizeMb = { min: 20 + node.sizeMb, max: 300 + node.sizeMb };
         warnings.push(
-          "Building from source can fail on Windows when a package needs C++ build tools.",
+          isWindows(this.#platform)
+            ? "Building from source can fail on Windows when a package needs C++ build tools."
+            : "Building from source can fail on a Mac when a package needs Apple's command line developer tools (Xcode).",
         );
         break;
       }
       case "oci": {
         if (!IMAGE.test(install.image)) throw new Error("Unexpected Docker image name.");
-        const docker = lookupCommand("docker", this.#hooks.env()).path;
+        const docker = lookupCommand("docker", this.#hooks.env(), this.#platform).path;
         if (!docker)
           throw new Error(
             "This one runs in Docker, and Docker Desktop is not installed. Sahkarmi does not install Docker for you.",
@@ -468,7 +496,7 @@ export class McpInstaller {
         folder,
         sizeMb,
         heavy: analysis.heavy,
-        steps: steps.map(view),
+        steps: steps.map((step) => this.#view(step)),
         warnings,
       },
       steps,
@@ -483,7 +511,7 @@ export class McpInstaller {
       repo,
       commit,
       target,
-      git: lookupCommand("git", this.#hooks.env()).path,
+      git: lookupCommand("git", this.#hooks.env(), this.#platform).path,
     };
   }
 
@@ -498,7 +526,7 @@ export class McpInstaller {
     const name = serverFolderName(cli.package);
     const folder = join(await this.#root(), name);
     const venv = join(folder, ".venv");
-    const exe = join(venv, "Scripts", `${cli.script}.exe`);
+    const exe = venvScript(venv, cli.script, this.#platform);
     const python = await this.#venvSteps(venv, cli.requiresPython);
     const isMpt = cli.package === "mpt";
     const steps: Step[] = [
@@ -513,12 +541,15 @@ export class McpInstaller {
       },
       {
         kind: "skill",
-        text: cliSkillText({
-          repo: analysis.repo,
-          packageName: cli.package,
-          version: cli.version,
-          executable: exe,
-        }),
+        text: cliSkillText(
+          {
+            repo: analysis.repo,
+            packageName: cli.package,
+            version: cli.version,
+            executable: exe,
+          },
+          this.#platform,
+        ),
       },
     ];
     return this.#remember({
@@ -537,7 +568,7 @@ export class McpInstaller {
           ? { min: 500, max: 2500 }
           : { min: 10 + python.sizeMb, max: 200 + python.sizeMb },
         heavy: analysis.heavy,
-        steps: steps.map(view),
+        steps: steps.map((step) => this.#view(step)),
         warnings: analysis.warnings,
       },
       steps,
@@ -559,7 +590,7 @@ export class McpInstaller {
       if (!uv || tool === "uv") {
         const version = await this.tools.latestUvVersion();
         steps.push({ kind: "download-uv", version });
-        uv = join(this.tools.uvDirectory(version), "uv.exe");
+        uv = this.tools.uvExecutable(version);
         source = `uv ${version} (github.com/astral-sh/uv)`;
       }
       if (tool === "python") {
@@ -583,7 +614,7 @@ export class McpInstaller {
         folder: this.tools.root,
         sizeMb,
         heavy: false,
-        steps: steps.map(view),
+        steps: steps.map((step) => this.#view(step)),
         warnings: [],
       },
       steps,
@@ -666,7 +697,7 @@ export class McpInstaller {
             break;
           case "exec": {
             lastCommand = step.command;
-            this.#log(job, `> ${displayCommand(step.command, step.args)}\n`);
+            this.#log(job, `> ${displayCommand(step.command, step.args, this.#platform)}\n`);
             if (step.cwd) await mkdir(step.cwd, { recursive: true });
             const result = await this.#spawn(job, step);
             exitCode = result.code;
@@ -786,18 +817,19 @@ export class McpInstaller {
     await rm(step.target, { recursive: true, force: true });
     await mkdir(dirname(step.target), { recursive: true });
     if (step.git) {
+      // Windows' 260-character limit; a Mac has none, so git needs no extra setting there.
+      const longPaths = isWindows(this.#platform) ? ["-c", "core.longpaths=true"] : [];
       for (const args of [
         [
-          "-c",
-          "core.longpaths=true",
+          ...longPaths,
           "clone",
           "--no-checkout",
           `https://github.com/${step.owner}/${step.repo}.git`,
           step.target,
         ],
-        ["-c", "core.longpaths=true", "-C", step.target, "checkout", "--quiet", step.commit],
+        [...longPaths, "-C", step.target, "checkout", "--quiet", step.commit],
       ]) {
-        this.#log(job, `> ${displayCommand("git", args)}\n`);
+        this.#log(job, `> ${displayCommand("git", args, this.#platform)}\n`);
         const result = await this.#spawn(job, {
           kind: "exec",
           view: "clone",

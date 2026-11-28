@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from "solid-js";
 import type { McpConnectorCheck, McpConnectorMissing, McpServerSummary } from "../../../shared/ipc";
-import { CONNECTOR_PRESETS, type ConnectorPreset } from "../../../shared/mcp-presets";
+import { type ConnectorPreset, connectorsFor, fieldHint } from "../../../shared/mcp-presets";
 import { CONNECTOR_MARKS } from "../connector-marks";
 import { t } from "../i18n";
 
@@ -53,6 +53,9 @@ function ConnectorLogo(props: { id: string }) {
     </Show>
   );
 }
+
+/** "darwin" on a Mac, "win32" on Windows: App.tsx writes it on the page when the app starts. */
+const platform = () => document.documentElement.dataset.platform;
 
 interface Props {
   busy: boolean;
@@ -114,7 +117,8 @@ export function McpConnectorGallery(props: Props) {
         </button>
       </div>
       <ul class="extension-list">
-        <For each={CONNECTOR_PRESETS}>
+        {/* A Mac is not shown a connector that needs a Windows program (Tally). */}
+        <For each={connectorsFor(platform())}>
           {(preset) => {
             const check = () => checkOf(preset.id);
             const missing = () => check()?.missing ?? [];
@@ -230,7 +234,7 @@ export function McpConnectorGallery(props: Props) {
                               <span>{field.label}</span>
                             </label>
                           </Show>
-                          <small class="settings-meta">{field.hint}</small>
+                          <small class="settings-meta">{fieldHint(field, platform())}</small>
                           <Show when={field.setupUrl}>
                             <button
                               type="button"

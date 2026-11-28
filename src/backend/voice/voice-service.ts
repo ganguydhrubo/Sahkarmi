@@ -1,16 +1,17 @@
-import { type ChildProcessWithoutNullStreams, execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createWriteStream } from "node:fs";
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { createInterface } from "node:readline";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import type { VoiceModelInfo, VoiceSettings, VoiceState } from "../../shared/ipc";
 import {
   downloadSize,
+  MAC_ENGINE_FILES,
+  MAC_VOICE_ENGINE,
   SHERPA_VERSION,
   VOICE_ENGINE,
   VOICE_MODELS,
@@ -19,7 +20,9 @@ import {
   type VoiceModel,
   voiceModel,
 } from "./voice-catalog";
-import { VOICE_HOST_SCRIPT } from "./voice-host-script";
+import type { DictationSetup, SpeechSetup, VoiceHost } from "./voice-host";
+import { MacVoiceHost, type ProgramRunner } from "./voice-mac-host";
+import { WindowsVoiceHost } from "./voice-windows-host";
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   dictationModel: null,
@@ -29,17 +32,34 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   speed: 1,
 };
 
-const IDLE_SHUTDOWN_MS = 10 * 60_000;
-const REQUEST_TIMEOUT_MS = 180_000;
 const MAX_SPOKEN_CHARS = 1_500;
+const NO_ENGINE_HERE =
+  "Voice typing models do not work on this computer yet. Voice notes work here.";
 
 export interface VoiceServiceOptions {
   /** Folder that holds voice/engine, voice/models and voice/settings.json. */
   userDataPath: string;
   fetchImpl?: typeof fetch;
-  /** Windows' bsdtar unpacks .tar.bz2 and .zip; Git's GNU tar does not do zip. */
+  /**
+   * The system's bsdtar, which unpacks .tar.bz2 and .zip (Git's GNU tar does not do zip):
+   * tar.exe in System32 on Windows, /usr/bin/tar on a Mac.
+   */
   tarPath?: string;
   powershellPath?: string;
+  /** The computer the engine runs on; the default is this one. Tests set these. */
+  platform?: NodeJS.Platform;
+  arch?: string;
+  /** Runs one Mac engine program; tests replace it. */
+  runProgram?: ProgramRunner;
+}
+
+type EngineChoice = "windows" | "arm64" | "x64";
+
+/** Which engine this computer gets; null when there is none for it yet (Linux). */
+function engineFor(platform: NodeJS.Platform, arch: string): EngineChoice | null {
+  if (platform === "win32") return "windows";
+  if (platform === "darwin" && (arch === "arm64" || arch === "x64")) return arch;
+  return null;
 }
 
 interface Progress {
@@ -47,12 +67,6 @@ interface Progress {
   received: number;
   message: string | null;
   abort?: AbortController;
-}
-
-interface HostRequest {
-  resolve: (value: Record<string, unknown>) => void;
-  reject: (error: Error) => void;
-  timer: NodeJS.Timeout;
 }
 
 /** Scripts we can read aloud with the Indian voices, by Unicode block. */
@@ -110,31 +124,55 @@ export class VoiceService extends EventEmitter {
   readonly #root: string;
   readonly #fetch: typeof fetch;
   readonly #tar: string;
-  readonly #powershell: string;
+  /** The Windows engine or the Mac engine for this chip; null when this computer has none. */
+  readonly #engine: EngineChoice | null;
+  readonly #host: VoiceHost | null;
+  readonly #closing = new AbortController();
   #settings: VoiceSettings = { ...DEFAULT_VOICE_SETTINGS };
   #installed = new Set<string>();
   #engineInstalled = false;
   readonly #progress = new Map<string, Progress>();
-  #host: ChildProcessWithoutNullStreams | null = null;
-  #hostReady: Promise<void> | null = null;
-  readonly #pending = new Map<number, HostRequest>();
-  #nextId = 1;
-  #idleTimer: NodeJS.Timeout | null = null;
   #engineInstall: Promise<void> | null = null;
 
   constructor(options: VoiceServiceOptions) {
     super();
     this.#root = join(options.userDataPath, "voice");
     this.#fetch = options.fetchImpl ?? fetch;
-    const system = process.env.SystemRoot ?? "C:\\Windows";
-    this.#tar = options.tarPath ?? join(system, "System32", "tar.exe");
-    this.#powershell =
-      options.powershellPath ??
-      join(system, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    this.#engine = engineFor(options.platform ?? process.platform, options.arch ?? process.arch);
+    if (this.#engine === "windows") {
+      const system = process.env.SystemRoot ?? "C:\\Windows";
+      this.#tar = options.tarPath ?? join(system, "System32", "tar.exe");
+      this.#host = new WindowsVoiceHost({
+        root: this.#root,
+        engineDir: this.#engineDir,
+        powershellPath:
+          options.powershellPath ??
+          join(system, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+      });
+    } else {
+      this.#tar = options.tarPath ?? "/usr/bin/tar";
+      this.#host = this.#engine
+        ? new MacVoiceHost({
+            engineDir: this.#engineDir,
+            tmpDir: join(this.#root, "tmp"),
+            run: options.runProgram,
+          })
+        : null;
+    }
   }
 
+  /** A Mac names the chip too, so a Mac moved to a new chip fetches the engine that fits it. */
   get #engineDir(): string {
-    return join(this.#root, "engine", SHERPA_VERSION);
+    const name =
+      this.#engine === "arm64" || this.#engine === "x64"
+        ? `${SHERPA_VERSION}-mac-${this.#engine}`
+        : SHERPA_VERSION;
+    return join(this.#root, "engine", name);
+  }
+
+  get #engineSize(): number {
+    if (this.#engine === "windows") return VOICE_ENGINE.native.size + VOICE_ENGINE.binding.size;
+    return this.#engine ? MAC_VOICE_ENGINE[this.#engine].size : 0;
   }
 
   #modelDir(id: string): string {
@@ -161,9 +199,10 @@ export class VoiceService extends EventEmitter {
   getState(): VoiceState {
     return {
       engineInstalled: this.#engineInstalled,
-      engineSizeBytes: VOICE_ENGINE.native.size + VOICE_ENGINE.binding.size,
+      engineSizeBytes: this.#engineSize,
       settings: { ...this.#settings, speakers: { ...this.#settings.speakers } },
-      models: VOICE_MODELS.map((model) => this.#info(model)),
+      // No engine for this computer: offer no model, so nothing large is downloaded in vain.
+      models: this.#engine ? VOICE_MODELS.map((model) => this.#info(model)) : [],
     };
   }
 
@@ -204,6 +243,7 @@ export class VoiceService extends EventEmitter {
 
   /** Downloads the engine (once) and a model, checking every file's SHA-256. */
   async install(id: string): Promise<VoiceState> {
+    if (!this.#engine) throw new Error(NO_ENGINE_HERE);
     const model = voiceModel(id);
     if (!model) throw new Error("Unknown voice model.");
     if (this.#installed.has(id)) return this.getState();
@@ -284,7 +324,7 @@ export class VoiceService extends EventEmitter {
   }
 
   async remove(id: string): Promise<VoiceState> {
-    await this.#stopHost();
+    await this.#host?.stop();
     await rm(this.#modelDir(id), { recursive: true, force: true });
     this.#installed.delete(id);
     this.#progress.delete(id);
@@ -307,25 +347,42 @@ export class VoiceService extends EventEmitter {
   }
 
   async #installEngine(signal: AbortSignal): Promise<void> {
+    if (!this.#engine) throw new Error(NO_ENGINE_HERE);
     const work = `${this.#engineDir}.partial`;
     await rm(work, { recursive: true, force: true });
     await mkdir(work, { recursive: true });
-    await this.#installArchive(
-      VOICE_ENGINE.native,
-      work,
-      signal,
-      () => undefined,
-      () => undefined,
-    );
-    const nupkg = join(work, "binding.zip");
-    await this.#downloadFile(
-      { path: "binding.zip", ...VOICE_ENGINE.binding },
-      nupkg,
-      signal,
-      () => undefined,
-    );
-    await this.#untar(nupkg, join(work, "binding"));
-    await rm(nupkg, { force: true });
+    if (this.#engine === "windows") {
+      await this.#installArchive(
+        VOICE_ENGINE.native,
+        work,
+        signal,
+        () => undefined,
+        () => undefined,
+      );
+      const nupkg = join(work, "binding.zip");
+      await this.#downloadFile(
+        { path: "binding.zip", ...VOICE_ENGINE.binding },
+        nupkg,
+        signal,
+        () => undefined,
+      );
+      await this.#untar(nupkg, join(work, "binding"));
+      await rm(nupkg, { force: true });
+    } else {
+      const archive = MAC_VOICE_ENGINE[this.#engine];
+      await this.#installArchive(
+        archive,
+        work,
+        signal,
+        () => undefined,
+        () => undefined,
+        MAC_ENGINE_FILES.map((file) => `${archive.folder}/${file}`),
+      );
+      // Files the app downloads itself carry no quarantine mark, so macOS lets them start.
+      for (const file of MAC_ENGINE_FILES) {
+        if (file.startsWith("bin/")) await chmod(join(work, ...file.split("/")), 0o755);
+      }
+    }
     await writeFile(join(work, "ready.json"), JSON.stringify({ version: SHERPA_VERSION }), "utf8");
     await rm(this.#engineDir, { recursive: true, force: true });
     await rename(work, this.#engineDir);
@@ -338,11 +395,13 @@ export class VoiceService extends EventEmitter {
     signal: AbortSignal,
     report: (received: number) => void,
     onUnpack: () => void,
+    /** Unpack only these paths from the archive; all of it when left out. */
+    only: string[] = [],
   ): Promise<void> {
     const file = join(work, basename(new URL(archive.url).pathname));
     await this.#downloadFile({ path: basename(file), ...archive }, file, signal, report);
     onUnpack();
-    await this.#untar(file, work);
+    await this.#untar(file, work, only);
     await rm(file, { force: true });
     // Lift the archive's top folder so the model files sit directly in the model folder.
     const inner = join(work, archive.folder);
@@ -386,13 +445,13 @@ export class VoiceService extends EventEmitter {
   }
 
   /** bsdtar with relative paths: it handles .tar.bz2 and .zip alike. */
-  #untar(archive: string, directory: string): Promise<void> {
+  #untar(archive: string, directory: string, only: string[] = []): Promise<void> {
     return mkdir(directory, { recursive: true }).then(
       () =>
         new Promise<void>((resolvePromise, reject) => {
           execFile(
             this.#tar,
-            ["-xf", archive, "-C", directory],
+            ["-xf", archive, "-C", directory, ...only],
             { windowsHide: true, maxBuffer: 4 * 1024 * 1024 },
             (error) =>
               error
@@ -413,7 +472,7 @@ export class VoiceService extends EventEmitter {
     }
     if (samples.length < 1_600) return { text: "", modelId: model.id };
     const dir = this.#modelDir(model.id);
-    const asr =
+    const asr: DictationSetup =
       model.kind === "nemo-ctc"
         ? {
             kind: "nemo-ctc",
@@ -432,19 +491,12 @@ export class VoiceService extends EventEmitter {
                 : (model.whisperLanguage ?? ""),
             threads: threads(),
           };
-    const clip = join(this.#root, "tmp", `clip-${Date.now()}-${this.#nextId}.f32`);
-    await mkdir(dirname(clip), { recursive: true });
-    await writeFile(clip, Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength));
-    try {
-      const reply = await this.#request({ op: "transcribe", asr, pcm: clip });
-      const text = typeof reply.text === "string" ? reply.text : "";
-      return {
-        text: tidyDictation(text, model.punctuates, model.languages[0] ?? ""),
-        modelId: model.id,
-      };
-    } finally {
-      await rm(clip, { force: true });
-    }
+    const host = await this.#readyHost();
+    const text = await host.transcribe(asr, samples);
+    return {
+      text: tidyDictation(text, model.punctuates, model.languages[0] ?? ""),
+      modelId: model.id,
+    };
   }
 
   // ---------------------------------------------------------------- text-to-speech
@@ -460,7 +512,7 @@ export class VoiceService extends EventEmitter {
       ) ?? null;
     if (voice?.type !== "speech") return null;
     const dir = this.#modelDir(voice.id);
-    const tts =
+    const tts: SpeechSetup =
       voice.kind === "vits"
         ? {
             kind: "vits",
@@ -483,143 +535,29 @@ export class VoiceService extends EventEmitter {
       0;
     // Sentence-final marks make the Indian voices add a burst of noise at the end.
     const spoken = voice.kind === "vits" ? text.replace(/[.?!।]+\s*$/u, "") : text;
-    const out = join(this.#root, "tmp", `speech-${Date.now()}-${this.#nextId}.wav`);
-    await mkdir(dirname(out), { recursive: true });
-    try {
-      await this.#request({
-        op: "speak",
-        tts,
-        text: spoken,
-        sid: speaker,
-        speed: this.#settings.speed,
-        out,
+    const host = await this.#readyHost();
+    return host.speak(tts, spoken, speaker, this.#settings.speed);
+  }
+
+  // ---------------------------------------------------------------- the engine host
+
+  async #readyHost(): Promise<VoiceHost> {
+    if (!this.#host) throw new Error(NO_ENGINE_HERE);
+    // A Mac moved from an Intel chip to Apple Silicon keeps its models but needs the engine
+    // built for the new chip. It is a small download, so fetch it instead of failing.
+    if (!this.#engineInstalled && this.#engine !== "windows") {
+      await this.#ensureEngine(this.#closing.signal).catch((error) => {
+        throw new Error(friendlyError(error));
       });
-      return new Uint8Array(await readFile(out));
-    } finally {
-      await rm(out, { force: true });
     }
-  }
-
-  // ---------------------------------------------------------------- the host process
-
-  async #startHost(): Promise<void> {
     if (!this.#engineInstalled) throw new Error("The voice engine is not downloaded yet.");
-    const script = join(this.#root, "voice-host.ps1");
-    // A byte-order mark makes Windows PowerShell 5.1 read the script as UTF-8.
-    await writeFile(script, `\uFEFF${VOICE_HOST_SCRIPT}`, "utf8");
-    const lib = join(this.#engineDir, "lib");
-    const binding = join(this.#engineDir, "binding", ...VOICE_ENGINE.binding.entry.split("/"));
-    const child = spawn(
-      this.#powershell,
-      [
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        script,
-        "-Lib",
-        lib,
-        "-Binding",
-        binding,
-      ],
-      { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] },
-    );
-    this.#host = child;
-    let stderr = "";
-    child.stderr.on("data", (chunk: Buffer) => {
-      stderr = `${stderr}${chunk.toString("utf8")}`.slice(-4_000);
-    });
-    await new Promise<void>((resolvePromise, reject) => {
-      const lines = createInterface({ input: child.stdout });
-      let ready = false;
-      lines.on("line", (line) => {
-        let message: Record<string, unknown>;
-        try {
-          message = JSON.parse(line);
-        } catch {
-          return;
-        }
-        if (!ready && message.ready === true) {
-          ready = true;
-          resolvePromise();
-          return;
-        }
-        const id = typeof message.id === "number" ? message.id : -1;
-        const request = this.#pending.get(id);
-        if (!request) return;
-        this.#pending.delete(id);
-        clearTimeout(request.timer);
-        if (message.ok === true) request.resolve(message);
-        else request.reject(new Error(String(message.error ?? "The voice engine failed.")));
-      });
-      child.on("exit", (code) => {
-        this.#host = null;
-        this.#hostReady = null;
-        const reason = new Error(
-          `The voice engine stopped (code ${code ?? "?"}). ${lastUsefulLine(stderr)}`.trim(),
-        );
-        if (!ready) reject(reason);
-        for (const request of this.#pending.values()) {
-          clearTimeout(request.timer);
-          request.reject(reason);
-        }
-        this.#pending.clear();
-      });
-      child.on("error", (error) => reject(error));
-    });
-  }
-
-  async #request(body: Record<string, unknown>): Promise<Record<string, unknown>> {
-    this.#hostReady ??= this.#startHost().catch((error) => {
-      this.#hostReady = null;
-      throw error;
-    });
-    await this.#hostReady;
-    const host = this.#host;
-    if (!host) throw new Error("The voice engine is not running.");
-    this.#touch();
-    const id = this.#nextId++;
-    return new Promise((resolvePromise, reject) => {
-      const timer = setTimeout(() => {
-        this.#pending.delete(id);
-        reject(new Error("The voice engine took too long. Try a shorter clip."));
-        void this.#stopHost();
-      }, REQUEST_TIMEOUT_MS);
-      this.#pending.set(id, { resolve: resolvePromise, reject, timer });
-      host.stdin.write(`${JSON.stringify({ id, ...body })}\n`);
-    });
-  }
-
-  #touch(): void {
-    if (this.#idleTimer) clearTimeout(this.#idleTimer);
-    this.#idleTimer = setTimeout(() => void this.#stopHost(), IDLE_SHUTDOWN_MS);
-    this.#idleTimer.unref?.();
-  }
-
-  async #stopHost(): Promise<void> {
-    const host = this.#host;
-    this.#host = null;
-    this.#hostReady = null;
-    if (!host) return;
-    host.stdin.end();
-    await new Promise<void>((resolvePromise) => {
-      const timer = setTimeout(() => {
-        host.kill();
-        resolvePromise();
-      }, 3_000);
-      host.once("exit", () => {
-        clearTimeout(timer);
-        resolvePromise();
-      });
-    });
+    return this.#host;
   }
 
   async dispose(): Promise<void> {
     for (const progress of this.#progress.values()) progress.abort?.abort();
-    if (this.#idleTimer) clearTimeout(this.#idleTimer);
-    await this.#stopHost();
+    this.#closing.abort();
+    await this.#host?.stop();
   }
 }
 
@@ -660,16 +598,6 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-function lastUsefulLine(output: string): string {
-  return (
-    output
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line && !/^at |^\+|CategoryInfo|FullyQualifiedErrorId/.test(line))
-      .at(-1) ?? ""
-  ).slice(0, 240);
 }
 
 function friendlyError(error: unknown): string {

@@ -4,8 +4,25 @@ import type { McpProblem } from "../../shared/ipc";
 import { placeholderHits } from "./placeholders";
 import { lookupCommand } from "./windows-env";
 
+/** The download page of Python and Git for this system (python.org and git-scm.com). */
+export function downloadPage(
+  program: "python" | "git",
+  platform: NodeJS.Platform = process.platform,
+): string {
+  const mac = platform === "darwin";
+  if (program === "python") {
+    return mac
+      ? "https://www.python.org/downloads/macos/"
+      : "https://www.python.org/downloads/windows/";
+  }
+  return mac ? "https://git-scm.com/download/mac" : "https://git-scm.com/download/win";
+}
+
 /** Where to get a missing command, and the one-click fix Sahkarmi offers for it. */
-export function installHint(command: string): Pick<McpProblem, "link" | "fix"> {
+export function installHint(
+  command: string,
+  platform: NodeJS.Platform = process.platform,
+): Pick<McpProblem, "link" | "fix"> {
   const name = command
     .split(/[\\/]/)
     .pop()
@@ -18,10 +35,10 @@ export function installHint(command: string): Pick<McpProblem, "link" | "fix"> {
     return { link: "https://nodejs.org/en/download", fix: "install-node" };
   }
   if (name === "python" || name === "python3" || name === "py") {
-    return { link: "https://www.python.org/downloads/windows/", fix: "install-python" };
+    return { link: downloadPage("python", platform), fix: "install-python" };
   }
   if (name === "docker") return { link: "https://www.docker.com/products/docker-desktop/" };
-  if (name === "git") return { link: "https://git-scm.com/download/win" };
+  if (name === "git") return { link: downloadPage("git", platform) };
   return {};
 }
 
@@ -81,7 +98,11 @@ export interface CheckableServer {
  * problem with its own advice (MCP-6): a template value, a missing command, the Store's Python
  * stub, a missing folder or file, or a required key not filled in.
  */
-export function serverProblems(server: CheckableServer, env: NodeJS.ProcessEnv): McpProblem[] {
+export function serverProblems(
+  server: CheckableServer,
+  env: NodeJS.ProcessEnv,
+  platform: NodeJS.Platform = process.platform,
+): McpProblem[] {
   const problems: McpProblem[] = [];
   for (const hit of placeholderHits(server)) {
     problems.push({
@@ -93,7 +114,7 @@ export function serverProblems(server: CheckableServer, env: NodeJS.ProcessEnv):
   }
   if (server.transport === "stdio") {
     const templated = problems.length > 0;
-    const lookup = lookupCommand(server.command, env);
+    const lookup = lookupCommand(server.command, env, platform);
     if (!lookup.path && !templated) {
       problems.push(
         lookup.storeStub
@@ -101,9 +122,13 @@ export function serverProblems(server: CheckableServer, env: NodeJS.ProcessEnv):
               kind: "store-stub",
               subject: server.command,
               fix: "install-python",
-              link: "https://www.python.org/downloads/windows/",
+              link: downloadPage("python", platform),
             }
-          : { kind: "missing-command", subject: server.command, ...installHint(server.command) },
+          : {
+              kind: "missing-command",
+              subject: server.command,
+              ...installHint(server.command, platform),
+            },
       );
     }
     if (server.cwd && !templated && !isDirectory(server.cwd)) {

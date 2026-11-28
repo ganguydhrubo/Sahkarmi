@@ -137,6 +137,14 @@ export const mcpEn = {
   mcpxAdapterNote:
     "Sahkarmi writes a small MCP adapter that calls this project's web API on this PC only (127.0.0.1). You start the project's own server yourself first; then press Test server.",
   mcpxAdapterAdd: "Add the adapter (switched off)",
+  // Mac twins of the sentences above that name Windows; t() picks "<key>_mac" on a Mac.
+  mcpxRecheckHint_mac:
+    "Installed something just now? Press Re-check: Sahkarmi looks for it again, no restart needed.",
+  mcpxProblemMissingCommand_mac:
+    "This Mac can't find \"{command}\", so coworkers won't get this server's tools. Install it, or edit the server and use its full path, then press Re-check.",
+  mcpxSkillOutput_mac:
+    "Finished videos are saved in ~/Library/Application Support/MoneyPrinterTurbo/storage/tasks.",
+  mcpxDiag_longPath_mac: "A file name got too long for this Mac. Press Install again.",
 };
 
 type McpDictionary = Record<keyof typeof mcpEn, string>;
@@ -272,6 +280,13 @@ export const mcpHi: McpDictionary = {
   mcpxAdapterNote:
     "Sahkarmi एक छोटा MCP एडैप्टर लिखता है जो इस प्रोजेक्ट के वेब API को सिर्फ़ इसी PC पर (127.0.0.1) कॉल करता है। पहले प्रोजेक्ट का अपना सर्वर खुद चालू करें; फिर टेस्ट सर्वर दबाएँ।",
   mcpxAdapterAdd: "एडैप्टर जोड़ें (बंद अवस्था में)",
+  mcpxRecheckHint_mac:
+    "अभी कुछ इंस्टॉल किया? फिर से जाँचें दबाएँ: Sahkarmi उसे दोबारा ढूँढता है, रीस्टार्ट की ज़रूरत नहीं।",
+  mcpxProblemMissingCommand_mac:
+    'इस Mac पर "{command}" नहीं मिल रहा, इसलिए सहकर्मियों को इस सर्वर के टूल नहीं मिलेंगे। इसे इंस्टॉल करें, या सर्वर बदलकर पूरा पाथ डालें, फिर फिर से जाँचें दबाएँ।',
+  mcpxSkillOutput_mac:
+    "तैयार वीडियो ~/Library/Application Support/MoneyPrinterTurbo/storage/tasks में सेव होते हैं।",
+  mcpxDiag_longPath_mac: "किसी फ़ाइल का नाम इस Mac की सीमा से लंबा हो गया। फिर से इंस्टॉल दबाएँ।",
 };
 
 export const mcpBn: McpDictionary = {
@@ -404,4 +419,11 @@ export const mcpBn: McpDictionary = {
   mcpxAdapterNote:
     "Sahkarmi একটি ছোট MCP অ্যাডাপ্টার লেখে, যা এই প্রজেক্টের ওয়েব API শুধু এই PC-তেই (127.0.0.1) কল করে। আগে প্রজেক্টের নিজের সার্ভার নিজে চালু করুন; তারপর টেস্ট সার্ভার চাপুন।",
   mcpxAdapterAdd: "অ্যাডাপ্টার যোগ করুন (বন্ধ অবস্থায়)",
+  mcpxRecheckHint_mac:
+    "এইমাত্র কিছু ইনস্টল করেছেন? আবার দেখুন চাপুন: Sahkarmi সেটি আবার খোঁজে, রিস্টার্ট লাগে না।",
+  mcpxProblemMissingCommand_mac:
+    'এই Mac-এ "{command}" খুঁজে পাওয়া যাচ্ছে না, তাই সহকর্মীরা এই সার্ভারের টুল পাবে না। এটি ইনস্টল করুন, বা সার্ভার বদলে পুরো পাথ দিন, তারপর আবার দেখুন চাপুন।',
+  mcpxSkillOutput_mac:
+    "তৈরি ভিডিও ~/Library/Application Support/MoneyPrinterTurbo/storage/tasks-এ সেভ হয়।",
+  mcpxDiag_longPath_mac: "একটি ফাইলের নাম এই Mac-এর সীমার চেয়ে লম্বা হয়ে গেছে। আবার ইনস্টল চাপুন।",
 };

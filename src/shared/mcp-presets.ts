@@ -39,6 +39,8 @@ export interface ConnectorField {
   target: "env" | "header" | "command";
   label: string;
   hint: string;
+  /** The hint for a Mac, when the usual one shows a Windows-style path. */
+  hintMac?: string;
   secret: boolean;
   required: boolean;
   /** "accept": a tick box that writes "true"/"false". */
@@ -102,6 +104,11 @@ export interface ConnectorPreset {
   files?: Record<string, string>;
   /** Imports heavy libraries: Settings suggests shared mode. */
   heavy?: boolean;
+  /**
+   * The systems this connector works on; left out means all of them. Tally's connector is a
+   * Windows program (and TallyPrime itself runs on Windows), so it is offered on Windows only.
+   */
+  platforms?: readonly string[];
   credits: ConnectorCredits;
 }
 
@@ -334,6 +341,8 @@ export const CONNECTOR_PRESETS: readonly ConnectorPreset[] = [
         target: "env",
         label: "Database address",
         hint: "Like postgres://user:password@localhost:5432/shop or sqlite:///C:/data/shop.db. Saved encrypted.",
+        hintMac:
+          "Like postgres://user:password@localhost:5432/shop or sqlite:///Users/you/data/shop.db. Saved encrypted.",
         secret: true,
         required: true,
       },
@@ -540,6 +549,7 @@ export const CONNECTOR_PRESETS: readonly ConnectorPreset[] = [
     summary:
       "Reads the TallyPrime books on this PC: trial balance, ledgers, vouchers, GST registers, outstanding amounts and stock.",
     serverName: "tally",
+    platforms: ["win32"],
     runtime: "program",
     transport: "stdio",
     command: "",
@@ -699,6 +709,24 @@ export const CONNECTOR_PRESETS: readonly ConnectorPreset[] = [
 
 export function connectorPreset(id: string): ConnectorPreset | undefined {
   return CONNECTOR_PRESETS.find((preset) => preset.id === id);
+}
+
+/** Whether a connector works on `platform` ("win32", "darwin" …). Unknown system: yes. */
+export function connectorOnPlatform(
+  preset: ConnectorPreset,
+  platform: string | undefined,
+): boolean {
+  return !preset.platforms || !platform || preset.platforms.includes(platform);
+}
+
+/** The connectors to offer on `platform`: a Mac never sees one that needs a Windows program. */
+export function connectorsFor(platform: string | undefined): readonly ConnectorPreset[] {
+  return CONNECTOR_PRESETS.filter((preset) => connectorOnPlatform(preset, platform));
+}
+
+/** A field's hint, with a Mac-style example on a Mac. */
+export function fieldHint(field: ConnectorField, platform: string | undefined): string {
+  return platform === "darwin" && field.hintMac ? field.hintMac : field.hint;
 }
 
 /** For the Open-source credits view: one line per connector, upstream names kept. */

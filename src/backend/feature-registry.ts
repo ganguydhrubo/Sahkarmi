@@ -386,10 +386,11 @@ export const BUILT_IN_FEATURES: FeatureDefinition[] = [
   feature(
     "mcp-guided-install",
     "MCP servers: install for me",
-    "After you approve a card that lists every download and command, Sahkarmi installs a server (or a command-line tool as a Skill) into its own folder, and can fetch uv, Python 3.11 or Node.js with checked SHA-256 sums. Off: you install programs yourself. Windows only for now.",
+    "After you approve a card that lists every download and command, Sahkarmi installs a server (or a command-line tool as a Skill) into its own folder, and can fetch uv, Python 3.11 or Node.js with checked SHA-256 sums. Off: you install programs yourself. Works on Windows and Mac.",
     "labs",
-    // The downloads it knows are the Windows builds of uv, Python and Node.js.
-    [{ type: "platform", platforms: ["win32"] }],
+    // The downloads it knows are the Windows and Mac (Apple Silicon and Intel) builds of uv,
+    // Python and Node.js. There are none for Linux yet.
+    [{ type: "platform", platforms: ["win32", "darwin"] }],
     true,
     true,
   ),

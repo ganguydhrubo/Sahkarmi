@@ -46,6 +46,12 @@ const EMPTY: Draft = {
   cwd: "",
 };
 
+/** A full folder path as this system writes it (App.tsx puts the platform on the page). */
+const folderExample = () =>
+  document.documentElement.dataset.platform === "darwin"
+    ? "/Users/you/my-server"
+    : "C:\\Users\\you\\my-server";
+
 /** "KEY=value" (env) or "Name: value" (headers) lines → a map. */
 export function parsePairs(text: string, separator: "=" | ":"): Record<string, string> {
   const result: Record<string, string> = {};
@@ -103,7 +109,7 @@ export function McpSettings() {
     }
   }
 
-  // Opening Settings re-reads Windows' PATH, so a just-installed program is found (MCP-3).
+  // Opening Settings re-reads the PATH, so a just-installed program is found (MCP-3).
   onMount(() => {
     void run(async () => setServers(await window.sahkarmi.mcp.recheck()));
     void window.sahkarmi.agent
@@ -367,7 +373,7 @@ export function McpSettings() {
                 <span>{t("mcpxCwd")}</span>
                 <input
                   value={current().cwd}
-                  placeholder="C:\\Users\\you\\my-server"
+                  placeholder={folderExample()}
                   onInput={(event) => edit({ cwd: event.currentTarget.value })}
                 />
               </label>

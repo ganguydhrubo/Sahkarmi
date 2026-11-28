@@ -601,9 +601,14 @@ function summary(server: McpServerConfig, env: NodeJS.ProcessEnv): McpServerSumm
 /**
  * Whether Windows can start `command`: a full path that exists, or a name found on PATH with one
  * of PATHEXT's endings (npx is npx.cmd). The Store's python.exe stub does not count (MCP-9).
+ * On a Mac: a file on PATH (or a full path) that has the "may run" permission.
  */
-export function commandExists(command: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  return lookupCommand(command, env).path !== null;
+export function commandExists(
+  command: string,
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): boolean {
+  return lookupCommand(command, env, platform).path !== null;
 }
 
 function requirements(value: unknown): McpEnvRequirement[] {

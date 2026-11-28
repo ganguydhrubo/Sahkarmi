@@ -81,7 +81,7 @@ class FakeTools extends ToolsManager {
     return "0.9.9";
   }
   override async latestNodeLts() {
-    return { version: "22.1.0", file: "", zip: "", shasums: "" };
+    return { version: "22.1.0", file: "", archive: "", shasums: "" };
   }
 }
 

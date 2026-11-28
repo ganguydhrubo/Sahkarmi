@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { mkdir } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
 /**
@@ -54,6 +55,12 @@ export const shortPath: ShortPath = (path) =>
     );
   });
 
+/**
+ * Where servers are installed. Windows: userData\mcp when plain and short enough, else its 8.3
+ * short form, else <drive>\Sahkarmi-mcp\<user>. Mac: the app's own folder is under
+ * "Application Support" (a space), so servers go to ~/.sahkarmi-mcp; a Mac has no 260-character
+ * limit, so only spaces and non-ASCII letters matter there.
+ */
 export async function installRoot(
   userDataPath: string,
   options: {
@@ -61,23 +68,52 @@ export async function installRoot(
     longPaths?: LongPathsCheck;
     systemDrive?: string;
     username?: string;
+    /** The system to choose for; the real one unless a test says otherwise. */
+    platform?: NodeJS.Platform;
+    /** The owner's home folder (Mac). */
+    home?: string;
   } = {},
 ): Promise<string> {
+  const platform = options.platform ?? process.platform;
+  const preferred = join(userDataPath, "mcp");
+  const user = (name: string | undefined) =>
+    (name ?? "owner").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 12) || "owner";
+  if (platform !== "win32") {
+    const home = options.home ?? homedir();
+    const candidates = [
+      preferred,
+      join(home, ".sahkarmi-mcp"),
+      // A home folder with a space or non-ASCII letters: the Mac's folder every user may write to.
+      ...(platform === "darwin"
+        ? [join("/Users/Shared", "Sahkarmi-mcp", user(options.username ?? process.env.USER))]
+        : []),
+    ];
+    for (const candidate of candidates) {
+      if (!isPlainPath(candidate)) continue;
+      try {
+        await mkdir(candidate, { recursive: true });
+        return candidate;
+      } catch {
+        // Not writable: the next place is tried.
+      }
+    }
+    await mkdir(preferred, { recursive: true });
+    return preferred;
+  }
   const limit = (await (options.longPaths ?? longPathsEnabled)())
     ? MAX_ROOT_LENGTH
     : MAX_ROOT_LENGTH_SHORT_PATHS;
   const fits = (path: string) => isPlainPath(path) && path.length <= limit;
-  const preferred = join(userDataPath, "mcp");
   await mkdir(preferred, { recursive: true });
   if (fits(preferred)) return preferred;
   const short = await (options.shortPath ?? shortPath)(preferred);
   if (short && fits(short)) return short;
   const drive = options.systemDrive ?? process.env.SystemDrive ?? "C:";
-  const user =
-    (options.username ?? process.env.USERNAME ?? "owner")
-      .replace(/[^A-Za-z0-9_-]/g, "")
-      .slice(0, 12) || "owner";
-  const fallback = join(`${drive}\\`, "Sahkarmi-mcp", user);
+  const fallback = join(
+    `${drive}\\`,
+    "Sahkarmi-mcp",
+    user(options.username ?? process.env.USERNAME),
+  );
   await mkdir(fallback, { recursive: true });
   return fallback;
 }
