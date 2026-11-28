@@ -576,7 +576,10 @@ function isPassingProblem(error: unknown): boolean {
     reason.startsWith("GitHub's download server is not answering") ||
     reason === "the connection timed out" ||
     reason === "the connection was interrupted" ||
-    reason.startsWith("GitHub is limiting requests")
+    reason.startsWith("GitHub is limiting requests") ||
+    // A new release shows up before the files for every platform are attached (the Mac files
+    // come some minutes after the Windows ones): a quiet check just tries again later.
+    reason === "the update files were not found"
   );
 }
 

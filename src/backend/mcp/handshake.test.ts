@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { realpathSync } from "node:fs";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -102,7 +103,16 @@ describe("Test server handshake (MCP-2)", () => {
     );
     expect(result.ok).toBe(true);
     const where = result.tools?.find((tool) => tool.name === "where")?.description ?? "";
-    expect(where.toLowerCase()).toContain(`cwd=${root.toLowerCase()}`);
+    // The server reports its real folder. On macOS the temp folder sits behind a link
+    // (/var is /private/var), so the folder as asked for and its real path both count. Letters
+    // like "ü" are compared in one written form, as a Mac disk may store them in the other.
+    const plain = (text: string) => text.toLowerCase().normalize("NFC");
+    const reported = plain(where);
+    const expected = [root, realpathSync(root)].map((folder) => `cwd=${plain(folder)}`);
+    expect(
+      expected.some((entry) => reported.includes(entry)),
+      `${where} should name ${expected.join(" or ")}`,
+    ).toBe(true);
     expect(where).toContain("tag=ok");
   });
 

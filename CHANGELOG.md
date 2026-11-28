@@ -9,6 +9,15 @@ All notable changes to Sahkarmi are documented here. The project follows
 
 ### Added
 
+- **Sahkarmi for Mac** (added to this release on 28 November 2026): one DMG for Apple Silicon
+  (M1 to M4) and one for Intel, macOS 12 or later, and a Homebrew install:
+  `brew install --cask ganguydhrubo/sahkarmi/sahkarmi`. Both are built, installed and opened on
+  real Mac machines before they are published. The Mac app is not notarised by Apple yet, so
+  macOS asks once to allow it (System Settings > Privacy & Security > Open Anyway); Homebrew does
+  that step for you. On a Mac the app finds the tools from your Terminal (Homebrew, npm, uv),
+  uses Command shortcuts and reads free memory the Mac way. Not on Mac yet: coworkers
+  controlling desktop apps, the on-computer voice typing models and the guided MCP install.
+
 - **Suggested next message**: after a coworker answers, the empty message box shows what you may
   want to send next. Press Tab to use it. It appears only when a useful next step is clear, and
   can be switched off in Settings > General.

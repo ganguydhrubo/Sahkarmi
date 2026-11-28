@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CdpSend, pressCdpKey, typeIntoFocus } from "./browser-keys";
+import { type CdpSend, cdpKeyEvent, pressCdpKey, typeIntoFocus } from "./browser-keys";
 
 function recorder(): { send: CdpSend; calls: Array<[string, Record<string, unknown>]> } {
   const calls: Array<[string, Record<string, unknown>]> = [];
@@ -74,13 +74,42 @@ describe("typeIntoFocus", () => {
 describe("pressCdpKey", () => {
   it("sends key combos like Ctrl+V with the modifier set", async () => {
     const { send, calls } = recorder();
-    await pressCdpKey(send, "Control+v");
+    await pressCdpKey(send, "Control+v", "win32");
     expect(calls[0]).toEqual([
       "Input.dispatchKeyEvent",
       expect.objectContaining({ type: "rawKeyDown", code: "KeyV", modifiers: 2 }),
     ]);
     expect(calls[0]?.[1]).not.toHaveProperty("text");
     expect(calls[1]?.[1]).toMatchObject({ type: "keyUp", code: "KeyV", modifiers: 2 });
+  });
+
+  it("on a Mac sends Ctrl+V as Command+V with the paste command", async () => {
+    const { send, calls } = recorder();
+    await pressCdpKey(send, "Ctrl+V", "darwin");
+    expect(calls[0]?.[1]).toMatchObject({
+      type: "rawKeyDown",
+      code: "KeyV",
+      modifiers: 4,
+      commands: ["paste"],
+    });
+    expect(calls[1]?.[1]).toMatchObject({ type: "keyUp", code: "KeyV", modifiers: 4 });
+    expect(calls[1]?.[1]).not.toHaveProperty("commands");
+  });
+
+  it("on a Mac keeps other Ctrl combos and maps CommandOrControl to Command", () => {
+    expect(cdpKeyEvent("Ctrl+a", "darwin")).toMatchObject({
+      modifiers: 4,
+      commands: ["selectAll"],
+    });
+    expect(cdpKeyEvent("Ctrl+Shift+z", "darwin")).toMatchObject({
+      modifiers: 12,
+      commands: ["redo"],
+    });
+    expect(cdpKeyEvent("Ctrl+k", "darwin")).toMatchObject({ modifiers: 2 });
+    expect(cdpKeyEvent("Ctrl+k", "darwin")).not.toHaveProperty("commands");
+    expect(cdpKeyEvent("CommandOrControl+k", "darwin")).toMatchObject({ modifiers: 4 });
+    expect(cdpKeyEvent("CommandOrControl+k", "win32")).toMatchObject({ modifiers: 2 });
+    expect(cdpKeyEvent("Ctrl+a", "win32")).not.toHaveProperty("commands");
   });
 
   it("presses Shift+Tab", async () => {

@@ -67,6 +67,7 @@ import { onCorruptFileRecovered } from "../backend/json-file";
 import type { KnowledgeApi } from "../backend/knowledge/knowledge-api";
 import { KnowledgeHost } from "../backend/knowledge/knowledge-host";
 import { closeLeftoverEngines, SAHKARMI_LAUNCH_MARKERS } from "../backend/leftover-processes";
+import { useTerminalPathOnMac } from "../backend/mac-path";
 import { MailboxStore } from "../backend/mailbox-store";
 import {
   genericApiSpec,
@@ -168,6 +169,7 @@ import {
   type StorageCleanInput,
   type TargetPeriod,
   type UpdateBotInput,
+  type VoiceState,
   type WorkflowDoc,
 } from "../shared/ipc";
 import { MARKETPLACE_SKILLS } from "../shared/marketplace";
@@ -221,6 +223,10 @@ if (!app.isPackaged) {
   );
 }
 app.enableSandbox();
+// Mac: an app opened from the Dock does not get the PATH of the owner's Terminal, so tools from
+// Homebrew, npm or uv would be "not found". The usual folders are added at once, the rest of the
+// Terminal PATH within a few seconds (before a coworker can start work).
+void useTerminalPathOnMac();
 // Development runs get their own ID: sharing it made Windows show the Electron logo for the
 // installed app in the taskbar.
 if (process.platform === "win32")
@@ -2004,6 +2010,16 @@ const SECRET_STORE_FILE = "secrets.enc.json";
 let voiceService: VoiceService | null = null;
 let desktopHost: DesktopHost | null = null;
 
+/**
+ * The on-computer voice models run through a Windows-only engine. On a Mac (and Linux) none is
+ * offered, so nothing large is downloaded that could never start; voice notes still record.
+ */
+const VOICE_MODELS_WORK_HERE = process.platform === "win32";
+
+function voiceStateForThisComputer(state: VoiceState): VoiceState {
+  return VOICE_MODELS_WORK_HERE ? state : { ...state, models: [] };
+}
+
 /** Two minutes of 16 kHz audio is the longest clip one dictation request may carry. */
 const MAX_DICTATION_SAMPLES = 16_000 * 120;
 
@@ -2015,8 +2031,13 @@ function registerVoiceHandlers(voice: VoiceService, ready: Promise<unknown>): vo
     }
     return value;
   };
-  handleTrusted(IPC_CHANNELS.voiceGetState, () => voice.getState());
-  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => voice.install(modelId(value)));
+  handleTrusted(IPC_CHANNELS.voiceGetState, () => voiceStateForThisComputer(voice.getState()));
+  handleTrusted(IPC_CHANNELS.voiceInstall, (value: unknown) => {
+    if (!VOICE_MODELS_WORK_HERE) {
+      throw new Error("Voice typing models work on Windows only for now. Voice notes work here.");
+    }
+    return voice.install(modelId(value));
+  });
   handleTrusted(IPC_CHANNELS.voiceCancel, (value: unknown) => voice.cancel(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceRemove, (value: unknown) => voice.remove(modelId(value)));
   handleTrusted(IPC_CHANNELS.voiceSetSettings, (value: unknown) => {
@@ -2730,7 +2751,8 @@ if (!hasSingleInstanceLock) {
           shell.openExternal(
             process.platform === "win32"
               ? `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v${version}/Sahkarmi-${version}-x64.exe`
-              : `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v${version}/Sahkarmi-${version}-arm64.dmg`,
+              : // Apple Silicon and Intel Macs each have their own DMG.
+                `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v${version}/Sahkarmi-${version}-${process.arch === "x64" ? "x64" : "arm64"}.dmg`,
           ),
       });
       service.on("event", forwardAgentEvent);
@@ -2846,7 +2868,7 @@ if (!hasSingleInstanceLock) {
       );
       voiceService.on("state", (state) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, state);
+          mainWindow.webContents.send(IPC_CHANNELS.voiceEvent, voiceStateForThisComputer(state));
         }
       });
       registerVoiceHandlers(voiceService, voiceReady);
@@ -3030,14 +3052,17 @@ if (!hasSingleInstanceLock) {
           unshare: (port) => unshareTailscale(port),
         },
         // The Store copy is started by Windows' own startup list, which the owner manages there.
-        setStartWithWindows: process.windowsStore
-          ? null
-          : (enabled) =>
-              app.setLoginItemSettings({
-                openAtLogin: enabled,
-                path: process.execPath,
-                args: enabled ? ["--background"] : [],
-              }),
+        // The switch means "start hidden in the tray", and only Windows has that tray; on a Mac
+        // the owner uses System Settings > General > Login Items.
+        setStartWithWindows:
+          process.windowsStore || process.platform !== "win32"
+            ? null
+            : (enabled) =>
+                app.setLoginItemSettings({
+                  openAtLogin: enabled,
+                  path: process.execPath,
+                  args: enabled ? ["--background"] : [],
+                }),
         log: (level, message, detail) => appLog.write(level, message, detail),
       });
       hostServer = host;

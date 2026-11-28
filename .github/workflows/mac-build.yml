@@ -1,0 +1,292 @@
+name: macOS build
+
+# Builds Sahkarmi for Mac (Apple Silicon and Intel), installs each DMG on real Mac machines the
+# way an owner does, and only then attaches the files to a GitHub release.
+#
+# - A push to a feat/mac-* branch builds and tests, and publishes nothing.
+# - "Run workflow" with a release tag (for example v0.37.0) also attaches the tested files to
+#   that release and refreshes the website download links.
+# - release.yml starts this by itself after every Windows release.
+
+on:
+  push:
+    branches: ["feat/mac-**"]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Attach the tested files to this release (for example v0.37.0). Empty = build and test only."
+        required: false
+        default: ""
+      ref:
+        description: "Branch, tag or commit to build. Empty = the release tag, or the branch this runs on."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-build-${{ github.ref }}-${{ inputs.release_tag }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag }}
+  BUILD_REF: ${{ inputs.ref || inputs.release_tag || github.sha }}
+
+jobs:
+  checks:
+    name: Checks on ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Apple Silicon
+            os: macos-15
+          - label: Intel
+            os: macos-15-intel
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BUILD_REF }}
+
+      # Knowledge Bases use node:sqlite, which vitest needs from the runner's Node (24 LTS).
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "Install attempt $attempt failed; trying again in 60 s."
+            sleep 60
+          done
+          exit 1
+
+      - name: Lint and typecheck
+        run: bun run lint && bun run typecheck
+
+      - name: Tests
+        run: bun run test
+
+  build:
+    name: Build ${{ matrix.label }} DMG
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            label: Apple Silicon
+            os: macos-15
+            app_dir: dist/mac-arm64
+          - arch: x64
+            label: Intel
+            os: macos-15-intel
+            app_dir: dist/mac
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BUILD_REF }}
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "Install attempt $attempt failed; trying again in 60 s."
+            sleep 60
+          done
+          exit 1
+
+      - name: Require the version to match the release tag
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        run: |
+          package_version="$(bun -p 'require("./package.json").version')"
+          if [[ "v$package_version" != "$RELEASE_TAG" ]]; then
+            echo "package.json says $package_version but the release is $RELEASE_TAG." >&2
+            exit 1
+          fi
+
+      - name: Build the app
+        run: bun run build && bun run fetch:opencode
+
+      # No Apple Developer ID yet: the app is ad-hoc signed (see electron-builder.mac-unsigned.yml).
+      # hdiutil sometimes answers "Resource busy" on these machines, so the DMG step may retry.
+      - name: Make the DMG and ZIP
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          for attempt in 1 2 3; do
+            if ./node_modules/.bin/electron-builder --mac --${{ matrix.arch }} \
+              --config electron-builder.mac-unsigned.yml --publish never; then
+              exit 0
+            fi
+            echo "Packaging attempt $attempt failed; trying again in 20 s."
+            sleep 20
+          done
+          exit 1
+
+      - name: Verify the app (name, version, chip, bundled AI, fuses, launch)
+        run: bun scripts/verify-macos-package.ts "${{ matrix.app_dir }}/Sahkarmi.app" ${{ matrix.arch }}
+
+      - name: Verify the signature
+        shell: bash
+        run: |
+          codesign --verify --deep --strict --verbose=2 "${{ matrix.app_dir }}/Sahkarmi.app"
+          codesign -dv --verbose=2 "${{ matrix.app_dir }}/Sahkarmi.app"
+
+      - name: List and checksum the files
+        shell: bash
+        run: |
+          cd dist
+          ls -la
+          shopt -s nullglob
+          dmgs=(*.dmg)
+          zips=(*.zip)
+          if (( ${#dmgs[@]} != 1 || ${#zips[@]} != 1 )); then
+            echo "Expected one DMG and one ZIP." >&2
+            exit 1
+          fi
+          shasum -a 256 "${dmgs[@]}" "${zips[@]}" | tee "SHA256SUMS-macos-${{ matrix.arch }}.txt"
+
+      - name: Keep the files for the test machines
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/SHA256SUMS-macos-${{ matrix.arch }}.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  install-test:
+    name: Install and use on ${{ matrix.os }} (${{ matrix.arch }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-26
+            arch: arm64
+          - os: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - name: Check out the test scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BUILD_REF }}
+          sparse-checkout: scripts/mac
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Get the DMG
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: macos-${{ matrix.arch }}
+          path: download
+
+      - name: Install from the DMG, open, use, close, open again
+        shell: bash
+        run: bash scripts/mac/install-test.sh download/*.dmg ${{ matrix.arch }} mac-test-output
+
+      - name: Keep the pictures and the log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mac-test-${{ matrix.os }}-${{ matrix.arch }}
+          path: mac-test-output
+          if-no-files-found: warn
+          retention-days: 14
+
+  publish:
+    name: Attach the Mac files to the release
+    needs: [checks, build, install-test]
+    if: ${{ inputs.release_tag != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.BUILD_REF }}
+          sparse-checkout: scripts/mac
+
+      - name: Get the Apple Silicon files
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: macos-arm64
+          path: mac
+
+      - name: Get the Intel files
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: macos-x64
+          path: mac
+
+      - name: Write the update list and the checksums
+        shell: bash
+        run: |
+          version="${RELEASE_TAG#v}"
+          node scripts/mac/latest-mac.mjs "$version" mac
+          cat mac/SHA256SUMS-macos-arm64.txt mac/SHA256SUMS-macos-x64.txt > mac/SHA256SUMS-macos.txt
+          rm mac/SHA256SUMS-macos-arm64.txt mac/SHA256SUMS-macos-x64.txt
+          (cd mac && shasum -a 256 -c SHA256SUMS-macos.txt)
+          # The combined list on the release gets the Mac lines too (old Mac lines are replaced).
+          if gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern SHA256SUMS.txt --dir existing; then
+            grep -v -E '\.(dmg|zip)$' existing/SHA256SUMS.txt > mac/SHA256SUMS.txt || true
+          fi
+          cat mac/SHA256SUMS-macos.txt >> mac/SHA256SUMS.txt
+          ls -la mac
+          cat mac/SHA256SUMS.txt
+
+      - name: Attach to the release
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" mac/* --clobber --repo "$GITHUB_REPOSITORY"
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[] | "\(.name)  \(.size)"'
+
+      # The website bakes direct download links in at deploy time; redeploy it so the Mac
+      # buttons point at these files.
+      - name: Refresh website download links
+        continue-on-error: true
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main -f "release_tag=$RELEASE_TAG"

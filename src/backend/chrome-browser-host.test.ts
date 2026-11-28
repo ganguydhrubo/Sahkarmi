@@ -107,7 +107,7 @@ describe("cdpKeyEvent", () => {
   it("maps characters and shortcuts", () => {
     expect(cdpKeyEvent("a")).toMatchObject({ key: "a", code: "KeyA", text: "a" });
     expect(cdpKeyEvent("7")).toMatchObject({ code: "Digit7", text: "7" });
-    const selectAll = cdpKeyEvent("Ctrl+a");
+    const selectAll = cdpKeyEvent("Ctrl+a", "win32");
     expect(selectAll).toMatchObject({ code: "KeyA", modifiers: 2 });
     expect(selectAll.text).toBeUndefined();
   });

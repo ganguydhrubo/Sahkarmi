@@ -907,8 +907,8 @@ describe.sequential("Gemini start-up, accounts and idle sleep", { timeout: 30_00
     // wake it once more before this check, so count from the moment it is really asleep.
     await waitFor(
       async () =>
-        (await antigravityEntries("stdin-closed")) >= 1 &&
-        (await antigravityEntries("stdin-closed")) === (await antigravityEntries("started")),
+        (await antigravityEntries("stopped")) >= 1 &&
+        (await antigravityEntries("stopped")) === (await antigravityEntries("started")),
     );
     const startedWhileAsleep = await antigravityEntries("started");
     // Asleep: the chat still reads from Sahkarmi's own transcript, and opening it wakes Gemini.
@@ -936,8 +936,8 @@ describe.sequential("Gemini start-up, accounts and idle sleep", { timeout: 30_00
     await service.updateBot({ botId: "meera-support", model: "opencode-free" });
     await waitFor(
       async () =>
-        (await antigravityEntries("stdin-closed")) >= 1 &&
-        (await antigravityEntries("stdin-closed")) === (await antigravityEntries("started")),
+        (await antigravityEntries("stopped")) >= 1 &&
+        (await antigravityEntries("stopped")) === (await antigravityEntries("started")),
     );
     const asleep = await antigravityEntries("started");
     service.wakeIdleProviders();
@@ -1101,8 +1101,15 @@ const cwdBySession = {};
 const serversBySession = {};
 let lastCwd = null;
 const agent = process.env.ANTIGRAVITY_HARNESS_PATH ? "antigravity" : "opencode";
+// "stopped" is written once when Sahkarmi stops this server. Windows closes stdin and then ends
+// the process tree (that cannot be caught). macOS and Linux send SIGTERM in the same moment, which
+// ends a Node program before it reads the closed stdin, so the signal is noted too. Set up before
+// "started" is written, so every "started" gets its "stopped".
+let stopNoted = false;
+const noteStopped = () => { if (stopNoted) return; stopNoted = true; log({ method: "stopped", agent }); };
+process.stdin.on("end", noteStopped);
+process.once("SIGTERM", () => { noteStopped(); process.kill(process.pid, "SIGTERM"); });
 log({ method: "started", agent, geminiHome: process.env.GEMINI_HOME || null, at: Date.now() });
-process.stdin.on("end", () => log({ method: "stdin-closed", agent }));
 const update = (sessionId, update) => write({ method: "session/update", params: { sessionId, update } });
 async function mcpCall(method, params) {
   const response = await fetch(mcp.url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: nextId++, method, params }) });

@@ -17,7 +17,7 @@ concurrency:
 jobs:
   check:
     name: Check
-    runs-on: macos-14
+    runs-on: macos-15
     # Windows only for now. Set the repository variable RELEASE_ALL_PLATFORMS=true to check
     # macOS again (same switch as the release workflow).
     if: ${{ vars.RELEASE_ALL_PLATFORMS == 'true' }}

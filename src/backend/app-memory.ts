@@ -67,6 +67,38 @@ export const windowsProcessDetailLister: ProcessLister = () =>
     );
   });
 
+/** Mac and Linux: every process from one `ps` call (memory in KB, then the program's path). */
+export const posixProcessLister: ProcessLister = () =>
+  new Promise((resolve) => {
+    execFile(
+      "/bin/ps",
+      ["-axo", "pid=,ppid=,rss=,comm="],
+      { timeout: 15_000, maxBuffer: 4 * MB },
+      (error, stdout) => {
+        if (error) return resolve([]);
+        resolve(posixProcessRows(String(stdout)));
+      },
+    );
+  });
+
+export function posixProcessRows(text: string): ProcessRow[] {
+  const rows: ProcessRow[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.+?)\s*$/.exec(line);
+    if (!match) continue;
+    const name = (match[4] ?? "").split("/").pop() ?? "";
+    if (name) {
+      rows.push({
+        pid: Number(match[1]),
+        ppid: Number(match[2]),
+        name,
+        bytes: Number(match[3]) * 1024,
+      });
+    }
+  }
+  return rows;
+}
+
 export function parseProcessRows(text: string): ProcessRow[] {
   const rows: ProcessRow[] = [];
   for (const line of text.split(/\r?\n/)) {
@@ -264,8 +296,12 @@ export class AppMemoryMonitor {
 
   constructor(options: AppMemoryOptions) {
     this.#rootPid = options.rootPid;
-    this.#lister = options.lister ?? windowsProcessLister;
-    this.#detailLister = options.detailLister ?? options.lister ?? windowsProcessDetailLister;
+    const windows = process.platform === "win32";
+    this.#lister = options.lister ?? (windows ? windowsProcessLister : posixProcessLister);
+    this.#detailLister =
+      options.detailLister ??
+      options.lister ??
+      (windows ? windowsProcessDetailLister : posixProcessLister);
     this.#now = options.now ?? Date.now;
     this.#cores = options.cores ?? safeCores();
   }

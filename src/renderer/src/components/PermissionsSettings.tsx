@@ -107,7 +107,13 @@ export function PermissionsSettings(props: { bots: BotProfile[] }) {
                 </tr>
               </thead>
               <tbody>
-                <For each={PERMISSION_CATEGORIES}>
+                <For
+                  each={PERMISSION_CATEGORIES.filter((category) => {
+                    // Coworkers control desktop apps on Windows only, so a Mac has no such row.
+                    const platform = document.documentElement.dataset.platform;
+                    return category !== "desktop_control" || !platform || platform === "win32";
+                  })}
+                >
                   {(category) => (
                     <tr>
                       <th scope="row">

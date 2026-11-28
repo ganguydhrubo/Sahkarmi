@@ -397,7 +397,11 @@ export function App() {
     void Promise.all([
       window.sahkarmi
         .getAppInfo()
-        .then(setAppInfo)
+        .then((info) => {
+          // The styles leave room for the Mac window buttons when they know the platform.
+          document.documentElement.dataset.platform = info.platform;
+          setAppInfo(info);
+        })
         .catch(() => setAppInfo({ name: "Sahkarmi", version: "unavailable", platform: "darwin" })),
       window.sahkarmi.agent
         .getStatus()

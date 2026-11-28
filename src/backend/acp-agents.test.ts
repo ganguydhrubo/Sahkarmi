@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -37,7 +37,8 @@ async function fakeAgent(root: string, signedIn: boolean): Promise<string> {
   const script = join(root, "agent.js");
   await writeFile(
     script,
-    `const write = (m) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", ...m }) + "\\n");
+    `#!/usr/bin/env node
+const write = (m) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", ...m }) + "\\n");
 let buffer = "";
 process.stdin.on("data", (chunk) => {
   buffer += chunk;
@@ -57,7 +58,11 @@ process.stdin.on("data", (chunk) => {
 });
 `,
   );
-  if (process.platform !== "win32") return script;
+  if (process.platform !== "win32") {
+    // macOS and Linux start the script itself, so it needs the first line above and this mark.
+    await chmod(script, 0o755);
+    return script;
+  }
   const cmd = join(root, "agent.cmd");
   await writeFile(cmd, `@node "%~dp0agent.js" %*\r\n`);
   return cmd;

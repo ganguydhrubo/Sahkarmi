@@ -2,7 +2,7 @@
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   acpMcpServers,
@@ -18,6 +18,9 @@ import {
 } from "./mcp-servers";
 
 let root: string | null = null;
+
+/** A server folder written as a full path on the system the tests run on. */
+const SRV = process.platform === "win32" ? "C:\\srv" : "/srv";
 
 afterEach(async () => {
   if (root) await rm(root, { recursive: true, force: true });
@@ -215,15 +218,19 @@ describe("McpServerStore with test-first and per-coworker servers", () => {
     await expect(
       mcp.save({ name: "py", transport: "stdio", command: "python", cwd: "relative" }),
     ).rejects.toThrow(/full path/);
+    // The example in the message is a path of this system, not always a Windows one.
+    await expect(
+      mcp.save({ name: "py", transport: "stdio", command: "python", cwd: "relative" }),
+    ).rejects.toThrow(process.platform === "win32" ? "C:\\Users\\you" : "/Users/you");
     const [saved] = await mcp.save({
       name: "py",
       transport: "stdio",
       command: "python",
       args: ["server.py"],
-      cwd: "C:\\srv",
+      cwd: SRV,
     });
-    expect(saved?.cwd).toBe("C:\\srv");
-    expect(mcp.enabled()[0]?.cwd).toBe("C:\\srv");
+    expect(saved?.cwd).toBe(SRV);
+    expect(mcp.enabled()[0]?.cwd).toBe(SRV);
   });
 });
 
@@ -307,33 +314,38 @@ describe("cwd per runtime (MCP-4)", () => {
     env: {},
     url: "",
     headers: {},
-    cwd: "C:\\srv",
+    cwd: SRV,
   };
 
   it("passes cwd to Codex and makes paths absolute for Claude and ACP", () => {
-    expect(codexMcpConfig([python])).toMatchObject({ mcp_servers: { py: { cwd: "C:\\srv" } } });
+    expect(codexMcpConfig([python])).toMatchObject({ mcp_servers: { py: { cwd: SRV } } });
     expect(claudeMcpServers([python]).py).toMatchObject({
-      args: [join("C:\\srv", "server.py")],
+      args: [join(SRV, "server.py")],
     });
     expect(claudeMcpServers([python]).py).not.toHaveProperty("cwd");
     expect(acpMcpServers([python], false)).toEqual([
-      expect.objectContaining({ args: [join("C:\\srv", "server.py")] }),
+      expect.objectContaining({ args: [join(SRV, "server.py")] }),
     ]);
   });
 
   it("gives uv a --directory and python -m a PYTHONPATH", () => {
     expect(withoutCwd({ ...python, command: "uv", args: ["run", "weather"] }).args).toEqual([
       "--directory",
-      "C:\\srv",
+      SRV,
       "run",
       "weather",
     ]);
-    expect(withoutCwd({ ...python, args: ["-m", "my_server"] }).env.PYTHONPATH).toBe("C:\\srv");
+    expect(withoutCwd({ ...python, args: ["-m", "my_server"] }).env.PYTHONPATH).toBe(SRV);
+    // A PYTHONPATH the server already had stays, split the way this system splits folders.
+    expect(
+      withoutCwd({ ...python, args: ["-m", "my_server"], env: { PYTHONPATH: "libs" } }).env
+        .PYTHONPATH,
+    ).toBe(`${SRV}${delimiter}libs`);
   });
 
   it("carries cwd and first-run through thread params", () => {
     expect(
       readCustomMcpServers({ customMcpServers: [{ ...python, firstRun: true }] })[0],
-    ).toMatchObject({ cwd: "C:\\srv", firstRun: true });
+    ).toMatchObject({ cwd: SRV, firstRun: true });
   });
 });

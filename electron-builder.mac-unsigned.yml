@@ -1,0 +1,13 @@
+# macOS build without an Apple Developer ID.
+#
+# The app is "ad-hoc" signed: every program inside carries a valid signature (Apple Silicon Macs
+# refuse to start a program that has none), but Apple has not checked it (not notarised). macOS
+# then asks the owner once to allow it (System Settings > Privacy & Security > Open Anyway).
+#
+# The hardened runtime is off on purpose: with an ad-hoc signature it stops the app from loading
+# its own Electron framework ("no Team ID"). The signed build (electron-builder.yml) keeps it on.
+extends: ./electron-builder.yml
+mac:
+  identity: "-"
+  notarize: false
+  hardenedRuntime: false
