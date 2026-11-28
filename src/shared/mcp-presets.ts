@@ -82,7 +82,10 @@ export interface ConnectorPreset {
   runtime: "node" | "python" | "remote" | "program";
   transport: "stdio" | "http";
   command: string;
-  /** `@@SHARED@@` = the Shared folder, `@@CONNECTOR_DIR@@` = this connector's own folder. */
+  /**
+   * `@@SHARED@@` = the Shared folder, `@@CONNECTOR_DIR@@` = this connector's own folder. A file
+   * inside it is written `@@CONNECTOR_DIR@@/name`; the right separator is put in when it is filled.
+   */
   args: string[];
   env: Record<string, string>;
   url: string;
@@ -318,7 +321,7 @@ export const CONNECTOR_PRESETS: readonly ConnectorPreset[] = [
       "--transport",
       "stdio",
       "--config",
-      "@@CONNECTOR_DIR@@\\connection.toml",
+      "@@CONNECTOR_DIR@@/connection.toml",
     ],
     env: {},
     url: "",
@@ -506,7 +509,7 @@ export const CONNECTOR_PRESETS: readonly ConnectorPreset[] = [
       "git+https://github.com/rehan1020/MCP-India-Stack@b1c5fd576b97a4a653201a2e0b2548922f541bb5",
       "mcp-india-stack",
     ],
-    env: { MCP_INDIA_STACK_CACHE_DIR: "@@CONNECTOR_DIR@@\\cache" },
+    env: { MCP_INDIA_STACK_CACHE_DIR: "@@CONNECTOR_DIR@@/cache" },
     url: "",
     headers: {},
     requirements: ["uv", "git"],

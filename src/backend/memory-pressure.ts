@@ -1,4 +1,5 @@
 import { freemem, totalmem } from "node:os";
+import { macAvailableMemory } from "./mac-memory";
 
 /**
  * How much physical memory the PC has free right now, and whether it is running short.
@@ -34,7 +35,11 @@ export interface MemoryBudget {
 }
 
 const MB = 1024 * 1024;
-const systemProbe: MemoryProbe = { free: freemem, total: totalmem };
+// A Mac keeps spare memory as cache, so its "free" number is read another way (mac-memory.ts).
+const systemProbe: MemoryProbe = {
+  free: process.platform === "darwin" ? () => macAvailableMemory() : freemem,
+  total: totalmem,
+};
 let probe: MemoryProbe = systemProbe;
 let budget: () => MemoryBudget | null = () => null;
 

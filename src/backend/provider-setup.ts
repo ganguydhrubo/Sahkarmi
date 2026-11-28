@@ -1,9 +1,9 @@
 import { type ChildProcess, execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, mkdtempSync, writeFileSync } from "node:fs";
 import { cp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -359,7 +359,7 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
       executable = await findAcpAgentExecutable(spec);
       if (!executable) {
         throw new Error(
-          `${label} was installed, but Windows cannot find it yet. Restart Sahkarmi, then click Connect.`,
+          `${label} was installed, but ${process.platform === "win32" ? "Windows" : "this computer"} cannot find it yet. Restart Sahkarmi, then click Connect.`,
         );
       }
     }
@@ -381,6 +381,15 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
   /** npm for tools published there, otherwise the vendor's own PowerShell installer. */
   async #installAcpAgent(id: AcpAgentProviderId, install: NonNullable<AcpAgentSpec["install"]>) {
     const label = PROVIDER_LABELS[id];
+    // The installers below are the Windows ones. On a Mac the owner installs the program in
+    // Terminal (a global npm install often needs their password, which Sahkarmi never asks for).
+    if (process.platform !== "win32") {
+      throw new Error(
+        install.kind === "npm"
+          ? `${label} is not installed yet. Open Terminal and run:  npm install --global ${install.pkg}  Then click Connect again.`
+          : `${label} is not installed yet. Install it from ${install.site}, then click Connect again.`,
+      );
+    }
     const source = install.kind === "npm" ? `npm (${install.pkg})` : install.site;
     this.#set(id, {
       phase: "installing",
@@ -456,11 +465,13 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
             windowsVerbatimArguments: true,
             env: envForProvider(id, process.env),
           })
-        : spawnImpl(executable, signIn.args, {
-            detached: true,
-            stdio: "ignore",
-            env: envForProvider(id, process.env),
-          });
+        : process.platform === "darwin"
+          ? this.#openMacTerminal(id, executable, signIn.args)
+          : spawnImpl(executable, signIn.args, {
+              detached: true,
+              stdio: "ignore",
+              env: envForProvider(id, process.env),
+            });
     this.#logins.set(id, child);
     this.#set(id, { phase: "terminal", message: signIn.tip, url: null, progress: null });
     child.on("exit", () => {
@@ -468,6 +479,37 @@ export class ProviderSetup extends EventEmitter<ProviderSetupEvents> {
       void this.check(id);
     });
     child.on("error", (error) => this.#set(id, { phase: "failed", message: messageOf(error) }));
+  }
+
+  /**
+   * Mac: a program started by an app has no window of its own, so the sign-in runs in Terminal.
+   * A small script file starts it there and leaves a mark when it ends; the returned process
+   * waits for that mark (15 minutes at most), so "exit" still means the owner has finished.
+   */
+  #openMacTerminal(id: AcpAgentProviderId, executable: string, args: string[]): ChildProcess {
+    const spawnImpl = this.#options.spawnImpl ?? spawn;
+    // Shell quoting: wrap in single quotes; a single quote inside becomes '\'' .
+    const quote = (part: string) => `'${part.split("'").join("'\\''")}'`;
+    const folder = mkdtempSync(join(tmpdir(), "sahkarmi-sign-in-"));
+    const script = join(folder, "sign-in.command");
+    const done = join(folder, "done");
+    const lines = [
+      "#!/bin/zsh -l",
+      [executable, ...args].map(quote).join(" "),
+      `touch ${quote(done)}`,
+      "",
+    ];
+    writeFileSync(script, lines.join("\n"), { mode: 0o755 });
+    return spawnImpl(
+      "/bin/sh",
+      [
+        "-c",
+        'open -a Terminal "$0"; n=0; while [ ! -f "$1" ] && [ $n -lt 450 ]; do sleep 2; n=$((n+1)); done',
+        script,
+        done,
+      ],
+      { detached: true, stdio: "ignore", env: envForProvider(id, process.env) },
+    );
   }
 
   async #codexExecutable(): Promise<string> {

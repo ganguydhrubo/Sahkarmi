@@ -20,6 +20,8 @@ import {
   withFreshPath,
 } from "./windows-env";
 
+const WINDOWS = process.platform === "win32";
+
 const folders: string[] = [];
 afterEach(async () => {
   resetFreshPathForTests();
@@ -92,24 +94,29 @@ describe("fresh Windows PATH (MCP-3)", () => {
     expect(expandWindowsVariables("%missing%\\a", {})).toBe("%missing%\\a");
   });
 
-  it("finds a program installed after start once the registry is re-read", async () => {
-    const before = await temp();
-    const installed = await temp();
-    await writeFile(join(installed, "uv.exe"), "");
-    const original = process.env.PATH;
-    process.env.PATH = before;
-    try {
-      await refreshFreshPath(async () => ({ machine: "", user: "" }));
-      expect(lookupCommand("uv", { PATH: freshPath(), PATHEXT: ".EXE" }).path).toBeNull();
-      // The installer added its folder to the user Path in the registry.
-      await refreshFreshPath(async () => ({ machine: "", user: installed }));
-      expect(lookupCommand("uv", { PATH: freshPath(), PATHEXT: ".EXE" }).path).toBe(
-        join(installed, "uv.exe"),
-      );
-    } finally {
-      process.env.PATH = original;
-    }
-  });
+  // Windows only: the Path comes from the registry, its folders are split by ";" and programs
+  // end in .exe. On macOS there is no registry to re-read and the PATH is left as it is.
+  it.runIf(WINDOWS)(
+    "finds a program installed after start once the registry is re-read",
+    async () => {
+      const before = await temp();
+      const installed = await temp();
+      await writeFile(join(installed, "uv.exe"), "");
+      const original = process.env.PATH;
+      process.env.PATH = before;
+      try {
+        await refreshFreshPath(async () => ({ machine: "", user: "" }));
+        expect(lookupCommand("uv", { PATH: freshPath(), PATHEXT: ".EXE" }).path).toBeNull();
+        // The installer added its folder to the user Path in the registry.
+        await refreshFreshPath(async () => ({ machine: "", user: installed }));
+        expect(lookupCommand("uv", { PATH: freshPath(), PATHEXT: ".EXE" }).path).toBe(
+          join(installed, "uv.exe"),
+        );
+      } finally {
+        process.env.PATH = original;
+      }
+    },
+  );
 
   it("gives Antigravity and OpenCode the fresh PATH under one key", async () => {
     await refreshFreshPath(async () => ({ machine: "C:\\Machine", user: "C:\\Installed\\uv" }));
@@ -153,7 +160,8 @@ describe("fresh Windows PATH (MCP-3)", () => {
 });
 
 describe("Store python stub (MCP-9)", () => {
-  it("skips WindowsApps python.exe unless a Store Python is installed", async () => {
+  // Windows only: the Microsoft Store python.exe does not exist on macOS.
+  it.runIf(WINDOWS)("skips WindowsApps python.exe unless a Store Python is installed", async () => {
     const local = await temp();
     const apps = join(local, "Microsoft", "WindowsApps");
     const real = await temp();
@@ -176,14 +184,20 @@ describe("Store python stub (MCP-9)", () => {
 
 describe("arg path checks and per-case problems (MCP-5, MCP-6)", () => {
   it("finds --directory folders and script files", () => {
-    expect(argumentPaths(["--directory", "C:\\srv", "run", "main.py"])).toEqual({
-      folders: ["C:\\srv"],
-      files: [join("C:\\srv", "main.py")],
+    // Full paths of the system the tests run on: a script is only looked up inside a full path.
+    const srv = WINDOWS ? "C:\\srv" : "/srv";
+    const app = WINDOWS ? "C:\\app" : "/app";
+    expect(argumentPaths(["--directory", srv, "run", "main.py"])).toEqual({
+      folders: [srv],
+      files: [join(srv, "main.py")],
     });
-    expect(argumentPaths(["dist/index.js"], "C:\\app").files).toEqual([
-      join("C:\\app", "dist/index.js"),
-    ]);
+    expect(argumentPaths(["dist/index.js"], app).files).toEqual([join(app, "dist/index.js")]);
     expect(argumentPaths(["-y", "@scope/pkg"]).files).toEqual([]);
+    // A folder that is not a full path is listed, but no script is looked up inside it.
+    expect(argumentPaths(["--directory", "srv", "run", "main.py"])).toEqual({
+      folders: ["srv"],
+      files: [],
+    });
   });
 
   it("reports the MoneyPrinterTurbo template as a template, not as a missing uv", () => {

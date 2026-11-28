@@ -46,9 +46,16 @@ export function connectorFolder(preset: ConnectorPreset, context: ConnectorConte
 }
 
 function fill(text: string, preset: ConnectorPreset, context: ConnectorContext): string {
-  return text
-    .replaceAll("@@SHARED@@", context.sharedRoot)
-    .replaceAll("@@CONNECTOR_DIR@@", connectorFolder(preset, context));
+  const folder = connectorFolder(preset, context);
+  return (
+    text
+      .replaceAll("@@SHARED@@", context.sharedRoot)
+      // "@@CONNECTOR_DIR@@/name" is a file or folder inside the connector's folder. It is joined
+      // here, so the path uses "\" on Windows and "/" on macOS (a fixed "\" broke it on a Mac).
+      .replace(/@@CONNECTOR_DIR@@(?:[\\/]([A-Za-z0-9_.-]+))?/g, (_whole, name?: string) =>
+        name ? join(folder, name) : folder,
+      )
+  );
 }
 
 /**

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { isAbsolute, join } from "node:path";
+import { delimiter, isAbsolute, join } from "node:path";
 import type {
   McpConnectorCheck,
   McpEnvRequirement,
@@ -634,6 +634,10 @@ function sameLaunch(a: McpServerConfig, b: McpServerConfig): boolean {
   );
 }
 
+/** A full folder path as this system writes it, shown when the owner typed a short one. */
+const FULL_PATH_EXAMPLE =
+  process.platform === "win32" ? "C:\\Users\\you\\my-server" : "/Users/you/my-server";
+
 function normalizeServer(
   input: McpServerInput,
   previous: McpServerConfig | undefined,
@@ -663,7 +667,7 @@ function normalizeServer(
   }
   const cwd = transport === "stdio" ? String(input.cwd ?? "").trim() : "";
   if (cwd && !isAbsolute(cwd) && placeholderHits({ cwd }).length === 0) {
-    throw new Error("Folder: use the full path, like C:\\Users\\you\\my-server.");
+    throw new Error(`Folder: use the full path, like ${FULL_PATH_EXAMPLE}.`);
   }
   const next: McpServerConfig = {
     id: previous?.id ?? randomUUID(),
@@ -812,7 +816,8 @@ export function withoutCwd(server: McpServerWire): McpServerWire {
     args.unshift("--directory", cwd);
   }
   if (PYTHON.test(server.command) && server.args.includes("-m")) {
-    env.PYTHONPATH = env.PYTHONPATH ? `${cwd};${env.PYTHONPATH}` : cwd;
+    // Folders in PYTHONPATH are split by ";" on Windows and ":" on macOS and Linux.
+    env.PYTHONPATH = env.PYTHONPATH ? `${cwd}${delimiter}${env.PYTHONPATH}` : cwd;
   }
   return { ...server, args, env };
 }

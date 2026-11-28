@@ -421,5 +421,16 @@ export function t(key: MessageKey, values: Record<string, string> = {}): string 
   const dict = packs()[code];
   if (!dict) void loadLanguage(code);
   const template = dict?.[key] ?? en[key] ?? "";
-  return template.replace(/\{(\w+)\}/g, (_match, name: string) => values[name] ?? "");
+  const text = template.replace(/\{(\w+)\}/g, (_match, name: string) => values[name] ?? "");
+  return typeof document !== "undefined" && document.documentElement.dataset.platform === "darwin"
+    ? macWording(text)
+    : text;
+}
+
+/**
+ * The words were written for Windows. On a Mac "this PC" reads "this Mac" and the shortcuts
+ * show the Command key (the app takes Command wherever it takes Ctrl).
+ */
+export function macWording(text: string): string {
+  return text.replace(/\bCtrl\s?\+\s?/g, "⌘").replace(/\bPC\b/g, "Mac");
 }

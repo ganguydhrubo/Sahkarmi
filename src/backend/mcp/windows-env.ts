@@ -89,14 +89,15 @@ export function mergePathLists(...lists: string[]): string {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const list of lists) {
-    for (const directory of list.split(";")) {
+    // ";" on Windows, ":" on a Mac (where ";" would glue two folders into one that is not found).
+    for (const directory of list.split(delimiter)) {
       const key = normal(directory);
       if (!key || seen.has(key)) continue;
       seen.add(key);
       result.push(directory.trim());
     }
   }
-  return result.join(";");
+  return result.join(delimiter);
 }
 
 function processPath(env: NodeJS.ProcessEnv = process.env): string {
@@ -110,7 +111,11 @@ export async function refreshFreshPath(
   const registry = await reader().catch(() => null);
   cachedPath = registry
     ? mergePathLists(registry.machine, registry.user, processPath())
-    : processPath();
+    : process.platform === "win32"
+      ? processPath()
+      : // No registry off Windows: always read the live PATH (on a Mac it grows a few seconds
+        // after start, when the owner's Terminal PATH is added; see mac-path.ts).
+        null;
   return freshPath();
 }
 
@@ -133,7 +138,7 @@ export function setManagedToolDirectories(directories: string[]): void {
 
 /** The merged PATH (or the process PATH before the first refresh). */
 export function freshPath(): string {
-  return mergePathLists(cachedPath ?? processPath(), extraDirectories.join(";"));
+  return mergePathLists(cachedPath ?? processPath(), extraDirectories.join(delimiter));
 }
 
 /**
@@ -242,6 +247,18 @@ const BASE_VARIABLES = [
   "NUMBER_OF_PROCESSORS",
 ];
 
+/** The same idea on a Mac or Linux: without HOME and TMPDIR most programs cannot even start. */
+const POSIX_BASE_VARIABLES = [
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "SHELL",
+  "TMPDIR",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+];
+
 function read(env: NodeJS.ProcessEnv, name: string): string | undefined {
   const key = Object.keys(env).find((entry) => entry.toLowerCase() === name.toLowerCase());
   return key ? env[key] : undefined;
@@ -259,7 +276,9 @@ export function serverEnvironment(
   path: string = freshPath(),
 ): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const name of BASE_VARIABLES) {
+  const names =
+    process.platform === "win32" ? BASE_VARIABLES : [...BASE_VARIABLES, ...POSIX_BASE_VARIABLES];
+  for (const name of names) {
     const value = read(base, name);
     if (value !== undefined) result[name] = value;
   }

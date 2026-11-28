@@ -3,6 +3,7 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { CONNECTOR_MARKS } from "../../renderer/src/connector-marks";
 import {
@@ -52,10 +53,24 @@ async function setup(
   };
 }
 
-const CONTEXT: ConnectorContext = {
-  sharedRoot: "C:\\Users\\owner\\Sahkarmi\\Shared",
-  connectorRoot: "C:\\Users\\owner\\AppData\\Roaming\\Sahkarmi\\mcp-connectors",
-};
+const WINDOWS = process.platform === "win32";
+
+// Folders written the way the system the tests run on writes them.
+const CONTEXT: ConnectorContext = WINDOWS
+  ? {
+      sharedRoot: "C:\\Users\\owner\\Sahkarmi\\Shared",
+      connectorRoot: "C:\\Users\\owner\\AppData\\Roaming\\Sahkarmi\\mcp-connectors",
+    }
+  : {
+      sharedRoot: "/Users/owner/Sahkarmi/Shared",
+      connectorRoot: "/Users/owner/Library/Application Support/Sahkarmi/mcp-connectors",
+    };
+/** A folder a coworker works in, for the tools that carry file paths. */
+const WORK = WINDOWS ? "C:\\S" : "/S";
+
+/** Tally's connector is a Windows program (an .exe the owner picks): added on Windows only. */
+const needsWindowsProgram = (entry: { fields: readonly { target: string }[] }) =>
+  entry.fields.some((field) => field.target === "command");
 
 function preset(id: string) {
   const found = connectorPreset(id);
@@ -202,7 +217,10 @@ describe("adding a connector", () => {
   });
 
   it("fills in the Shared folder and the connector folder, and leaves no template values", () => {
-    for (const entry of CONNECTOR_PRESETS) {
+    const addable = CONNECTOR_PRESETS.filter((entry) => WINDOWS || !needsWindowsProgram(entry));
+    // Only Tally is left out away from Windows; every other connector is filled in everywhere.
+    expect(CONNECTOR_PRESETS.length - addable.length).toBe(WINDOWS ? 0 : 1);
+    for (const entry of addable) {
       const input = connectorInput(entry, filled(entry.id), CONTEXT);
       expect(JSON.stringify(input), entry.id).not.toContain("@@");
       expect(placeholderHits(input), entry.id).toEqual([]);
@@ -211,10 +229,17 @@ describe("adding a connector", () => {
     const files = connectorInput(preset("files"), {}, CONTEXT);
     expect(files.args?.at(-1)).toBe(CONTEXT.sharedRoot);
     expect(files.args).toContain("--confine-roots");
+    // A file or folder inside the connector's folder is joined the way this system writes paths.
+    const databases = connectorInput(preset("databases"), filled("databases"), CONTEXT);
+    expect(databases.args?.at(-1)).toBe(
+      join(CONTEXT.connectorRoot, "databases", "connection.toml"),
+    );
+    expect(connectorInput(preset("india-lookups"), {}, CONTEXT).env).toEqual({
+      MCP_INDIA_STACK_CACHE_DIR: join(CONTEXT.connectorRoot, "india-lookups", "cache"),
+    });
   });
 
-  it("asks for required keys and agreements up front", () => {
-    expect(() => connectorInput(preset("code-hosting"), {}, CONTEXT)).toThrow(/GitHub token/);
+  it.runIf(WINDOWS)("asks for the Tally program's full path and its agreement up front", () => {
     expect(() =>
       connectorInput(preset("tally-accounts"), { command: "C:\\Tools\\bridge_mcp.exe" }, CONTEXT),
     ).toThrow(/Tick/);
@@ -225,6 +250,10 @@ describe("adding a connector", () => {
         CONTEXT,
       ),
     ).toThrow(/full path/);
+  });
+
+  it("asks for required keys up front", () => {
+    expect(() => connectorInput(preset("code-hosting"), {}, CONTEXT)).toThrow(/GitHub token/);
     const hosting = connectorInput(
       preset("code-hosting"),
       { Authorization: "github_pat_x" },
@@ -278,7 +307,7 @@ describe("safe defaults", () => {
     expect(config?.env.SAHKARMI_DB_DSN).toBe("sqlite:///C:/data/shop.db");
   });
 
-  it("Tally starts with posting off and its write tools always ask", async () => {
+  it("Tally starts with posting off and its write tools always ask", () => {
     const entry = preset("tally-accounts");
     expect(entry.env.BRIDGE_AGENT_ENABLE_WRITES).toBe("false");
     expect(entry.env.BRIDGE_AGENT_ENABLE_TAX_AUDIT).toBe("false");
@@ -297,7 +326,9 @@ describe("safe defaults", () => {
     expect(connectorToolCategory(entry, "trial_balance", {})?.category).toBe("research");
     // Not every tool is guessed: an unknown one keeps the usual ask.
     expect(connectorToolCategory(entry, "build_import_xml", {})).toBeNull();
+  });
 
+  it.runIf(WINDOWS)("an added Tally keeps posting off and counts a post as a payment", async () => {
     const { store, context } = await setup();
     await store.addConnector("tally-accounts", "", filled("tally-accounts"), context);
     expect(store.connectorToolCategory("mcp__tally__post_import", {})?.category).toBe("payments");
@@ -336,25 +367,32 @@ describe("safe defaults", () => {
 
   it("file tools carry their paths so the folder rules apply", () => {
     const files = preset("files");
-    expect(connectorToolCategory(files, "write_file", { path: "C:\\S\\a.txt" })).toEqual({
+    const note = join(WORK, "a.txt");
+    expect(connectorToolCategory(files, "write_file", { path: note })).toEqual({
       category: "file_create",
-      paths: ["C:\\S\\a.txt"],
+      paths: [note],
     });
-    expect(
-      connectorToolCategory(files, "move_file", { source: "C:\\S\\a", destination: "C:\\S\\b" }),
-    ).toEqual({ category: "file_modify", paths: ["C:\\S\\a", "C:\\S\\b"] });
+    const [from, to] = [join(WORK, "a"), join(WORK, "b")];
+    expect(connectorToolCategory(files, "move_file", { source: from, destination: to })).toEqual({
+      category: "file_modify",
+      paths: [from, to],
+    });
+    const shop = join(WORK, "shop");
     for (const tool of ["git_commit", "git_merge", "git_checkout"]) {
-      expect(connectorToolCategory(preset("git"), tool, { repo_path: "C:\\S\\shop" })).toEqual({
+      expect(connectorToolCategory(preset("git"), tool, { repo_path: shop })).toEqual({
         category: "file_modify",
-        paths: ["C:\\S\\shop"],
+        paths: [shop],
       });
     }
     // Remote changes are not guessed: asked like any tool server's.
     expect(connectorToolCategory(preset("git"), "git_remote", {})).toBeNull();
     const converter = preset("document-converter");
+    // A file: address of this system (file:///C:/S/report.pdf on Windows, file:///S/report.pdf on
+    // macOS) comes back as the plain path the folder rules check.
+    const report = join(WORK, "report.pdf");
     expect(
-      connectorToolCategory(converter, "convert_to_markdown", { uri: "file:///C:/S/report.pdf" }),
-    ).toEqual({ category: "file_read", paths: ["C:\\S\\report.pdf"] });
+      connectorToolCategory(converter, "convert_to_markdown", { uri: pathToFileURL(report).href }),
+    ).toEqual({ category: "file_read", paths: [report] });
     expect(
       connectorToolCategory(converter, "convert_to_markdown", { uri: "https://example.com" })
         ?.category,

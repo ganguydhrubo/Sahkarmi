@@ -42,22 +42,57 @@ const MODIFIERS: Record<string, number> = {
   shift: 8,
 };
 
-/** The DevTools key event for a key name like "Enter", "a", "Tab" or "Ctrl+A". */
-export function cdpKeyEvent(input: string): {
+const CONTROL = 2;
+const COMMAND = 4;
+const SHIFT = 8;
+
+/**
+ * On a Mac the editing shortcuts use Command, and a made-up Command+V key press does nothing by
+ * itself: the page acts only when the key event also names the editing command.
+ */
+const MAC_EDIT_COMMANDS: Record<string, string> = {
+  a: "selectAll",
+  c: "copy",
+  v: "paste",
+  x: "cut",
+  z: "undo",
+};
+
+/**
+ * The DevTools key event for a key name like "Enter", "a", "Tab" or "Ctrl+A". On a Mac,
+ * "Ctrl+A/C/V/X/Z" and "CommandOrControl+…" mean the Command key, as an owner would press it.
+ */
+export function cdpKeyEvent(
+  input: string,
+  platform: NodeJS.Platform = process.platform,
+): {
   key: string;
   code: string;
   windowsVirtualKeyCode: number;
   modifiers: number;
   text?: string;
+  commands?: string[];
 } {
   if (!/^[a-zA-Z0-9+_-]{1,32}$/.test(input)) throw new Error("Invalid browser key.");
   const parts = input.split("+").filter(Boolean);
   const name = parts.pop() ?? "";
+  const mac = platform === "darwin";
   let modifiers = 0;
   for (const part of parts) {
-    const bit = MODIFIERS[part.toLowerCase()];
+    const word = part.toLowerCase();
+    const bit =
+      mac && (word === "commandorcontrol" || word === "cmdorctrl") ? COMMAND : MODIFIERS[word];
     if (bit === undefined) throw new Error("Invalid browser key.");
     modifiers |= bit;
+  }
+  let commands: string[] | undefined;
+  if (mac && name.length === 1) {
+    const edit = MAC_EDIT_COMMANDS[name.toLowerCase()];
+    const withoutShift = modifiers & ~SHIFT;
+    if (edit && (withoutShift === CONTROL || withoutShift === COMMAND)) {
+      modifiers = COMMAND | (modifiers & SHIFT);
+      commands = [edit === "undo" && modifiers & SHIFT ? "redo" : edit];
+    }
   }
   const named = NAMED_KEYS[name.toLowerCase()];
   if (named) {
@@ -79,6 +114,7 @@ export function cdpKeyEvent(input: string): {
       windowsVirtualKeyCode: upper.charCodeAt(0),
       modifiers,
       ...(text ? { text } : {}),
+      ...(commands ? { commands } : {}),
     };
   }
   const functionKey = /^F([1-9]|1[0-2])$/i.exec(name);
@@ -95,10 +131,14 @@ export function cdpKeyEvent(input: string): {
 }
 
 /** Presses a key name like "Enter", "Tab" or "Ctrl+V": key down, then key up. */
-export async function pressCdpKey(send: CdpSend, input: string): Promise<void> {
-  const event = cdpKeyEvent(input);
+export async function pressCdpKey(
+  send: CdpSend,
+  input: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
+  const event = cdpKeyEvent(input, platform);
   await send("Input.dispatchKeyEvent", { type: event.text ? "keyDown" : "rawKeyDown", ...event });
-  const { text: _text, ...up } = event;
+  const { text: _text, commands: _commands, ...up } = event;
   await send("Input.dispatchKeyEvent", { type: "keyUp", ...up });
 }
 
