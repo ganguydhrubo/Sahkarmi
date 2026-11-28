@@ -22,7 +22,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://sahkarmi.site/" />
   <meta property="og:title" content="Sahkarmi — open-source AI coworkers for your own computer" />
-  <meta property="og:description" content="A free desktop app with a team of AI coworkers that work on your PC, each with its own browser, and ask you before they pay, send or post. Windows 10 and 11; macOS and Linux later." />
+  <meta property="og:description" content="A free desktop app with a team of AI coworkers that work on your PC, each with its own browser, and ask you before they pay, send or post. Windows 10 and 11, and Mac; Linux later." />
   <meta property="og:locale" content="en_IN" />
   <meta property="og:locale:alternate" content="hi_IN" />
   <meta property="og:image" content="https://sahkarmi.site/assets/og.jpg" />
@@ -89,12 +89,12 @@
         "name": "Sahkarmi",
         "alternateName": "सहकर्मी",
         "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Windows 10, Windows 11",
+        "operatingSystem": "Windows 10, Windows 11, macOS 12 or later",
         "softwareVersion": "0.34.0",
         "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
-        "downloadUrl": "https://apps.microsoft.com/detail/9PD6BP3NGVST",
+        "downloadUrl": ["https://apps.microsoft.com/detail/9PD6BP3NGVST", "https://sahkarmi.site/ai-agent-for-mac.html"],
         "installUrl": "https://sahkarmi.site/install.html",
         "softwareHelp": { "@type": "CreativeWork", "url": "https://sahkarmi.site/install.html" },
         "screenshot": "https://sahkarmi.site/assets/shots/conversation-1440.webp",
@@ -123,7 +123,7 @@
           {
             "@type": "Question",
             "name": "Which computers does it run on?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 and 11 (64-bit). That is the build the project releases and tests." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 and 11 (64-bit). That is the build the project releases and tests. From version 0.37.0 it also runs on Mac with macOS 12 or later (Apple Silicon and Intel)." }
           },
           {
             "@type": "Question",
@@ -164,6 +164,26 @@
             "@type": "Question",
             "name": "What is a team run, and what is LangGraph?",
             "acceptedAnswer": { "@type": "Answer", "text": "A team run gives the whole team one goal on the Multi-Agent page. The goal is split into tasks, each task goes to a coworker through its normal queue, and your approvals apply as usual. LangGraph is the open-source library the run is built on: it keeps the run as a graph of steps with a saved checkpoint after each one, so a run waiting for your approval costs nothing and continues from the last finished step after a restart." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Sahkarmi available for Mac?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. From version 0.37.0 Sahkarmi runs on Mac with macOS 12 (Monterey) or later, and it is free. Download the DMG file for your Mac from this page, or install it with Homebrew. On Mac, coworkers use the built-in browser, files and all AI features; they cannot control Mac desktop apps yet." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Sahkarmi work on Apple Silicon (M1, M2, M3, M4) and Intel Macs?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes, both. There is one file for Apple Silicon Macs (M1, M2, M3, M4) and one for Intel Macs, and both need macOS 12 or later. To see which Mac you have, open the Apple menu, then About This Mac: Chip Apple M means Apple Silicon, Processor Intel means Intel." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I install Sahkarmi on a Mac with Homebrew?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Open Terminal and run: brew install --cask ganguydhrubo/sahkarmi/sahkarmi. The same line works on Apple Silicon and Intel Macs, and the app opens straight away. To update later, run: brew upgrade --cask sahkarmi. To remove it, run: brew uninstall --cask sahkarmi." }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does macOS say it could not verify Sahkarmi?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Because the Mac app is not notarised by Apple yet. On the first open, click Done, not Move to Trash. Then open System Settings, Privacy & Security, scroll down to Security, click Open Anyway and confirm with your Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only, and Homebrew installs skip it." }
           }
         ]
       }
@@ -431,6 +451,17 @@
     .dl-card .btn { margin-top: auto; }
     .dl-card small { color: var(--muted); font-size: 13px; }
     .dl-card .size { color: var(--muted); font-size: 14px; }
+    /* Mac card: a plain laptop tile (not Apple's logo), one button for each chip, the Homebrew line. */
+    .mac-tile { color: var(--text); background: linear-gradient(145deg, rgba(160, 166, 190, 0.26), rgba(120, 126, 150, 0.08)); border-color: rgba(190, 196, 216, 0.4);
+      box-shadow: 0 18px 36px -12px rgba(40, 46, 70, 0.5), 0 0 0 6px rgba(160, 166, 190, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+    .dl-card .mac-tile svg { filter: drop-shadow(3px 5px 5px rgba(20, 24, 41, 0.3)); }
+    #card-mac { scroll-margin-top: 96px; }
+    .mac-btns { display: grid; gap: 8px; }
+    .dl-card .mac-btns .btn { margin-top: 0; justify-content: space-between; gap: 6px 12px; padding-inline: 20px; font-size: 16px; line-height: 1.25; }
+    .btn-size { flex: none; font-size: 13px; font-weight: 600; opacity: 0.85; white-space: nowrap; }
+    .hero-fact[hidden], .dls-steps[hidden] { display: none; }
+    /* Mac visitors: the Microsoft Store badge beside the main buttons is of no use to them. */
+    .on-mac .hero-store, .on-mac .go-store { display: none; }
     .dl-facts { margin: 22px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
     .dl-facts > div { background: var(--bg-2, rgba(255,255,255,0.04)); border: 1px solid var(--line, rgba(255,255,255,0.1)); border-radius: 12px; padding: 10px 14px; min-width: 0; }
     .dl-facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
@@ -837,7 +868,7 @@
     .hero-cta { gap: 14px 16px; margin-top: 6px; }
     .hero-cta .btn-xl { min-height: 60px; }
     .hero-store img { display: block; height: 60px; width: auto; }
-    .hero-cta.on-phone #hero-download { display: none; }
+    .hero-cta.on-phone #hero-download, .hero-cta.on-phone #hero-other { display: none; }
     .hero-facts { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 14px 0 0; padding: 0; }
     .hero-fact { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text-2); font-size: 14px; font-weight: 600; white-space: nowrap; }
     .hero-fact b { color: var(--text); }
@@ -903,8 +934,8 @@
     /* Download section: command-line card and the steps after downloading */
     .dl-grid { max-width: none; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
     .cli-mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #0f1220; color: #5ec48a; font: 800 16px ui-monospace, Consolas, monospace; }
-    .dl-cli .cli-label { margin: 4px 0 -4px; font-weight: 700; color: var(--text); font-size: 14px; }
-    .dl-cli .winget code { font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; overflow: visible; }
+    .dl-cli .cli-label, #card-mac .cli-label { margin: 4px 0 -4px; font-weight: 700; color: var(--text); font-size: 14px; }
+    .dl-cli .winget code, #card-mac .winget code { font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; overflow: visible; }
     .dl-steps { list-style: none; counter-reset: ds; margin: 22px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
     .dl-steps li { counter-increment: ds; position: relative; display: grid; gap: 4px; padding: 16px 16px 16px 60px; border-radius: 16px; border: 1px dashed var(--line-2); background: var(--card); }
     .dl-steps li::before { content: counter(ds); position: absolute; left: 16px; top: 16px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--saffron); color: #0f1220; font-weight: 800; }
@@ -1039,6 +1070,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
               <span id="download-label" data-i18n="download">Download for Windows</span>
             </a>
+            <a class="btn btn-secondary btn-xl" id="hero-other" href="#card-mac">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              <span id="other-label" data-i18n="downloadMac">Download for Mac</span>
+            </a>
             <a class="ms-badge hero-store" href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer"><img src="/assets/ms-store-badge.svg" width="190" height="52" alt="Download from the Microsoft Store" /></a>
           </div>
           <p class="lead" data-i18n="lead">Sahkarmi is free, open-source AI that uses your Windows PC like a coworker would. It browses websites, opens and works in desktop apps, researches, writes, works inside 1,660 apps and runs on a schedule. Before it pays, sends or posts, it asks you.</p>
@@ -1051,7 +1086,7 @@
             </div>
             <p class="to-pc-note" data-i18n="toPcNote">Then open sahkarmi.site/download on your PC. Once it is installed, your phone can use it too.</p>
           </div>
-          <p class="hero-facts"><span class="hero-fact"><i class="live-dot" aria-hidden="true"></i><span data-i18n="hfVersion">Version</span>&nbsp;<b data-release-version>0.34.0</b></span><span class="hero-fact" data-release-size="win">246 MB</span><span class="hero-fact" data-i18n="hfWin">Windows 10 and 11</span><span class="hero-fact" data-i18n="hfFree">Free, no account, no card</span></p>
+          <p class="hero-facts"><span class="hero-fact"><i class="live-dot" aria-hidden="true"></i><span data-i18n="hfVersion">Version</span>&nbsp;<b data-release-version>0.34.0</b></span><span class="hero-fact" id="hero-size" data-release-size="win">246 MB</span><span class="hero-fact" data-i18n="hfWin">Windows 10 and 11</span><span class="hero-fact" data-i18n="hfMac">Mac: Apple Silicon and Intel</span><span class="hero-fact" data-i18n="hfFree">Free, no account, no card</span></p>
           <p class="cta-meta"><span id="dl-meta" data-i18n="dlMeta">The Microsoft Store version is signed by Microsoft and updates itself.</span> <a class="watch-link" href="#see"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span data-i18n="watch">Watch the 2-minute film</span></a></p>
           <ul class="proof">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="var(--saffron-ink)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span data-i18n="p1">Runs on your PC</span></li>
@@ -1643,6 +1678,25 @@
             <a class="btn btn-primary" data-platform-tile="win" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.35.0/Sahkarmi-0.35.0-x64.exe"><span data-i18n="winBtn">Download .exe</span></a>
             <small><a href="/install.html#windows" data-i18n="winHelp">Windows install and first-launch steps</a></small>
           </div>
+          <div class="dl-card" id="card-mac">
+            <div class="os os-win">
+              <span class="win-tile mac-tile" aria-hidden="true">
+                <svg viewBox="0 0 88 88" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><rect x="17" y="19" width="54" height="37" rx="5"/><path d="M7 67h74"/><path d="M38 67h12" stroke-width="9"/></svg>
+              </span>
+              <div><h3 id="download-mac" data-i18n="macH3">Download for Mac</h3><span class="os-sub" data-i18n="macSub">macOS 12 or later · Apple Silicon and Intel</span></div>
+            </div>
+            <span class="status tested" data-i18n="stWin">Built and tested by the project</span>
+            <p data-i18n="macP">Free for every Mac with macOS 12 (Monterey) or later. Pick the file for the chip in your Mac.</p>
+            <div class="mac-btns">
+              <a class="btn btn-primary" data-platform-tile="mac-arm64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-arm64.dmg"><span data-i18n="macArmBtn">Apple Silicon (M1 to M4)</span><span class="btn-size" data-release-size="mac-arm64">300 MB</span></a>
+              <a class="btn btn-secondary" data-platform-tile="mac-x64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-x64.dmg"><span data-i18n="macIntelBtn">Intel</span><span class="btn-size" data-release-size="mac-x64">300 MB</span></a>
+            </div>
+            <small data-i18n="macWhich">Not sure? Apple menu &gt; About This Mac: "Chip Apple M…" = Apple Silicon, "Processor Intel" = Intel.</small>
+            <p class="cli-label">Homebrew <span data-i18n="macBrewNote">(one line, works on both chips)</span></p>
+            <div class="winget"><code>brew install --cask ganguydhrubo/sahkarmi/sahkarmi</code><button type="button" data-copy="brew install --cask ganguydhrubo/sahkarmi/sahkarmi" data-i18n="msCopy">Copy</button></div>
+            <p data-i18n="macOpen">The Mac app is not notarised by Apple yet, so macOS stops the first open. In that box click Done, not Move to Trash. Then open System Settings &gt; Privacy &amp; Security, scroll down, click Open Anyway and open Sahkarmi again. This is needed one time only. Homebrew installs skip all of this.</p>
+            <small><a href="/install.html#mac" data-i18n="macHelp">Mac install and first-open steps</a> · <a href="/ai-agent-for-mac.html" data-i18n="macMore">Sahkarmi for Mac</a></small>
+          </div>
           <div class="dl-card dl-cli" id="card-cli">
             <div class="os"><span class="cli-mark" aria-hidden="true">&gt;_</span><div><h3 data-i18n="cliH">Command line</h3><span class="os-sub" data-i18n="cliSub">For IT teams and power users</span></div></div>
             <span class="status tested" data-i18n="cliStatus">Updates with one command</span>
@@ -1658,14 +1712,17 @@
           <li><b data-i18n="ds2">If Windows warns you</b><span data-i18n="ds2P">The installer is not code-signed yet, so SmartScreen may ask. Choose More info, then Run anyway.</span></li>
           <li><b data-i18n="ds3">Say what to do</b><span data-i18n="ds3P">Pick a coworker and type or speak the job. The free AI is built in: no key, no account.</span></li>
         </ol>
+        <p class="note" data-i18n="dsMac">On a Mac: open the DMG file and drag Sahkarmi into Applications. On the first open click Done, not Move to Trash, then click Open Anyway in System Settings &gt; Privacy &amp; Security and open Sahkarmi again.</p>
         <dl class="dl-facts reveal" aria-label="Release details">
           <div><dt data-i18n="dfVersion">Version</dt><dd data-release-version>0.34.0</dd></div>
           <div><dt data-i18n="dfDate">Released</dt><dd><time data-release-date datetime="2026-11-18">2026-11-18</time></dd></div>
           <div><dt data-i18n="dfSize">Download size</dt><dd data-release-size="win">246 MB</dd></div>
           <div><dt data-i18n="dfSystem">System</dt><dd data-i18n="dfSystemV">Windows 10 or 11, 64-bit (x64)</dd></div>
+          <div><dt data-i18n="dfMac">Mac</dt><dd data-i18n="dfMacV">macOS 12 or later, Apple Silicon and Intel</dd></div>
           <div><dt data-i18n="dfLicense">License</dt><dd><a href="https://github.com/ganguydhrubo/sahakarmi/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-i18n="dfLicenseV">Apache 2.0, free and open source</a></dd></div>
           <div class="dl-sha"><dt data-i18n="dfSha">SHA-256 of the installer</dt><dd><code id="release-sha" data-release-sha256="win">f1690bf619439de9b246c1cd8eb51a215ed063cb5831745e227471223caa3a6a</code> <button type="button" data-copy-from="#release-sha" data-i18n="msCopy">Copy</button> <a href="/install.html#verify" data-i18n="dfGuide">Installation guide</a></dd></div>
         </dl>
+        <p class="note" data-i18n="dlMacSums">Mac files: the SHA-256 checksums are in SHA256SUMS-macos.txt on the release page. The provenance attestation is for the Windows installer.</p>
         <div class="dl-help reveal">
           <a href="https://github.com/ganguydhrubo/sahakarmi/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="allReleases">All releases and checksums on GitHub</a>
           <a href="https://sahkarmisite.itch.io/sahkarmi" target="_blank" rel="noopener noreferrer" data-i18n="itchLink">Also on itch.io</a>
@@ -1679,6 +1736,8 @@
         </div>
         <p class="platforms sr-only">
           <a data-platform="win" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.35.0/Sahkarmi-0.35.0-x64.exe">Windows installer</a>
+          <a data-platform="mac-arm64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-arm64.dmg">Mac installer for Apple Silicon</a>
+          <a data-platform="mac-x64" href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.37.0/Sahkarmi-0.37.0-x64.dmg">Mac installer for Intel</a>
         </p>
       </div>
     </section>
@@ -1772,7 +1831,7 @@
           </details>
           <details>
             <summary data-i18n="q2">Which computers does it run on?</summary>
-            <p data-i18n="a2">Windows 10 and 11 (64-bit). That is the build the project releases and tests.</p>
+            <p data-i18n="a2">Windows 10 and 11 (64-bit). That is the build the project releases and tests. From version 0.37.0 it also runs on Mac with macOS 12 or later (Apple Silicon and Intel).</p>
           </details>
           <details>
             <summary data-i18n="q3">Can a coworker pay, send or post without me?</summary>
@@ -1805,6 +1864,22 @@
           <details>
             <summary data-i18n="q10">What is a team run, and what is LangGraph?</summary>
             <p data-i18n="a10">A team run gives the whole team one goal on the Multi-Agent page. The goal is split into tasks, each task goes to a coworker through its normal queue, and your approvals apply as usual. LangGraph is the open-source library the run is built on: it keeps the run as a graph of steps with a saved checkpoint after each one, so a run waiting for your approval costs nothing and continues from the last finished step after a restart.</p>
+          </details>
+          <details>
+            <summary data-i18n="q11">Is Sahkarmi available for Mac?</summary>
+            <p data-i18n="a11">Yes. From version 0.37.0 Sahkarmi runs on Mac with macOS 12 (Monterey) or later, and it is free. Download the DMG file for your Mac from this page, or install it with Homebrew. On Mac, coworkers use the built-in browser, files and all AI features; they cannot control Mac desktop apps yet.</p>
+          </details>
+          <details>
+            <summary data-i18n="q12">Does Sahkarmi work on Apple Silicon (M1, M2, M3, M4) and Intel Macs?</summary>
+            <p data-i18n="a12">Yes, both. There is one file for Apple Silicon Macs (M1, M2, M3, M4) and one for Intel Macs, and both need macOS 12 or later. To see which Mac you have, open the Apple menu, then About This Mac: Chip Apple M means Apple Silicon, Processor Intel means Intel.</p>
+          </details>
+          <details>
+            <summary data-i18n="q13">How do I install Sahkarmi on a Mac with Homebrew?</summary>
+            <p data-i18n="a13">Open Terminal and run: brew install --cask ganguydhrubo/sahkarmi/sahkarmi. The same line works on Apple Silicon and Intel Macs, and the app opens straight away. To update later, run: brew upgrade --cask sahkarmi. To remove it, run: brew uninstall --cask sahkarmi.</p>
+          </details>
+          <details>
+            <summary data-i18n="q14">Why does macOS say it could not verify Sahkarmi?</summary>
+            <p data-i18n="a14">Because the Mac app is not notarised by Apple yet. On the first open, click Done, not Move to Trash. Then open System Settings, Privacy &amp; Security, scroll down to Security, click Open Anyway and confirm with your Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only, and Homebrew installs skip it.</p>
           </details>
         </div>
       </div>
@@ -1863,12 +1938,17 @@
     <button type="button" class="dls-close" id="dls-close" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <p class="dls-kicker"><i aria-hidden="true"></i><span data-i18n="dlsKicker">Download started</span></p>
     <h2 id="dls-h" data-i18n="dlsH">Three steps and your team is ready</h2>
-    <ol class="dls-steps">
+    <ol class="dls-steps" id="dls-win">
       <li><b data-i18n="dls1">Open Sahkarmi-Setup from your downloads</b><span data-i18n="dls1P">Top right in Chrome and Edge, or press Ctrl+J.</span></li>
       <li><b data-i18n="dls2">Windows protected your PC? Choose More info, then Run anyway</b><span data-i18n="dls2P">It shows because the installer is not code-signed yet. The source is open on GitHub.</span></li>
       <li><b data-i18n="dls3">Pick a coworker and say what to do</b><span data-i18n="dls3P">The free AI is built in. No key, no account, no card.</span></li>
     </ol>
-    <p class="dls-alt"><a id="dls-retry" data-download href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.35.0/Sahkarmi-0.35.0-x64.exe" data-i18n="dlsRetry">Download did not start? Try again</a> · <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="dlsStore">No warning: get it from the Microsoft Store</a></p>
+    <ol class="dls-steps" id="dls-mac" hidden>
+      <li><b data-i18n="dlsM1">Open the Sahkarmi .dmg file from your Downloads</b><span data-i18n="dlsM1P">Then drag Sahkarmi into the Applications folder.</span></li>
+      <li><b data-i18n="dlsM2">Open Sahkarmi from Applications. macOS stops it once: click Done, not Move to Trash</b><span data-i18n="dlsM2P">Then open System Settings &gt; Privacy &amp; Security, scroll down to Security and click Open Anyway. Give your Mac password or Touch ID, open Sahkarmi again and choose Open. It shows because the app is not notarised by Apple yet.</span></li>
+      <li><b data-i18n="dls3">Pick a coworker and say what to do</b><span data-i18n="dls3P">The free AI is built in. No key, no account, no card.</span></li>
+    </ol>
+    <p class="dls-alt"><a id="dls-retry" data-download href="https://github.com/ganguydhrubo/Sahkarmi/releases/download/v0.35.0/Sahkarmi-0.35.0-x64.exe" data-i18n="dlsRetry">Download did not start? Try again</a><span id="dls-store"> · <a href="https://apps.microsoft.com/detail/9PD6BP3NGVST" target="_blank" rel="noopener noreferrer" data-i18n="dlsStore">No warning: get it from the Microsoft Store</a></span></p>
     <p class="dls-support"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.5-5.3-8.5-11.4A4.9 4.9 0 0 1 12 6.5a4.9 4.9 0 0 1 8.5 3.1C20.5 15.7 12 21 12 21z"/></svg><a href="https://github.com/sponsors/ganguydhrubo" target="_blank" rel="noopener noreferrer" data-i18n="dlsSup">Sahkarmi is free. Support it if you like</a> · <a href="https://github.com/ganguydhrubo/sahakarmi" target="_blank" rel="noopener noreferrer" data-i18n="dlsStar">Give it a star</a></p>
   </div>
   <div class="dl-bar" id="dl-bar" aria-hidden="true">
@@ -1887,6 +1967,7 @@
         <a href="/use-cases.html" data-i18n="footUseCases">Use cases</a>
         <a href="/coworkers/" data-i18n="footCoworkers">All AI coworkers</a>
         <a href="/ai-agent-for-windows.html" data-i18n="footWindows">AI agent for Windows</a>
+        <a href="/ai-agent-for-mac.html" data-i18n="footMac">AI agent for Mac</a>
         <a href="/alternatives.html" data-i18n="footAlt">Alternatives</a>
         <a href="/open-source-ai-agent.html" data-i18n="footOpen">Open-source AI agent</a>
         <a href="/install.html" data-i18n="footInstall">Install guide</a>
@@ -1982,6 +2063,7 @@
         footCoworkers: "All AI coworkers",
         footOpen: "Open-source AI agent",
         footWindows: "AI agent for Windows",
+        footMac: "AI agent for Mac",
         footAlt: "Alternatives",
         dfVersion: "Version",
         dfDate: "Released",
@@ -2073,7 +2155,15 @@
         h1b: "Pay ₹0.",
         lead: "Sahkarmi is free, open-source AI that uses your Windows PC like a coworker would. It browses websites, opens and works in desktop apps, researches, writes, works inside 1,660 apps and runs on a schedule. Before it pays, sends or posts, it asks you.",
         download: "Download for Windows",
-        downloadOther: "Windows only, for now",
+        downloadOther: "Windows and Mac only, for now",
+        downloadMac: "Download for Mac",
+        goBtnMac: "Download free for Mac",
+        hfMac: "Mac: Apple Silicon and Intel",
+        heroKickerMac: "Free desktop app for Mac",
+        barTextMac: "Your free AI team for Mac",
+        dlMetaMac: "Choose Apple Silicon or Intel in the Mac card. Needs macOS 12 or later.",
+        dlMetaMacArm: "For your Mac with Apple Silicon. Needs macOS 12 or later.",
+        dlMetaMacIntel: "For your Intel Mac. Needs macOS 12 or later.",
         downloadAny: "Download",
         watch: "Watch the 2-minute film",
         dlMeta: "The Microsoft Store version is signed by Microsoft and updates itself.",
@@ -2236,6 +2326,16 @@
         winP: "Windows 10 or 11, 64-bit. SmartScreen will warn because the installer is not code-signed yet: choose More info, then Run anyway.",
         winBtn: "Download .exe",
         winHelp: "Windows install and first-launch steps",
+        macSub: "macOS 12 or later · Apple Silicon and Intel",
+        macH3: "Download for Mac",
+        macP: "Free for every Mac with macOS 12 (Monterey) or later. Pick the file for the chip in your Mac.",
+        macArmBtn: "Apple Silicon (M1 to M4)",
+        macIntelBtn: "Intel",
+        macWhich: "Not sure? Apple menu > About This Mac: \"Chip Apple M…\" = Apple Silicon, \"Processor Intel\" = Intel.",
+        macBrewNote: "(one line, works on both chips)",
+        macOpen: "The Mac app is not notarised by Apple yet, so macOS stops the first open. In that box click Done, not Move to Trash. Then open System Settings > Privacy & Security, scroll down, click Open Anyway and open Sahkarmi again. This is needed one time only. Homebrew installs skip all of this.",
+        macHelp: "Mac install and first-open steps",
+        macMore: "Sahkarmi for Mac",
         allReleases: "All releases and checksums on GitHub",
         itchLink: "Also on itch.io",
         verifyLink: "Verify your download",
@@ -2266,7 +2366,7 @@
         q1: "Is Sahkarmi free?",
         a1: "Yes. The app is free and open source under the Apache License 2.0. It includes free AI models through the bundled OpenCode runtime, with no login and no card. Those free models have usage limits set by OpenCode. If you connect a paid plan such as ChatGPT, Claude or Google Antigravity, that provider bills you directly; Sahkarmi charges nothing.",
         q2: "Which computers does it run on?",
-        a2: "Windows 10 and 11 (64-bit). That is the build the project releases and tests.",
+        a2: "Windows 10 and 11 (64-bit). That is the build the project releases and tests. From version 0.37.0 it also runs on Mac with macOS 12 or later (Apple Silicon and Intel).",
         q3: "Can a coworker pay, send or post without me?",
         a3: "Coworkers are instructed to stop and file an approval request before payments, messages to customers or vendors, publishing and form submissions, and you approve or reject each one in the Approvals inbox. In the current preview this relies on the AI following those instructions, not on a hard technical block, so watch new tasks closely and never share card details or OTPs with a coworker.",
         q4: "Where is my data stored, and does Sahkarmi collect anything?",
@@ -2283,6 +2383,14 @@
         a9: "Yes. Make a knowledge base on the Knowledge page and add files or a folder: PDF, Word, PowerPoint, Excel, CSV, Markdown, text, JSON and HTML. They are indexed on your computer in a SQLite full-text index and never uploaded. Coworkers you allow get the best passages with every message and cite them as [S1]; click a citation to open the file. Optionally download one small model (about 30 MB, MIT licence) so searches also match by meaning, still on your computer.",
         q10: "What is a team run, and what is LangGraph?",
         a10: "A team run gives the whole team one goal on the Multi-Agent page. The goal is split into tasks, each task goes to a coworker through its normal queue, and your approvals apply as usual. LangGraph is the open-source library the run is built on: it keeps the run as a graph of steps with a saved checkpoint after each one, so a run waiting for your approval costs nothing and continues from the last finished step after a restart.",
+        q11: "Is Sahkarmi available for Mac?",
+        a11: "Yes. From version 0.37.0 Sahkarmi runs on Mac with macOS 12 (Monterey) or later, and it is free. Download the DMG file for your Mac from this page, or install it with Homebrew. On Mac, coworkers use the built-in browser, files and all AI features; they cannot control Mac desktop apps yet.",
+        q12: "Does Sahkarmi work on Apple Silicon (M1, M2, M3, M4) and Intel Macs?",
+        a12: "Yes, both. There is one file for Apple Silicon Macs (M1, M2, M3, M4) and one for Intel Macs, and both need macOS 12 or later. To see which Mac you have, open the Apple menu, then About This Mac: Chip Apple M means Apple Silicon, Processor Intel means Intel.",
+        q13: "How do I install Sahkarmi on a Mac with Homebrew?",
+        a13: "Open Terminal and run: brew install --cask ganguydhrubo/sahkarmi/sahkarmi. The same line works on Apple Silicon and Intel Macs, and the app opens straight away. To update later, run: brew upgrade --cask sahkarmi. To remove it, run: brew uninstall --cask sahkarmi.",
+        q14: "Why does macOS say it could not verify Sahkarmi?",
+        a14: "Because the Mac app is not notarised by Apple yet. On the first open, click Done, not Move to Trash. Then open System Settings, Privacy & Security, scroll down to Security, click Open Anyway and confirm with your Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only, and Homebrew installs skip it.",
         comEyebrow: "Community and feedback",
         comH2: "Tell us what to build next",
         comLead: "Report a bug or an idea with the app version (Settings, then About) and the steps you took. Code, translations and docs are welcome under the Apache License 2.0.",
@@ -2424,6 +2532,10 @@
         ds2P: "The installer is not code-signed yet, so SmartScreen may ask. Choose More info, then Run anyway.",
         ds3: "Say what to do",
         ds3P: "Pick a coworker and type or speak the job. The free AI is built in: no key, no account.",
+        dsMac: "On a Mac: open the DMG file and drag Sahkarmi into Applications. On the first open click Done, not Move to Trash, then click Open Anyway in System Settings > Privacy & Security and open Sahkarmi again.",
+        dfMac: "Mac",
+        dfMacV: "macOS 12 or later, Apple Silicon and Intel",
+        dlMacSums: "Mac files: the SHA-256 checksums are in SHA256SUMS-macos.txt on the release page. The provenance attestation is for the Windows installer.",
         dlsKicker: "Download started",
         dlsH: "Three steps and your team is ready",
         dls1: "Open Sahkarmi-Setup from your downloads",
@@ -2432,6 +2544,10 @@
         dls2P: "It shows because the installer is not code-signed yet. The source is open on GitHub.",
         dls3: "Pick a coworker and say what to do",
         dls3P: "The free AI is built in. No key, no account, no card.",
+        dlsM1: "Open the Sahkarmi .dmg file from your Downloads",
+        dlsM1P: "Then drag Sahkarmi into the Applications folder.",
+        dlsM2: "Open Sahkarmi from Applications. macOS stops it once: click Done, not Move to Trash",
+        dlsM2P: "Then open System Settings > Privacy & Security, scroll down to Security and click Open Anyway. Give your Mac password or Touch ID, open Sahkarmi again and choose Open. It shows because the app is not notarised by Apple yet.",
         dlsRetry: "Download did not start? Try again",
         dlsStore: "No warning: get it from the Microsoft Store",
         vtEyebrow: "Video library",
@@ -2510,6 +2626,7 @@
         footCoworkers: "सभी AI सहकर्मी",
         footOpen: "ओपन-सोर्स AI एजेंट",
         footWindows: "Windows के लिए AI एजेंट",
+        footMac: "Mac के लिए AI एजेंट",
         footAlt: "विकल्प",
         dfVersion: "वर्ज़न",
         dfDate: "रिलीज़",
@@ -2601,7 +2718,15 @@
         h1b: "ख़र्च ₹0.",
         lead: "सहकर्मी मुफ़्त, ओपन-सोर्स AI है जो आपके Windows PC को एक सहकर्मी की तरह चलाता है. यह वेबसाइट ब्राउज़ करता है, डेस्कटॉप ऐप खोलकर उनमें काम करता है, रिसर्च करता है, लिखता है, 1,660 ऐप्स में काम करता है और तय समय पर चलता है. पेमेंट, मैसेज या पोस्ट से पहले आपसे पूछता है.",
         download: "Windows के लिए डाउनलोड करें",
-        downloadOther: "अभी सिर्फ़ Windows के लिए",
+        downloadOther: "अभी सिर्फ़ Windows और Mac के लिए",
+        downloadMac: "Mac के लिए डाउनलोड करें",
+        goBtnMac: "Mac के लिए मुफ़्त डाउनलोड",
+        hfMac: "Mac: Apple Silicon और Intel",
+        heroKickerMac: "Mac के लिए मुफ़्त डेस्कटॉप ऐप",
+        barTextMac: "Mac के लिए आपकी मुफ़्त AI टीम",
+        dlMetaMac: "Mac कार्ड में Apple Silicon या Intel चुनें. macOS 12 या उससे नया चाहिए.",
+        dlMetaMacArm: "Apple Silicon वाले आपके Mac के लिए. macOS 12 या उससे नया चाहिए.",
+        dlMetaMacIntel: "आपके Intel Mac के लिए. macOS 12 या उससे नया चाहिए.",
         downloadAny: "डाउनलोड करें",
         watch: "2 मिनट की फ़िल्म देखिए",
         dlMeta: "Microsoft Store वाला वर्ज़न Microsoft से साइन है और अपने आप अपडेट होता है.",
@@ -2764,6 +2889,16 @@
         winP: "Windows 10 या 11, 64-bit. इंस्टॉलर पर अभी कोड-साइनिंग नहीं है, इसलिए SmartScreen चेतावनी देगा: More info, फिर Run anyway चुनें.",
         winBtn: ".exe डाउनलोड करें",
         winHelp: "Windows इंस्टॉल और पहली बार खोलने के कदम",
+        macSub: "macOS 12 या उससे नया · Apple Silicon और Intel",
+        macH3: "Mac के लिए डाउनलोड करें",
+        macP: "macOS 12 (Monterey) या उससे नए वाले हर Mac के लिए मुफ़्त. अपने Mac की चिप वाली फ़ाइल चुनें.",
+        macArmBtn: "Apple Silicon (M1 से M4)",
+        macIntelBtn: "Intel",
+        macWhich: "पक्का नहीं? Apple मेन्यू > About This Mac: \"Chip Apple M…\" यानी Apple Silicon, \"Processor Intel\" यानी Intel.",
+        macBrewNote: "(एक लाइन, दोनों चिप पर चलती है)",
+        macOpen: "Mac ऐप अभी Apple से नोटराइज़ नहीं है, इसलिए macOS पहली बार खोलने से रोकता है. उस बॉक्स में Done दबाएँ, Move to Trash नहीं. फिर System Settings > Privacy & Security खोलें, नीचे जाएँ, Open Anyway दबाएँ और Sahkarmi दोबारा खोलें. यह सिर्फ़ एक बार करना होता है. Homebrew से इंस्टॉल करने पर यह सब नहीं करना पड़ता.",
+        macHelp: "Mac इंस्टॉल और पहली बार खोलने के कदम",
+        macMore: "Mac के लिए Sahkarmi",
         allReleases: "सभी रिलीज़ और चेकसम GitHub पर",
         itchLink: "itch.io पर भी उपलब्ध",
         verifyLink: "अपना डाउनलोड जाँचें",
@@ -2794,7 +2929,7 @@
         q1: "क्या सहकर्मी मुफ़्त है?",
         a1: "हाँ. ऐप Apache License 2.0 के तहत मुफ़्त और ओपन सोर्स है. इसमें बंडल किए OpenCode रनटाइम के ज़रिए मुफ़्त AI मॉडल हैं, न लॉगिन, न कार्ड. उन मुफ़्त मॉडल पर OpenCode की तय उपयोग सीमाएँ हैं. अगर आप ChatGPT, Claude या Google Antigravity जैसा पेड प्लान जोड़ते हैं, तो उसका बिल वही प्रदाता भेजता है; सहकर्मी कुछ नहीं लेता.",
         q2: "यह किन कंप्यूटरों पर चलता है?",
-        a2: "Windows 10 और 11 (64-bit). यही बिल्ड प्रोजेक्ट रिलीज़ करता और परखता है.",
+        a2: "Windows 10 और 11 (64-bit). यही बिल्ड प्रोजेक्ट रिलीज़ करता और परखता है. वर्ज़न 0.37.0 से यह macOS 12 या उससे नए वाले Mac पर भी चलता है (Apple Silicon और Intel).",
         q3: "क्या कोई सहकर्मी मुझसे पूछे बिना भुगतान, मैसेज या पोस्ट कर सकता है?",
         a3: "सहकर्मियों को निर्देश है कि भुगतान, ग्राहक या वेंडर को मैसेज, पोस्ट और फ़ॉर्म जमा करने से पहले रुकें और अप्रूवल का अनुरोध भेजें, और आप Approvals इनबॉक्स में हर अनुरोध मंज़ूर या नामंज़ूर करते हैं. मौजूदा प्रीव्यू में यह AI के निर्देश मानने पर टिका है, किसी सख़्त तकनीकी रोक पर नहीं, इसलिए नए कामों पर नज़र रखें और कार्ड की जानकारी या OTP किसी सहकर्मी को न दें.",
         q4: "मेरा डेटा कहाँ रहता है, और क्या सहकर्मी कुछ इकट्ठा करता है?",
@@ -2811,6 +2946,14 @@
         a9: "हाँ. Knowledge पेज पर एक ज्ञान-कोश बनाएँ और फ़ाइलें या फ़ोल्डर जोड़ें: PDF, Word, PowerPoint, Excel, CSV, Markdown, टेक्स्ट, JSON और HTML. वे आपके कंप्यूटर पर SQLite फ़ुल-टेक्स्ट इंडेक्स में इंडेक्स होती हैं और कभी अपलोड नहीं होतीं. जिन सहकर्मियों को आप अनुमति दें, उन्हें हर संदेश के साथ सबसे अच्छे अंश मिलते हैं और वे [S1] के रूप में हवाला देते हैं; हवाले पर क्लिक करके फ़ाइल खोलें. चाहें तो एक छोटा मॉडल (लगभग 30 MB, MIT लाइसेंस) डाउनलोड करें ताकि खोज अर्थ से भी मिले, वह भी आपके कंप्यूटर पर.",
         q10: "टीम रन क्या है, और LangGraph क्या है?",
         a10: "टीम रन मल्टी-एजेंट पेज पर पूरी टीम को एक लक्ष्य देता है. लक्ष्य कामों में बँटता है, हर काम सहकर्मी की सामान्य कतार से जाता है, और आपकी मंज़ूरियाँ हमेशा की तरह लागू रहती हैं. LangGraph वह ओपन-सोर्स लाइब्रेरी है जिस पर रन बना है: यह रन को कदमों के ग्राफ़ की तरह रखती है और हर कदम के बाद चेकपॉइंट सहेजती है, इसलिए मंज़ूरी का इंतज़ार करता रन कुछ खर्च नहीं करता और रीस्टार्ट के बाद आख़िरी पूरे कदम से आगे बढ़ता है.",
+        q11: "क्या Sahkarmi Mac के लिए उपलब्ध है?",
+        a11: "हाँ. वर्ज़न 0.37.0 से सहकर्मी macOS 12 (Monterey) या उससे नए वाले Mac पर चलता है, और यह मुफ़्त है. इस पेज से अपने Mac की DMG फ़ाइल डाउनलोड करें, या Homebrew से इंस्टॉल करें. Mac पर सहकर्मी अपना ब्राउज़र, फ़ाइलें और सभी AI सुविधाएँ इस्तेमाल करते हैं; वे अभी Mac के डेस्कटॉप ऐप नहीं चला सकते.",
+        q12: "क्या Sahkarmi Apple Silicon (M1, M2, M3, M4) और Intel Mac दोनों पर चलता है?",
+        a12: "हाँ, दोनों पर. एक फ़ाइल Apple Silicon Mac (M1, M2, M3, M4) के लिए है और एक Intel Mac के लिए, और दोनों को macOS 12 या उससे नया चाहिए. आपका Mac कौन सा है, यह देखने के लिए Apple मेन्यू, फिर About This Mac खोलें: Chip Apple M यानी Apple Silicon, Processor Intel यानी Intel.",
+        q13: "Mac पर Homebrew से Sahkarmi कैसे इंस्टॉल करें?",
+        a13: "Terminal खोलें और यह चलाएँ: brew install --cask ganguydhrubo/sahkarmi/sahkarmi. यही लाइन Apple Silicon और Intel दोनों Mac पर चलती है, और ऐप सीधे खुल जाता है. बाद में अपडेट के लिए चलाएँ: brew upgrade --cask sahkarmi. हटाने के लिए चलाएँ: brew uninstall --cask sahkarmi.",
+        q14: "macOS क्यों कहता है कि वह Sahkarmi को जाँच नहीं सका?",
+        a14: "क्योंकि Mac ऐप अभी Apple से नोटराइज़ नहीं है. पहली बार खोलने पर Done दबाएँ, Move to Trash नहीं. फिर System Settings, Privacy & Security खोलें, नीचे Security तक जाएँ, Open Anyway दबाएँ और अपने Mac पासवर्ड या Touch ID से पक्का करें. Sahkarmi दोबारा खोलें और Open चुनें. यह सिर्फ़ एक बार करना होता है, और Homebrew से इंस्टॉल करने पर इसकी ज़रूरत नहीं पड़ती.",
         comEyebrow: "समुदाय और फ़ीडबैक",
         comH2: "बताइए, आगे क्या बनाएँ",
         comLead: "ऐप का वर्ज़न (Settings, फिर About) और आपने क्या किया, उसके साथ बग या आइडिया भेजिए. Apache License 2.0 के तहत कोड, अनुवाद और डॉक्स का स्वागत है.",
@@ -2952,6 +3095,10 @@
         ds2P: "इंस्टॉलर अभी कोड-साइन नहीं है, इसलिए SmartScreen पूछ सकता है. More info चुनें, फिर Run anyway.",
         ds3: "काम बताएँ",
         ds3P: "कोई सहकर्मी चुनें और काम लिखें या बोलें. मुफ़्त AI पहले से है: न की, न अकाउंट.",
+        dsMac: "Mac पर: DMG फ़ाइल खोलें और Sahkarmi को Applications में खींचें. पहली बार खोलने पर Done दबाएँ, Move to Trash नहीं, फिर System Settings > Privacy & Security में Open Anyway दबाएँ और Sahkarmi दोबारा खोलें.",
+        dfMac: "Mac",
+        dfMacV: "macOS 12 या उससे नया, Apple Silicon और Intel",
+        dlMacSums: "Mac फ़ाइलें: SHA-256 चेकसम रिलीज़ पेज पर SHA256SUMS-macos.txt में हैं. प्रोवेनेंस अटेस्टेशन Windows इंस्टॉलर के लिए है.",
         dlsKicker: "डाउनलोड शुरू हो गया",
         dlsH: "तीन कदम और आपकी टीम तैयार",
         dls1: "डाउनलोड से Sahkarmi की फ़ाइल खोलें",
@@ -2960,6 +3107,10 @@
         dls2P: "यह इसलिए दिखता है क्योंकि इंस्टॉलर अभी कोड-साइन नहीं है. सोर्स GitHub पर खुला है.",
         dls3: "कोई सहकर्मी चुनें और काम बताएँ",
         dls3P: "मुफ़्त AI पहले से है. न की, न अकाउंट, न कार्ड.",
+        dlsM1: "Downloads से Sahkarmi की .dmg फ़ाइल खोलें",
+        dlsM1P: "फिर Sahkarmi को Applications फ़ोल्डर में खींचें.",
+        dlsM2: "Applications से Sahkarmi खोलें. macOS एक बार रोकेगा: Done दबाएँ, Move to Trash नहीं",
+        dlsM2P: "फिर System Settings > Privacy & Security खोलें, नीचे Security तक जाएँ और Open Anyway दबाएँ. अपना Mac पासवर्ड या Touch ID दें, Sahkarmi दोबारा खोलें और Open चुनें. यह इसलिए दिखता है क्योंकि ऐप अभी Apple से नोटराइज़ नहीं है.",
         dlsRetry: "डाउनलोड शुरू नहीं हुआ? फिर से कोशिश करें",
         dlsStore: "बिना चेतावनी: Microsoft Store से लें",
         vtEyebrow: "वीडियो लाइब्रेरी",
@@ -2969,14 +3120,40 @@
       },
     };
 
-    // Windows is the only published build; visitors on other systems are sent to the download section.
-    const DOWNLOADS = { win: document.querySelector('[data-platform="win"]').href };
+    // Windows and Mac are the published builds; Linux visitors are sent to the download section.
+    // A Mac visitor gets the file for their chip when the browser can tell it. When it cannot,
+    // the main buttons lead to the Mac card, where the visitor picks Apple Silicon or Intel.
+    const DOWNLOADS = {};
+    for (const link of document.querySelectorAll("a[data-platform]")) DOWNLOADS[link.dataset.platform] = link.href;
+    const mainButtons = [...document.querySelectorAll("a[data-download]:not(#dls-retry)")];
+    let macChip = null; // "arm64" or "x64" once known
 
     function detectPlatform() {
       const ua = navigator.userAgent;
-      if (/iPhone|iPad|iPod|Android/i.test(ua)) return "mobile";
-      if (/Mac/i.test(ua) || (/Linux|X11/i.test(ua) && !/Android/i.test(ua))) return "other";
+      // An iPad can call itself a Mac; a real Mac has no touch screen.
+      if (/iPhone|iPad|iPod|Android/i.test(ua) || (/Mac/i.test(ua) && navigator.maxTouchPoints > 1)) return "mobile";
+      if (/Mac/i.test(ua)) return macChip ? `mac-${macChip}` : "mac";
+      if (/Linux|X11/i.test(ua)) return "other";
       return "win";
+    }
+
+    async function detectMacChip() {
+      try {
+        const data = await navigator.userAgentData?.getHighEntropyValues(["architecture"]);
+        if (data?.architecture === "arm") return "arm64";
+        if (data?.architecture === "x86") return "x64";
+      } catch (_) { /* this browser does not tell */ }
+      try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        const info = gl?.getExtension("WEBGL_debug_renderer_info");
+        const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+        if (/Intel|AMD|Radeon|NVIDIA/i.test(renderer)) return "x64";
+        // Safari says only "Apple GPU" on every Mac, Intel ones too. There the chip is known only
+        // when the graphics offer ASTC textures, which Apple Silicon has and Intel Macs do not.
+        if (/Apple M\d/i.test(renderer)) return "arm64";
+        if (/Apple/i.test(renderer) && gl.getExtension("WEBGL_compressed_texture_astc")) return "arm64";
+      } catch (_) { /* no WebGL */ }
+      return null;
     }
 
     let lang = "en";
@@ -3003,11 +3180,32 @@
       const label = document.getElementById("download-label");
       const meta = document.getElementById("dl-meta");
       const header = document.querySelector(".header-download");
+      const mac = platform.startsWith("mac");
+      // The second hero button always offers the other system: Mac visitors get the Windows
+      // installer there, everyone else is taken to the Mac card to pick the chip.
+      document.getElementById("other-label").textContent = mac ? dict.download : dict.downloadMac;
+      document.getElementById("hero-other").setAttribute("href", mac ? DOWNLOADS.win : "#card-mac");
       const labels = { win: dict.download, other: dict.downloadOther, mobile: dict.downloadAny };
-      const metas = { win: dict.dlMeta, other: dict.dlMetaOther, mobile: dict.dlMetaMobile };
-      label.textContent = labels[platform];
+      const metas = {
+        win: dict.dlMeta, other: dict.dlMetaOther, mobile: dict.dlMetaMobile,
+        mac: dict.dlMetaMac, "mac-arm64": dict.dlMetaMacArm, "mac-x64": dict.dlMetaMacIntel,
+      };
+      label.textContent = mac ? dict.downloadMac : labels[platform];
       meta.textContent = metas[platform];
-      if (platform !== "win") {
+      if (mac) {
+        // Chip known: every main button downloads that DMG. Not known: they lead to the Mac card.
+        const file = DOWNLOADS[platform];
+        for (const link of mainButtons) {
+          link.setAttribute("href", file ?? "#card-mac");
+          link.toggleAttribute("data-download", Boolean(file));
+        }
+        document.querySelector('[data-i18n="goBtn"]').textContent = dict.goBtnMac;
+        document.querySelector('[data-i18n="heroKicker"]').textContent = dict.heroKickerMac;
+        document.querySelector('[data-i18n="barText"]').textContent = dict.barTextMac;
+        const size = document.getElementById("hero-size");
+        size.hidden = !file;
+        if (file) size.textContent = document.querySelector(`#card-mac [data-release-size="${platform}"]`).textContent;
+      } else if (platform !== "win") {
         button.setAttribute("href", "#download");
         button.removeAttribute("data-download");
         if (header) header.setAttribute("href", "#download");
@@ -3015,7 +3213,9 @@
         button.setAttribute("href", DOWNLOADS[platform]);
         if (header) header.setAttribute("href", DOWNLOADS[platform]);
       }
-      document.getElementById("card-store").classList.add("primary");
+      document.documentElement.classList.toggle("on-mac", mac);
+      document.getElementById("card-store").classList.toggle("primary", !mac);
+      document.getElementById("card-mac").classList.toggle("primary", mac);
       // A phone cannot install a Windows app: offer to send the link to the PC instead.
       const toPc = document.getElementById("to-pc");
       const heroCta = document.querySelector(".hero-cta");
@@ -3029,6 +3229,13 @@
     let saved = null;
     try { saved = localStorage.getItem("sahkarmi-lang"); } catch (_) { /* private mode */ }
     applyLanguage(params.get("lang") || saved || (navigator.language.startsWith("hi") ? "hi" : "en"));
+    if (detectPlatform() === "mac") {
+      detectMacChip().then((chip) => {
+        if (!chip) return;
+        macChip = chip;
+        applyPlatform();
+      });
+    }
     for (const button of document.querySelectorAll(".lang button")) {
       button.addEventListener("click", () => applyLanguage(button.dataset.lang));
     }
@@ -3040,8 +3247,14 @@
       document.getElementById("dls-close")?.addEventListener("click", hide);
       document.addEventListener("keydown", (event) => { if (event.key === "Escape") hide(); });
       document.addEventListener("click", (event) => {
-        const link = event.target instanceof Element ? event.target.closest('a[href$=".exe"]') : null;
+        const link = event.target instanceof Element ? event.target.closest('a[href$=".exe"], a[href$=".dmg"]') : null;
         if (!link || link.id === "dls-retry") return;
+        // A Mac file gets the Mac steps, and no Microsoft Store link.
+        const mac = link.href.endsWith(".dmg");
+        document.getElementById("dls-win").hidden = mac;
+        document.getElementById("dls-mac").hidden = !mac;
+        document.getElementById("dls-store").hidden = mac;
+        document.getElementById("dls-retry").href = link.href;
         setTimeout(() => {
           started.hidden = false;
           document.getElementById("dls-close")?.focus({ preventScroll: true });
@@ -3217,10 +3430,10 @@
       });
     }
 
-    // Sticky download bar once the hero button is out of view (Windows visitors only).
+    // Sticky download bar once the hero button is out of view (Windows and Mac visitors only).
     const bar = document.getElementById("dl-bar");
     const heroButton = document.getElementById("hero-download");
-    if (bar && heroButton && detectPlatform() === "win" && "IntersectionObserver" in window) {
+    if (bar && heroButton && /^(win|mac)/.test(detectPlatform()) && "IntersectionObserver" in window) {
       new IntersectionObserver(([entry]) => {
         const show = !entry.isIntersecting && entry.boundingClientRect.top < 0;
         bar.classList.toggle("show", show);

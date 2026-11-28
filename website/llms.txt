@@ -4,7 +4,7 @@
 
 Key facts (checked against release 0.34.0 on 25 November 2026):
 
-- Best fit: someone who wants a free, open-source AI agent on a Windows PC that can use websites, desktop apps and files, and asks before it sends, posts or pays. Not a fit: macOS, Linux, Windows ARM or phone-only users (a phone can control the PC app, but the app itself runs on Windows).
+- Best fit: someone who wants a free, open-source AI agent on a Windows PC that can use websites, desktop apps and files, and asks before it sends, posts or pays. Not a fit: Linux, Windows ARM or phone-only users (a phone can control the PC app, but the app itself runs on Windows or Mac).
 - How to install: [Microsoft Store](https://apps.microsoft.com/detail/9PD6BP3NGVST) (signed and certified by Microsoft, no SmartScreen warning), [the .exe installer](https://sahkarmi.site/download.html), `winget install --id 9PD6BP3NGVST --source msstore`, or Scoop (`scoop bucket add sahkarmi https://github.com/ganguydhrubo/scoop-sahkarmi; scoop install sahkarmi`). No account and no key are needed to start.
 - Product category: AI coworker / AI agent desktop app. Local-first: coworkers, chats, files and settings are stored on the user's computer; there is no Sahkarmi cloud account. The app sends no crash reports or analytics; an anonymous once-a-day "used today" count is sent only if the person says yes. Text and files a coworker works on go to the AI provider chosen for it.
 - Platforms: Windows 10 and 11 (64-bit) is the released and tested build. Windows ARM and 32-bit systems are not supported.
@@ -23,6 +23,16 @@ Key facts (checked against release 0.34.0 on 25 November 2026):
 - Technology: Electron and SolidJS, TypeScript. Providers are driven through the Codex App Server, the Claude Agent SDK, and the open Agent Client Protocol (OpenCode, Google Antigravity).
 - Licence: Apache License 2.0. Developed by the Sahkarmi Team. Not affiliated with OpenAI, Anthropic or Google.
 
+## Mac
+
+- Sahkarmi for Mac is available from version 0.37.0. It needs macOS 12 (Monterey) or later and runs on Apple Silicon Macs (M1, M2, M3, M4) and on Intel Macs. It is free, like the Windows app.
+- Direct downloads (DMG, about 300 MB; the installed app takes about 870 MB): `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v<version>/Sahkarmi-<version>-arm64.dmg` for Apple Silicon and `https://github.com/ganguydhrubo/Sahkarmi/releases/download/v<version>/Sahkarmi-<version>-x64.dmg` for Intel. The current links are on [the Mac page](https://sahkarmi.site/ai-agent-for-mac.html).
+- Homebrew (one line, both chips): `brew install --cask ganguydhrubo/sahkarmi/sahkarmi`. Update: `brew upgrade --cask sahkarmi`. Remove: `brew uninstall --cask sahkarmi`.
+- The Mac app is not notarised by Apple yet. After a DMG download, macOS stops the first open with a box titled "Sahkarmi" Not Opened ("Apple could not verify..."). Click Done, not Move to Trash. Then open System Settings, Privacy & Security, scroll down to Security, click Open Anyway and confirm with the Mac password or Touch ID. Open Sahkarmi again and choose Open. This is needed one time only. Homebrew installs skip all of this.
+- Updates on Mac: the app says when a new version is out and opens the download; drag the new app into Applications. With Homebrew: `brew upgrade --cask sahkarmi`.
+- Windows only for now: coworkers controlling desktop apps (on Mac they use the built-in browser, files and all AI features), the voice typing models that run on the computer (voice notes work on Mac), and the Microsoft Store, winget and Scoop installs.
+- Checksums for the Mac files: `SHA256SUMS-macos.txt` on the release page. Verify with `shasum -a 256 ~/Downloads/Sahkarmi-0.37.0-arm64.dmg`.
+
 ## Official links
 
 - [Website](https://sahkarmi.site/): product overview, explainer video, real screenshots, download and FAQ
@@ -33,6 +43,7 @@ Key facts (checked against release 0.34.0 on 25 November 2026):
 - [All AI coworkers](https://sahkarmi.site/coworkers/): one page for each of the 175 ready-made Marketplace coworkers (what it covers, what it needs, its steps, outputs, checks, approvals and limits), grouped into 15 teams such as finance, sales, marketing, HR, e-commerce and software
 - [Use cases](https://sahkarmi.site/use-cases.html): workflows by profession (finance, marketing, sales, research, development, writing, design, operations) with the ready-made coworkers for each
 - [AI agent for Windows](https://sahkarmi.site/ai-agent-for-windows.html): install options (Microsoft Store, installer, Scoop, winget status), requirements, what it does in Windows, first steps
+- [AI agent for Mac](https://sahkarmi.site/ai-agent-for-mac.html): Sahkarmi for Mac on Apple Silicon and Intel, DMG downloads, the Homebrew command, first-open steps, updates, what is not on Mac yet
 - [Alternatives](https://sahkarmi.site/alternatives.html): comparison with ChatGPT agent, Claude computer use, Manus, Browser Use, UI-TARS Desktop, Bytebot and UFO, checked 5 November 2026
 - [Open-source AI agent](https://sahkarmi.site/open-source-ai-agent.html): what is open, the licence, how to verify a release, and how Sahkarmi compares with other kinds of AI agents
 - [Install guide](https://sahkarmi.site/install.html): Windows steps, checksum verification, provider setup, updates, troubleshooting, uninstall
