@@ -235,22 +235,25 @@ describe("McpServerStore with test-first and per-coworker servers", () => {
 });
 
 describe("commandExists", () => {
-  it("finds a command on PATH with a Windows ending and spots a missing one", async () => {
-    const bin = await mkdtemp(join(tmpdir(), "sahkarmi-mcp-bin-"));
-    try {
-      await mkdir(join(bin, "tools"));
-      await writeFile(join(bin, "npx.cmd"), "@echo off");
-      await writeFile(join(bin, "tools", "server.exe"), "");
-      const env = { PATH: bin, PATHEXT: ".EXE;.CMD" };
-      expect(commandExists("npx", env)).toBe(true);
-      expect(commandExists("uvx", env)).toBe(false);
-      expect(commandExists(join(bin, "tools", "server.exe"), env)).toBe(true);
-      expect(commandExists(join(bin, "tools", "server"), env)).toBe(true);
-      expect(commandExists(join(bin, "missing", "server.exe"), env)).toBe(false);
-    } finally {
-      await rm(bin, { recursive: true, force: true });
-    }
-  });
+  it.runIf(process.platform === "win32")(
+    "finds a command on PATH with a Windows ending and spots a missing one",
+    async () => {
+      const bin = await mkdtemp(join(tmpdir(), "sahkarmi-mcp-bin-"));
+      try {
+        await mkdir(join(bin, "tools"));
+        await writeFile(join(bin, "npx.cmd"), "@echo off");
+        await writeFile(join(bin, "tools", "server.exe"), "");
+        const env = { PATH: bin, PATHEXT: ".EXE;.CMD" };
+        expect(commandExists("npx", env)).toBe(true);
+        expect(commandExists("uvx", env)).toBe(false);
+        expect(commandExists(join(bin, "tools", "server.exe"), env)).toBe(true);
+        expect(commandExists(join(bin, "tools", "server"), env)).toBe(true);
+        expect(commandExists(join(bin, "missing", "server.exe"), env)).toBe(false);
+      } finally {
+        await rm(bin, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe("runtime formats", () => {

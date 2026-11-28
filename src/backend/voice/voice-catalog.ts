@@ -482,8 +482,8 @@ export const VOICE_MODELS: VoiceModel[] = [
     ],
     archive: {
       url: `${SHERPA_RELEASES}/tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2`,
-      sha256: "4c3052abaa60943a341f193888cf6abd68787dae6ab8ae5c925a706caa247e4e",
-      size: 132_303_094,
+      sha256: "72c347230107ef8a31098ec4d468a605244beef5f1ed00db97efa13518800653",
+      size: 132_353_410,
       folder: "kokoro-int8-multi-lang-v1_0",
     },
   },

@@ -1,5 +1,7 @@
 import { createSignal, For, onMount, Show } from "solid-js";
 import {
+  type MacPermissionId,
+  type MacPermissionsState,
   PERMISSION_CATEGORIES,
   PERMISSION_LEVELS,
   type PermissionCategory,
@@ -109,9 +111,14 @@ export function PermissionsSettings(props: { bots: BotProfile[] }) {
               <tbody>
                 <For
                   each={PERMISSION_CATEGORIES.filter((category) => {
-                    // Coworkers control desktop apps on Windows only, so a Mac has no such row.
+                    // Coworkers control desktop apps on Windows and Mac only.
                     const platform = document.documentElement.dataset.platform;
-                    return category !== "desktop_control" || !platform || platform === "win32";
+                    return (
+                      category !== "desktop_control" ||
+                      !platform ||
+                      platform === "win32" ||
+                      platform === "darwin"
+                    );
                   })}
                 >
                   {(category) => (
@@ -147,6 +154,10 @@ export function PermissionsSettings(props: { bots: BotProfile[] }) {
                 </For>
               </tbody>
             </table>
+
+            <Show when={document.documentElement.dataset.platform === "darwin"}>
+              <MacDesktopPermissions />
+            </Show>
 
             <h3>{t("grantTitle")}</h3>
             <p class="settings-meta">{t("grantIntro")}</p>
@@ -272,5 +283,54 @@ export function PermissionsSettings(props: { bots: BotProfile[] }) {
         )}
       </Show>
     </div>
+  );
+}
+
+/** The two macOS switches desktop control needs, with a button to each Settings pane. */
+function MacDesktopPermissions() {
+  const [state, setState] = createSignal<MacPermissionsState | null>(null);
+  const refresh = async () => setState(await window.sahkarmi.getMacPermissions());
+  onMount(() => void refresh().catch(() => {}));
+  const rows: { id: MacPermissionId; label: MessageKey; key: keyof MacPermissionsState }[] = [
+    { id: "accessibility", label: "macPermAccessibility", key: "accessibility" },
+    { id: "screen-recording", label: "macPermScreen", key: "screenRecording" },
+  ];
+  return (
+    <section class="mac-desktop-permissions" aria-label={t("macPermTitle")}>
+      <h3>{t("macPermTitle")}</h3>
+      <p class="settings-meta">{t("macPermIntro")}</p>
+      <ul class="grant-list">
+        <For each={rows}>
+          {(row) => {
+            const granted = () => state()?.[row.key] === "granted";
+            return (
+              <li>
+                <span>
+                  <strong>{t(row.label)}</strong> ·{" "}
+                  {granted() ? t("macPermGranted") : t("macPermMissing")}
+                </span>
+                <Show when={!granted()}>
+                  <button
+                    type="button"
+                    class="button-secondary"
+                    onClick={() =>
+                      void window.sahkarmi
+                        .requestMacPermission(row.id)
+                        .then(setState)
+                        .catch(() => {})
+                    }
+                  >
+                    {t("macPermOpen")}
+                  </button>
+                </Show>
+              </li>
+            );
+          }}
+        </For>
+      </ul>
+      <button type="button" class="button-secondary" onClick={() => void refresh().catch(() => {})}>
+        {t("macPermCheck")}
+      </button>
+    </section>
   );
 }

@@ -7,9 +7,9 @@
 
 export const SAHKARMI_DESKTOP_NAMESPACE = "sahkarmi_desktop";
 
-/** Desktop control drives Windows itself; other systems never get these tools. */
+/** Desktop control drives Windows or macOS itself; other systems never get these tools. */
 export function desktopControlSupported(platform: NodeJS.Platform = process.platform): boolean {
-  return platform === "win32";
+  return platform === "win32" || platform === "darwin";
 }
 
 const COORDINATE_HELP =
@@ -20,7 +20,11 @@ const COORDINATE_HELP =
  * their own default ("I run in a sandbox, I cannot touch your apps") and refuse every request
  * to work in WhatsApp, Excel, Tally or any other app on the owner's PC.
  */
-export function desktopPromptLines(level: string): string[] {
+export function desktopPromptLines(
+  level: string,
+  platform: NodeJS.Platform = process.platform,
+): string[] {
+  if (platform === "darwin") return macPromptLines(level);
   if (level === "deny") {
     return [
       "Desktop control is switched off by the owner (Settings > Permissions > Control this PC). If asked to work in an app on this PC, say that it is switched off and where to turn it on; do not claim you are in a sandbox.",
@@ -29,6 +33,19 @@ export function desktopPromptLines(level: string): string[] {
   return [
     `You can operate this Windows PC and ANY app open on it (WhatsApp Desktop, Excel, Tally, Word, File Explorer and so on) with the ${SAHKARMI_DESKTOP_NAMESPACE} tools (for Claude they are named mcp__${SAHKARMI_DESKTOP_NAMESPACE}__*): screenshot, list_windows, focus_window, read_ui, click, type, key, scroll, drag, launch_app. You are NOT limited to a sandbox: never tell the owner you cannot control their apps. Work like this: list_windows, focus_window, read_ui to find the exact control, then click or type, then screenshot to check.`,
     "Sahkarmi asks the owner once before you first control the PC. After that, still call sahkarmi.request_approval and STOP before you press Send or Enter on a message, make a payment, post anything, or delete anything in a desktop app, exactly as for the browser.",
+  ];
+}
+
+function macPromptLines(level: string): string[] {
+  if (level === "deny") {
+    return [
+      "Desktop control is switched off by the owner (Settings > Permissions > Control this Mac). If asked to work in an app on this Mac, say that it is switched off and where to turn it on; do not claim you are in a sandbox.",
+    ];
+  }
+  return [
+    `You can operate this Mac and ANY app open on it (WhatsApp, Excel, Numbers, Word, TextEdit, Finder, Safari and so on) with the ${SAHKARMI_DESKTOP_NAMESPACE} tools (for Claude they are named mcp__${SAHKARMI_DESKTOP_NAMESPACE}__*): screenshot, list_windows, focus_window, read_ui, click, type, key, scroll, drag, launch_app. You are NOT limited to a sandbox: never tell the owner you cannot control their apps. Work like this: list_windows, focus_window, read_ui to find the exact control, then click or type, then screenshot to check.`,
+    'This is a Mac: shortcuts use cmd, not ctrl (cmd+s saves, cmd+c copies, cmd+v pastes, cmd+a selects all, cmd+q quits); alt is the option key. Open apps by their name in the Applications folder (launch_app "TextEdit"). read_ui reads the macOS accessibility tree. Positions are macOS screen points. If a step says a macOS permission is missing, tell the owner exactly which switch to turn on in System Settings > Privacy & Security, and stop.',
+    "Sahkarmi asks the owner once before you first control the Mac. After that, still call sahkarmi.request_approval and STOP before you press Send or Return on a message, make a payment, post anything, or delete anything in a desktop app, exactly as for the browser.",
   ];
 }
 
@@ -538,13 +555,19 @@ export function sensitiveDesktopStep(
 const WIN_KEY = 0x5b;
 /** Win+R opens Run, Win+X the menu with Terminal: both are a command line. */
 const COMMAND_PROMPT_KEYS: Record<number, string> = { 82: "the Run box", 88: "the Win+X menu" };
+/** On a Mac the same key is Command: Command+Space opens Spotlight, which starts Terminal. */
+const MAC_COMMAND_PROMPT_KEYS: Record<number, string> = { 32: "Spotlight" };
 
 /** What command line a chord opens, or null. */
-export function opensCommandPrompt(chords: KeyStroke[][]): string | null {
+export function opensCommandPrompt(
+  chords: KeyStroke[][],
+  platform: NodeJS.Platform = process.platform,
+): string | null {
+  const table = platform === "darwin" ? MAC_COMMAND_PROMPT_KEYS : COMMAND_PROMPT_KEYS;
   for (const chord of chords) {
     if (!chord.some((stroke) => stroke.vk === WIN_KEY || stroke.vk === 0x5c)) continue;
     for (const stroke of chord) {
-      const what = COMMAND_PROMPT_KEYS[stroke.vk];
+      const what = table[stroke.vk];
       if (what) return what;
     }
   }
@@ -555,10 +578,12 @@ export function opensCommandPrompt(chords: KeyStroke[][]): string | null {
 
 /** Interpreters that would run arbitrary commands: those go through the coworker's shell tool. */
 const SHELL_PROGRAMS =
-  /^(cmd|powershell|powershell_ise|pwsh|wt|windowsterminal|conhost|wscript|cscript|mshta|rundll32|regsvr32|bash|wsl|sh|msiexec|reg|schtasks|certutil|bitsadmin|node|nodejs|npx|deno|bun|python[\d.]*|pythonw|py|pyw|ruby|perl|php|java|javaw)(\.exe)?$/i;
-const SCRIPT_FILES = /\.(bat|cmd|ps1|psm1|vbs|vbe|js|jse|wsf|wsh|hta|msi|scr|reg|lnk|pif|com)$/i;
-/** Programs and scripts a page could have just put on this PC. */
-const RUNNABLE_FILES = /\.(exe|msi|bat|cmd|ps1|vbs|vbe|js|jse|wsf|hta|scr|com|pif|lnk)\b/i;
+  /^(cmd|powershell|powershell_ise|pwsh|wt|windowsterminal|conhost|wscript|cscript|mshta|rundll32|regsvr32|bash|wsl|sh|zsh|fish|csh|tcsh|ksh|osascript|terminal|iterm|iterm2|script editor|automator|msiexec|reg|schtasks|certutil|bitsadmin|node|nodejs|npx|deno|bun|python[\d.]*|pythonw|py|pyw|ruby|perl|php|java|javaw)(\.exe|\.app)?$/i;
+const SCRIPT_FILES =
+  /\.(bat|cmd|ps1|psm1|vbs|vbe|js|jse|wsf|wsh|hta|msi|scr|reg|lnk|pif|com|sh|command|tool|scpt|applescript|workflow|pkg|mpkg)$/i;
+/** Programs and scripts a page could have just put on this PC (or Mac). */
+const RUNNABLE_FILES =
+  /\.(exe|msi|bat|cmd|ps1|vbs|vbe|js|jse|wsf|hta|scr|com|pif|lnk|app|pkg|dmg|command|sh)\b/i;
 /** Downloads (Sahkarmi's or the owner's) and temporary folders, as written or as %TEMP%. */
 const DROP_FOLDERS = /(^|[\\/"'\s])(downloads|temp|tmp)[\\/]|%(temp|tmp)%|\$env:(temp|tmp)/i;
 

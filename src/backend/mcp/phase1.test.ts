@@ -224,40 +224,43 @@ describe("arg path checks and per-case problems (MCP-5, MCP-6)", () => {
     expect(problems.map((problem) => problem.kind)).toEqual(["placeholder"]);
   });
 
-  it("says which command, folder or file is missing, with a link and fix", async () => {
-    const root = await temp();
-    await writeFile(join(root, "uv.exe"), "");
-    const env = { PATH: root, PATHEXT: ".EXE" };
-    const base = { transport: "stdio" as const, env: {}, url: "", headers: {} };
-    expect(serverProblems({ ...base, command: "uvx", args: ["pkg"] }, env)).toEqual([
-      {
-        kind: "missing-command",
-        subject: "uvx",
-        link: "https://docs.astral.sh/uv/getting-started/installation/",
-        fix: "install-uv",
-      },
-    ]);
-    const missingFolder = join(root, "nope");
-    expect(
-      serverProblems(
-        { ...base, command: "uv", args: ["--directory", missingFolder, "run", "x.py"] },
-        env,
-      ),
-    ).toEqual([{ kind: "missing-folder", subject: missingFolder, fix: "edit" }]);
-    expect(
-      serverProblems({ ...base, command: "uv", args: ["run", "server.py"], cwd: root }, env),
-    ).toEqual([{ kind: "missing-file", subject: join(root, "server.py"), fix: "edit" }]);
-    await writeFile(join(root, "server.py"), "");
-    expect(
-      serverProblems({ ...base, command: "uv", args: ["run", "server.py"], cwd: root }, env),
-    ).toEqual([]);
-    expect(
-      serverProblems(
-        { ...base, command: "uv", args: [], requiredEnv: [{ name: "TOKEN", isRequired: true }] },
-        env,
-      ),
-    ).toEqual([{ kind: "missing-env", subject: "TOKEN", fix: "edit" }]);
-  });
+  it.runIf(process.platform === "win32")(
+    "says which command, folder or file is missing, with a link and fix",
+    async () => {
+      const root = await temp();
+      await writeFile(join(root, "uv.exe"), "");
+      const env = { PATH: root, PATHEXT: ".EXE" };
+      const base = { transport: "stdio" as const, env: {}, url: "", headers: {} };
+      expect(serverProblems({ ...base, command: "uvx", args: ["pkg"] }, env)).toEqual([
+        {
+          kind: "missing-command",
+          subject: "uvx",
+          link: "https://docs.astral.sh/uv/getting-started/installation/",
+          fix: "install-uv",
+        },
+      ]);
+      const missingFolder = join(root, "nope");
+      expect(
+        serverProblems(
+          { ...base, command: "uv", args: ["--directory", missingFolder, "run", "x.py"] },
+          env,
+        ),
+      ).toEqual([{ kind: "missing-folder", subject: missingFolder, fix: "edit" }]);
+      expect(
+        serverProblems({ ...base, command: "uv", args: ["run", "server.py"], cwd: root }, env),
+      ).toEqual([{ kind: "missing-file", subject: join(root, "server.py"), fix: "edit" }]);
+      await writeFile(join(root, "server.py"), "");
+      expect(
+        serverProblems({ ...base, command: "uv", args: ["run", "server.py"], cwd: root }, env),
+      ).toEqual([]);
+      expect(
+        serverProblems(
+          { ...base, command: "uv", args: [], requiredEnv: [{ name: "TOKEN", isRequired: true }] },
+          env,
+        ),
+      ).toEqual([{ kind: "missing-env", subject: "TOKEN", fix: "edit" }]);
+    },
+  );
 });
 
 describe("diagnosis table (§11.7)", () => {

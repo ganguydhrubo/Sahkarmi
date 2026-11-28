@@ -16,8 +16,8 @@ import {
 } from "./desktop-tools";
 
 describe("desktop tool definitions", () => {
-  it("offers the namespace on Windows only", () => {
-    expect(desktopDynamicTools("darwin")).toEqual([]);
+  it("offers the namespace on Windows and Mac only", () => {
+    expect(desktopDynamicTools("darwin")).toHaveLength(1);
     expect(desktopDynamicTools("linux")).toEqual([]);
     const [namespace] = desktopDynamicTools("win32") as Array<{ name: string; tools: unknown[] }>;
     expect(namespace?.name).toBe(SAHKARMI_DESKTOP_NAMESPACE);
